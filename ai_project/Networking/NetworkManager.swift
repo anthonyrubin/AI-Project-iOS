@@ -1,5 +1,6 @@
 import Foundation
 import Alamofire
+import UIKit
 
 class NetworkManager {
     static let shared = NetworkManager()
@@ -18,8 +19,9 @@ class NetworkManager {
             .validate()
             .responseDecodable(of: TokenResponse.self) { response in
                 switch response.result {
-                case .success(let user):
-                    completion(.success(user))
+                case .success(let tokenResponse):
+                    TokenManager.shared.saveTokens(tokenResponse)
+                    completion(.success(tokenResponse))
                 case .failure(let error):
                     completion(.failure(error))
                 }
@@ -54,33 +56,40 @@ class NetworkManager {
     }
     
     
-    func uploadImage(data: Data, completion: @escaping (Result<Void, Error>) -> Void) {
-        let url = URL(string: "http://localhost:8000/api/upload-image/")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+    func uploadImage(data: Data, completion: @escaping (Result<String, Error>) -> Void) {
+        guard let token = TokenManager.shared.getAccessToken() else {
+            completion(.failure(NSError(domain: "", code: 401, userInfo: [NSLocalizedDescriptionKey: "Unauthorized: No token found."])))
+            return
+        }
 
-        let boundary = UUID().uuidString
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        let url = "\(baseURL)/upload-image/" // Replace with your actual endpoint
+        let headers: HTTPHeaders = [
+            "Authorization": "Bearer \(token)"
+        ]
 
-        let uuidFilename = UUID().uuidString + ".jpg"
-
-        let httpBody = createBody(boundary: boundary, data: data, mimeType: "image/jpeg", fieldName: "screenshot", filename: uuidFilename)
-        request.httpBody = httpBody
-
-        URLSession.shared.dataTask(with: request) { _, response, error in
-            if let error = error {
+        AF.upload(
+            multipartFormData: { multipartFormData in
+                multipartFormData.append(
+                    data,
+                    withName: "image",
+                    fileName: "\(UUID().uuidString).jpg",
+                    mimeType: "image/jpeg"
+                )
+            },
+            to: url,
+            headers: headers
+        )
+        .validate()
+        .responseJSON { response in
+            switch response.result {
+            case .success:
+                completion(.success("Image uploaded successfully"))
+            case .failure(let error):
                 completion(.failure(error))
-                return
             }
-
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                completion(.failure(NSError(domain: "Upload failed", code: 1)))
-                return
-            }
-
-            completion(.success(()))
-        }.resume()
+        }
     }
+
 
     private func createBody(boundary: String, data: Data, mimeType: String, fieldName: String, filename: String) -> Data {
         var body = Data()
