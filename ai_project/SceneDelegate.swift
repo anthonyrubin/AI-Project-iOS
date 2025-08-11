@@ -1,56 +1,108 @@
-//
-//  SceneDelegate.swift
-//  ai_project
-//
-//  Created by Tony Rubin on 8/5/25.
-//
-
 import UIKit
 
-class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+extension Notification.Name {
+    static let authDidSucceed = Notification.Name("authDidSucceed")
+    static let didLogout      = Notification.Name("didLogout")
+}
 
+final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
 
+    func scene(_ scene: UIScene,
+               willConnectTo session: UISceneSession,
+               options connectionOptions: UIScene.ConnectionOptions) {
+        guard let ws = scene as? UIWindowScene else { return }
 
-    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        
-        guard let windowScene = (scene as? UIWindowScene) else { return }
-
-        let window = UIWindow(windowScene: windowScene)
-        let navController = UINavigationController(rootViewController: LoginViewController())
-        window.rootViewController = navController
+        let window = UIWindow(windowScene: ws)
         self.window = window
-        window.makeKeyAndVisible()
+
+        NotificationCenter.default.addObserver(self, selector: #selector(showMainApp), name: .authDidSucceed, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(showAuth),      name: .didLogout,      object: nil)
+
+        configureAppearance()
+
+//        if isLoggedIn() {
+            setRoot(makeTabBar(), animated: false)
+//        } else {
+//            setRoot(makeAuthFlow(), animated: false)
+//        }
     }
 
-    func sceneDidDisconnect(_ scene: UIScene) {
-        // Called as the scene is being released by the system.
-        // This occurs shortly after the scene enters the background, or when its session is discarded.
-        // Release any resources associated with this scene that can be re-created the next time the scene connects.
-        // The scene may re-connect later, as its session was not necessarily discarded (see `application:didDiscardSceneSessions` instead).
+    // MARK: - Root swapping
+
+    @objc private func showMainApp() {
+        setRoot(makeTabBar(), animated: true)
     }
 
-    func sceneDidBecomeActive(_ scene: UIScene) {
-        // Called when the scene has moved from an inactive state to an active state.
-        // Use this method to restart any tasks that were paused (or not yet started) when the scene was inactive.
+    @objc private func showAuth() {
+        clearSessionState()
+        setRoot(makeAuthFlow(), animated: true)
     }
 
-    func sceneWillResignActive(_ scene: UIScene) {
-        // Called when the scene will move from an active state to an inactive state.
-        // This may occur due to temporary interruptions (ex. an incoming phone call).
+    private func setRoot(_ vc: UIViewController, animated: Bool) {
+        guard let window = window else { return }
+        if animated {
+            UIView.transition(with: window,
+                              duration: 0.3,
+                              options: .transitionCrossDissolve,
+                              animations: { window.rootViewController = vc },
+                              completion: { _ in window.makeKeyAndVisible() })
+        } else {
+            window.rootViewController = vc
+            window.makeKeyAndVisible()
+        }
     }
 
-    func sceneWillEnterForeground(_ scene: UIScene) {
-        // Called as the scene transitions from the background to the foreground.
-        // Use this method to undo the changes made on entering the background.
+    // MARK: - Builders
+
+    private func makeAuthFlow() -> UIViewController {
+        let login = LoginViewController() // replace with your VC
+        return UINavigationController(rootViewController: login)
     }
 
-    func sceneDidEnterBackground(_ scene: UIScene) {
-        // Called as the scene transitions from the foreground to the background.
-        // Use this method to save data, release shared resources, and store enough scene-specific state information
-        // to restore the scene back to its current state.
+    private func makeTabBar() -> UITabBarController {
+        let tab = UITabBarController()
+        tab.viewControllers = [
+            nav(LessonsViewController(), "LessonsTabIcon"),
+            nav(SessionViewController(), "SessionTabIcon"),
+            nav(ProfileViewController(), "ProfileTabIcon")
+        ]
+        return tab
     }
 
+    private func nav(_ root: UIViewController, _ assetName: String) -> UINavigationController {
+        root.tabBarItem = UITabBarItem(title: nil,
+                                       image: UIImage(named: assetName),
+                                       selectedImage: UIImage(named: assetName))
+        return UINavigationController(rootViewController: root)
+    }
 
+    // MARK: - Appearance
+
+    private func configureAppearance() {
+        let tabAppearance = UITabBarAppearance()
+        tabAppearance.configureWithOpaqueBackground()
+        tabAppearance.backgroundColor = .systemBackground
+        UITabBar.appearance().standardAppearance = tabAppearance
+        if #available(iOS 15.0, *) {
+            UITabBar.appearance().scrollEdgeAppearance = tabAppearance
+        }
+
+        let navAppearance = UINavigationBarAppearance()
+        navAppearance.configureWithOpaqueBackground()
+        navAppearance.backgroundColor = .systemBackground
+        UINavigationBar.appearance().standardAppearance = navAppearance
+        UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
+    }
+
+    // MARK: - Auth state
+
+    private func isLoggedIn() -> Bool {
+        UserDefaults.standard.bool(forKey: "isLoggedIn")
+    }
+
+    private func clearSessionState() {
+        UserDefaults.standard.set(false, forKey: "isLoggedIn")
+    }
 }
 

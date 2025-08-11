@@ -98,6 +98,9 @@ class LoginViewController: UIViewController {
         viewModel.onLoginSuccess = { user in
             print("Logged in")
             // Navigate to next screen
+            UserDefaults.standard.set(true, forKey: "isLoggedIn")
+            // notify SceneDelegate to swap root
+            NotificationCenter.default.post(name: .authDidSucceed, object: nil)
             let uploadVC = UploadImageViewController()
             DispatchQueue.main.async {
                 self.navigationController?.pushViewController(uploadVC, animated: true)
