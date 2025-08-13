@@ -10,11 +10,29 @@ import UIKit
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
-
-
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        
+        // Set up session expiration handler
+        AuthenticationManager.shared.onSessionExpired = { [weak self] in
+            self?.handleSessionExpired()
+        }
+        
         return true
+    }
+    
+    private func handleSessionExpired() {
+        // Present login screen when session expires
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first {
+            
+            // Create and present login view controller
+            let loginVC = LoginViewController()
+            let navController = UINavigationController(rootViewController: loginVC)
+            navController.modalPresentationStyle = .fullScreen
+            
+            window.rootViewController?.present(navController, animated: true)
+        }
     }
 
     // MARK: UISceneSession Lifecycle
@@ -30,7 +48,5 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // If any sessions were discarded while the application was not running, this will be called shortly after application:didFinishLaunchingWithOptions.
         // Use this method to release any resources that were specific to the discarded scenes, as they will not return.
     }
-
-
 }
 
