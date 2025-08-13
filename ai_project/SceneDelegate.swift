@@ -82,21 +82,29 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     // MARK: - Appearance
 
     private func configureAppearance() {
-        let tabAppearance = UITabBarAppearance()
-        tabAppearance.configureWithOpaqueBackground()
-        tabAppearance.backgroundColor = .systemBackground
-        UITabBar.appearance().standardAppearance = tabAppearance
-        if #available(iOS 15.0, *) {
-            UITabBar.appearance().scrollEdgeAppearance = tabAppearance
-        }
+        // Tab bar
+        let tab = UITabBarAppearance()
+        tab.configureWithOpaqueBackground()
+        tab.backgroundColor = .systemBackground
+        tab.shadowColor = .clear
+        tab.stackedLayoutAppearance.normal.iconColor = .secondaryLabel
+        tab.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.secondaryLabel]
+        tab.stackedLayoutAppearance.selected.iconColor = .black
+        tab.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: UIColor.black]
 
-        let navAppearance = UINavigationBarAppearance()
-        navAppearance.configureWithOpaqueBackground()
-        navAppearance.backgroundColor = .systemBackground
-        UINavigationBar.appearance().standardAppearance = navAppearance
-        UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
+        let tabProxy = UITabBar.appearance()
+        tabProxy.standardAppearance = tab
+        tabProxy.tintColor = .black
+
+        // Nav bar
+        let nav = UINavigationBarAppearance()
+        nav.configureWithOpaqueBackground()
+        nav.backgroundColor = .systemBackground
+
+        let navProxy = UINavigationBar.appearance()
+        navProxy.standardAppearance = nav
+        navProxy.scrollEdgeAppearance = nav
     }
-
     // MARK: - Auth state
 
     private func isLoggedIn() -> Bool {
