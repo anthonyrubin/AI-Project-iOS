@@ -8,25 +8,19 @@ class NetworkManager {
 
     private let baseURL = "http://localhost:8000/api"
 
-    func login(username: String, password: String, completion: @escaping (Result<TokenResponse, Error>) -> Void) {
-        let url = "\(baseURL)/login/"
-        let parameters = [
-            "username": username,
-            "password": password
-        ]
-
-        AF.request(url, method: .post, parameters: parameters, encoder: JSONParameterEncoder.default)
-            .validate()
-            .responseDecodable(of: TokenResponse.self) { response in
-                switch response.result {
-                case .success(let tokenResponse):
-                    TokenManager.shared.saveTokens(tokenResponse)
-                    completion(.success(tokenResponse))
-                case .failure(let error):
-                    completion(.failure(error))
+    func loginOrCheckpoint(
+        username: String,
+        password: String,
+        completion: @escaping (Result<LoginOrCheckpointResponse, AFError>) -> Void
+    ) {
+            let url = "\(baseURL)/login/"
+            let params = ["username": username, "password": password]
+            AF.request(url, method: .post, parameters: params, encoder: JSONParameterEncoder.default)
+                .validate(statusCode: 200..<300)
+                .responseDecodable(of: LoginOrCheckpointResponse.self) { resp in
+                    completion(resp.result)
                 }
-            }
-    }
+        }
     
     func logout(completion: @escaping () -> Void) {
         let url = "\(baseURL)/logout/"
@@ -53,19 +47,6 @@ class NetworkManager {
             // Best-effort: regardless of network errors, proceed to local logout.
             completion()
         }
-    }
-    
-    func fetchCheckpoint(completion: @escaping (Result<CheckpointResponse, AFError>) -> Void) {
-        guard let token = TokenManager.shared.getAccessToken() else {
-            completion(.failure(AFError.explicitlyCancelled)); return
-        }
-        let url = "\(baseURL)/checkpoint/"
-        let headers: HTTPHeaders = ["Authorization": "Bearer \(token)"]
-        AF.request(url, method: .get, headers: headers)
-            .validate(statusCode: 200..<300)
-            .responseDecodable(of: CheckpointResponse.self) { resp in
-                completion(resp.result)
-            }
     }
     
     func createAccount(

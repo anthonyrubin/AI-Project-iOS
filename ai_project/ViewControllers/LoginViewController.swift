@@ -98,20 +98,8 @@ class LoginViewController: UIViewController {
     // MARK: - ViewModel Bindings
 
     func setupViewModelBindings() {
-        viewModel.onLoginSuccess = { user in
-            print("Logged in")
-
-            NetworkManager.shared.fetchCheckpoint { [weak self] result in
-                DispatchQueue.main.async {
-                    switch result {
-                    case .success(let payload):
-                        self?.route(from: payload)
-                    case .failure(let err):
-                        // fallback: go to verify page if you expect that first
-                        print("checkpoint error:", err)
-                    }
-                }
-            }
+        viewModel.onLoginSuccess = { [weak self] loginOrCheckpiont in
+            self?.handleLoginResult(loginOrCheckpiont)
         }
 
         viewModel.onLoginFailure = { error in
@@ -137,25 +125,39 @@ class LoginViewController: UIViewController {
         navigationController?.pushViewController(createAccountVC, animated: true)
     }
     
-    private func route(from payload: CheckpointResponse) {
+    func handleLoginResult(_ payload: LoginOrCheckpointResponse) {
         switch payload.checkpoint {
         case .verify_code:
-            let email = payload.email ?? ""   // or the login email the user typed
+            let email = payload.email ?? ""   // or the typed email
             let vc = VerifyAccountViewController(email: email)
             navigationController?.pushViewController(vc, animated: true)
 
+        case .name, .birthday, .home:
+            if let tokens = payload.tokens {
+                TokenManager.shared.saveTokens(tokens)
+//                if let u = payload.user, let data = try? JSONEncoder().encode(u) {
+//                    // TODO: Figure out what to set here
+//                    UserDefaults.standard.set(data, forKey: "currentUser")
+//                    UserDefaults.standard.set(u.id, forKey: "currentUserId")
+//                }
+            }
+            // If server already told us final checkpoint, route directly; otherwise you can still call /checkpoint
+            routeFromCheckpoint(payload.checkpoint)
+            
+        }
+    }
+
+    private func routeFromCheckpoint(_ cp: Checkpoint) {
+        switch cp {
         case .name:
-            let vc = SetNameViewController()
-            navigationController?.pushViewController(vc, animated: true)
-
+            navigationController?.pushViewController(SetNameViewController(), animated: true)
         case .birthday:
-            let vc = SetBirthdayViewController()
-            navigationController?.pushViewController(vc, animated: true)
-
+            navigationController?.pushViewController(SetBirthdayViewController(), animated: true)
         case .home:
-            // mark logged-in and ask SceneDelegate to mount the tab bar
             UserDefaults.standard.set(true, forKey: "isLoggedIn")
             NotificationCenter.default.post(name: .authDidSucceed, object: nil)
+        case .verify_code:
+            break
         }
     }
 
