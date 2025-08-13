@@ -4,6 +4,7 @@ import PhotosUI
 import UniformTypeIdentifiers
 
 final class SessionViewController: UIViewController {
+    private let viewModel = VideoUploadViewModel()
     private let floatingBar = UIView()
     private let startButton: UIButton = {
         var c = UIButton.Configuration.filled()
@@ -24,6 +25,9 @@ final class SessionViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         hideNavBarHairline()
+        
+        setupViewModel()
+        setupUI()
 
         // bar visuals
         floatingBar.backgroundColor = .white
@@ -37,6 +41,32 @@ final class SessionViewController: UIViewController {
 
         startButton.translatesAutoresizingMaskIntoConstraints = false
         startButton.addTarget(self, action: #selector(startSession), for: .touchUpInside)
+    }
+    
+    private func setupViewModel() {
+        viewModel.onUploadSuccess = { [weak self] videoId in
+            print("Video uploaded successfully with ID: \(videoId)")
+            // Show success message or navigate to analysis view
+        }
+        
+        viewModel.onUploadFailure = { [weak self] error in
+            print("Video upload failed: \(error)")
+            // Show error message to user
+        }
+        
+        viewModel.onAnalysisComplete = { [weak self] analysisId in
+            print("Video analysis completed with ID: \(analysisId)")
+            // Navigate to results view or show success message
+        }
+        
+        viewModel.onAnalysisFailure = { [weak self] error in
+            print("Video analysis failed: \(error)")
+            // Show error message to user
+        }
+    }
+    
+    private func setupUI() {
+        // Additional UI setup if needed
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -159,7 +189,7 @@ extension SessionViewController: PHPickerViewControllerDelegate {
     }
 
     private func handlePickedVideo(at url: URL) {
-        // TODO: push your analysis VC or upload using `url`
-        // e.g., uploadManager.uploadVideo(fileURL: url)
+        // Upload video using the view model
+        viewModel.uploadVideo(fileURL: url)
     }
 }

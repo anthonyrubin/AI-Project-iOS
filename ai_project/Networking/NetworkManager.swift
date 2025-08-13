@@ -194,6 +194,88 @@ class NetworkManager {
             }
         }
     }
+    
+    func uploadVideo(fileURL: URL, completion: @escaping (Result<String, Error>) -> Void) {
+        guard let token = TokenManager.shared.getAccessToken() else {
+            completion(.failure(NSError(domain: "", code: 401, userInfo: [NSLocalizedDescriptionKey: "Unauthorized: No token found."])))
+            return
+        }
+
+        let url = "\(baseURL)/upload-video/"
+        let headers: HTTPHeaders = [
+            "Authorization": "Bearer \(token)"
+        ]
+
+        AF.upload(
+            multipartFormData: { multipartFormData in
+                multipartFormData.append(
+                    fileURL,
+                    withName: "video",
+                    fileName: fileURL.lastPathComponent,
+                    mimeType: "video/mp4"
+                )
+            },
+            to: url,
+            headers: headers
+        )
+        .validate()
+        .responseDecodable(of: VideoUploadResponse.self) { response in
+            switch response.result {
+            case .success(let uploadResponse):
+                completion(.success(uploadResponse.video_id))
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    func analyzeVideo(videoId: String, completion: @escaping (Result<String, Error>) -> Void) {
+        guard let token = TokenManager.shared.getAccessToken() else {
+            completion(.failure(NSError(domain: "", code: 401, userInfo: [NSLocalizedDescriptionKey: "Unauthorized: No token found."])))
+            return
+        }
+
+        let url = "\(baseURL)/analyze-video/"
+        let headers: HTTPHeaders = [
+            "Authorization": "Bearer \(token)"
+        ]
+        
+        let params = ["video_id": videoId]
+
+        AF.request(url, method: .post, parameters: params, encoder: JSONParameterEncoder.default, headers: headers)
+            .validate(statusCode: 200..<300)
+            .responseDecodable(of: VideoAnalysisResponse.self) { response in
+                switch response.result {
+                case .success(let analysisResponse):
+                    completion(.success(analysisResponse.analysis_id))
+                case .failure(let error):
+                    completion(.failure(error))
+                }
+            }
+    }
+    
+    func getUserAnalyses(completion: @escaping (Result<[VideoAnalysis], Error>) -> Void) {
+        guard let token = TokenManager.shared.getAccessToken() else {
+            completion(.failure(NSError(domain: "", code: 401, userInfo: [NSLocalizedDescriptionKey: "Unauthorized: No token found."])))
+            return
+        }
+
+        let url = "\(baseURL)/user-analyses/"
+        let headers: HTTPHeaders = [
+            "Authorization": "Bearer \(token)"
+        ]
+
+        AF.request(url, method: .get, headers: headers)
+            .validate(statusCode: 200..<300)
+            .responseDecodable(of: [VideoAnalysis].self) { response in
+                switch response.result {
+                case .success(let analyses):
+                    completion(.success(analyses))
+                case .failure(let error):
+                    completion(.failure(error))
+                }
+            }
+    }
 
 
     private func createBody(boundary: String, data: Data, mimeType: String, fieldName: String, filename: String) -> Data {
