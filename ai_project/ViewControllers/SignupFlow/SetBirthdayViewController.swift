@@ -67,6 +67,17 @@ final class SetBirthdayViewController: UIViewController {
 
         nextButton.addTarget(self, action: #selector(nextButtonTapped), for: .touchUpInside)
     }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationItem.hidesBackButton = true
+        navigationController?.interactivePopGestureRecognizer?.isEnabled = false
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        navigationController?.interactivePopGestureRecognizer?.isEnabled = true
+    }
 
     @objc private func nextButtonTapped() {
         setLoading(true)

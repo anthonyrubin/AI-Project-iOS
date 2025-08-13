@@ -73,6 +73,7 @@ class SetNameViewController: UIViewController {
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        navigationItem.hidesBackButton = true
         navigationController?.interactivePopGestureRecognizer?.isEnabled = false
     }
 
