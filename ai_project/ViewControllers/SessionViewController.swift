@@ -1,5 +1,7 @@
 import Foundation
 import UIKit
+import PhotosUI
+import UniformTypeIdentifiers
 
 final class SessionViewController: UIViewController {
     private let floatingBar = UIView()
@@ -116,6 +118,48 @@ final class SessionViewController: UIViewController {
     }
 
     @objc private func startSession() {
-        // push your session VC
+        var cfg = PHPickerConfiguration(photoLibrary: .shared())
+        cfg.filter = .videos
+        cfg.selectionLimit = 1
+        cfg.preferredAssetRepresentationMode = .current
+
+        let picker = PHPickerViewController(configuration: cfg)
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+}
+
+// MARK: - PHPicker
+extension SessionViewController: PHPickerViewControllerDelegate {
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        dismiss(animated: true)
+
+        guard let item = results.first?.itemProvider else { return }
+        let type = UTType.movie.identifier
+
+        guard item.hasItemConformingToTypeIdentifier(type) else { return }
+
+        item.loadFileRepresentation(forTypeIdentifier: type) { [weak self] url, err in
+            guard let self, let url else { return }
+            // Copy to a readable location for later upload/use
+            let dest = FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString)
+                .appendingPathExtension(url.pathExtension.isEmpty ? "mov" : url.pathExtension)
+            do {
+                // remove if exists
+                try? FileManager.default.removeItem(at: dest)
+                try FileManager.default.copyItem(at: url, to: dest)
+                DispatchQueue.main.async {
+                    self.handlePickedVideo(at: dest)
+                }
+            } catch {
+                // handle copy error if needed
+            }
+        }
+    }
+
+    private func handlePickedVideo(at url: URL) {
+        // TODO: push your analysis VC or upload using `url`
+        // e.g., uploadManager.uploadVideo(fileURL: url)
     }
 }
