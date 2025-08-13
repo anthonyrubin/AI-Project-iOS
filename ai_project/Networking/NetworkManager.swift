@@ -33,28 +33,112 @@ class NetworkManager {
         email: String,
         password1: String,
         password2: String,
-        completion: @escaping (Result<User, Error>) -> Void
+        completion: @escaping (Result<Void, AFError>) -> Void
     ) {
         let url = "\(baseURL)/create-account/"
-        let parameters = [
-            "username": username,
-            "email": email,
-            "password1": password1,
-            "password2": password2
-        ]
+        let params = ["username": username, "email": email, "password1": password1, "password2": password2]
 
-        AF.request(url, method: .post, parameters: parameters, encoder: JSONParameterEncoder.default)
-            .validate()
-            .responseDecodable(of: User.self) { response in
-                switch response.result {
-                case .success(let user):
-                    completion(.success(user))
-                case .failure(let error):
-                    completion(.failure(error))
+        AF.request(url, method: .post, parameters: params, encoder: JSONParameterEncoder.default)
+            .validate(statusCode: 200..<300)        // 2xx only
+            .response { resp in                     // no decoding
+                switch resp.result {
+                case .success:
+                    print("switched success")
+                    completion(.success(()))
+                case .failure(let err):
+                    print("Switched failure")
+                    // optional: inspect server error body
+                    // let body = String(data: resp.data ?? Data(), encoding: .utf8)
+                    completion(.failure(err))
                 }
             }
     }
     
+    func verifyAccount(
+        email: String,
+        code: String,
+        completion: @escaping (Result<Void, AFError>) -> Void
+    ) {
+        let url = "\(baseURL)/verify-account/"
+        let params = ["email": email, "code": code]
+
+        AF.request(url, method: .post, parameters: params, encoder: JSONParameterEncoder.default)
+            .validate(statusCode: 200..<300)
+            .responseDecodable(of: VerifyAccountResponse.self) { resp in
+                switch resp.result {
+                case .success(let payload):
+                    TokenManager.shared.saveTokens(payload.tokens)
+                    // optionally persist the user too
+                    if let data = try? JSONEncoder().encode(payload.user) {
+                        UserDefaults.standard.set(data, forKey: "currentUser")
+                    }
+                    completion(.success(()))
+                case .failure(let err):
+                    completion(.failure(err))
+                }
+            }
+    }
+    
+    func setName(
+        firstName: String,
+        lastName: String,
+        completion: @escaping (Result<String, Error>) -> Void
+    ) {
+        
+        guard let token = TokenManager.shared.getAccessToken() else {
+            completion(.failure(NSError(domain: "", code: 401, userInfo: [NSLocalizedDescriptionKey: "Unauthorized: No token found."])))
+            return
+        }
+
+        let url = "\(baseURL)/set-name/"
+        let params = ["firstName": firstName, "lastName": lastName]
+
+        let headers: HTTPHeaders = [
+            "Authorization": "Bearer \(token)"
+        ]
+
+        AF.request(url, method: .post, parameters: params, encoder: JSONParameterEncoder.default, headers: headers)
+            .validate(statusCode: 200..<300)        // 2xx only
+            .response { resp in                     // no decoding
+                switch resp.result {
+                case .success:
+                    print("switched success")
+                    completion(.success(("")))
+                case .failure(let err):
+                    print("Switched failure")
+                    // optional: inspect server error body
+                    // let body = String(data: resp.data ?? Data(), encoding: .utf8)
+                    completion(.failure(err))
+                }
+            }
+    }
+
+    func setBirthday(birthday: Date, completion: @escaping (Result<Void, AFError>) -> Void) {
+        guard let token = TokenManager.shared.getAccessToken() else {
+            completion(.failure(AFError.explicitlyCancelled))
+            return
+        }
+
+        let url = "\(baseURL)/set-birthday/"
+        let fmt = DateFormatter()
+        fmt.calendar = Calendar(identifier: .gregorian)
+        fmt.locale = Locale(identifier: "en_US_POSIX")
+        fmt.timeZone = TimeZone(secondsFromGMT: 0)
+        fmt.dateFormat = "yyyy-MM-dd"
+        let params = ["birthday": fmt.string(from: birthday)]
+
+        let headers: HTTPHeaders = ["Authorization": "Bearer \(token)"]
+
+        AF.request(url, method: .post, parameters: params, encoder: JSONParameterEncoder.default, headers: headers)
+            .validate(statusCode: 200..<300)
+            .response { resp in
+                switch resp.result {
+                case .success: completion(.success(()))
+                case .failure(let err): completion(.failure(err))
+                }
+            }
+    }
+
     
     func uploadImage(data: Data, completion: @escaping (Result<String, Error>) -> Void) {
         guard let token = TokenManager.shared.getAccessToken() else {

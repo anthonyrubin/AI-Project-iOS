@@ -21,11 +21,11 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         configureAppearance()
 
-//        if isLoggedIn() {
+        if isLoggedIn() {
             setRoot(makeTabBar(), animated: false)
-//        } else {
-//            setRoot(makeAuthFlow(), animated: false)
-//        }
+        } else {
+            setRoot(makeAuthFlow(), animated: false)
+        }
     }
 
     // MARK: - Root swapping

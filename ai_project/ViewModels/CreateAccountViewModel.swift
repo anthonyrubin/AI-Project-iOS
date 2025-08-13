@@ -1,7 +1,7 @@
 import Foundation
 
 class CreateAccountViewModel {
-    var onCreateAccountSuccess: ((User) -> Void)?
+    var onCreateAccountSuccess: (() -> Void)?
     var onCreateAccountFailure: ((String) -> Void)?
 
     func CreateAccount(username: String, email: String, password1: String, password2: String) {
@@ -13,8 +13,8 @@ class CreateAccountViewModel {
         ) { [weak self] result in
             DispatchQueue.main.async {
                 switch result {
-                case .success(let user):
-                    self?.onCreateAccountSuccess?(user)
+                case .success():
+                    self?.onCreateAccountSuccess?()
                 case .failure(let error):
                     self?.onCreateAccountFailure?(error.localizedDescription)
                 }
