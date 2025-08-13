@@ -60,6 +60,25 @@ class NetworkManager {
                 case .success(let data):
                     completion(.success(data))
                 case .failure(let error):
+                    // Add debug logging for decoding errors
+                    if let afError = error as? AFError {
+                        switch afError {
+                        case .responseSerializationFailed(let reason):
+                            print("❌ Response serialization failed: \(reason)")
+                            if case .decodingFailed(let decodingError) = reason {
+                                print("❌ Decoding error: \(decodingError)")
+                                // Log the raw response data
+                                if let responseData = response.data {
+                                    if let jsonString = String(data: responseData, encoding: .utf8) {
+                                        print("📄 Raw JSON response: \(jsonString)")
+                                    }
+                                }
+                            }
+                        default:
+                            print("❌ Other AFError: \(afError)")
+                        }
+                    }
+                    
                     // Check if it's an authentication error (401)
                     if let statusCode = response.response?.statusCode, statusCode == 401 {
                         self?.handleTokenRefresh { refreshResult in
@@ -403,19 +422,43 @@ class NetworkManager {
     
     func getUserAnalyses(completion: @escaping (Result<[VideoAnalysis], Error>) -> Void) {
         let url = "\(baseURL)/user-analyses/"
-
-        performAuthenticatedRequest(
-            url: url,
-            method: .get,
-            responseType: [VideoAnalysis].self
-        ) { result in
-            switch result {
-            case .success(let analyses):
-                completion(.success(analyses))
-            case .failure(let error):
-                completion(.failure(error))
-            }
+        
+        guard let token = TokenManager.shared.getAccessToken() else {
+            completion(.failure(NetworkError.unauthorized))
+            return
         }
+        
+        let headers: HTTPHeaders = [
+            "Authorization": "Bearer \(token)"
+        ]
+        
+        // First, get the raw response to see what we're actually receiving
+        AF.request(url, method: .get, headers: headers)
+            .validate(statusCode: 200..<300)
+            .response { response in
+                switch response.result {
+                case .success:
+                    if let data = response.data {
+                        if let jsonString = String(data: data, encoding: .utf8) {
+                            print("📄 Raw JSON response from getUserAnalyses:")
+                            print(jsonString)
+                        }
+                        
+                        // Now try to decode it
+                        do {
+                            let analyses = try JSONDecoder().decode([VideoAnalysis].self, from: data)
+                            completion(.success(analyses))
+                        } catch {
+                            print("❌ Manual decoding failed: \(error)")
+                            completion(.failure(NetworkError.requestFailed(AFError.responseSerializationFailed(reason: .decodingFailed(error: error)))))
+                        }
+                    } else {
+                        completion(.failure(NetworkError.requestFailed(AFError.responseSerializationFailed(reason: .decodingFailed(error: NSError(domain: "No data", code: -1, userInfo: nil))))))
+                    }
+                case .failure(let error):
+                    completion(.failure(NetworkError.requestFailed(error)))
+                }
+            }
     }
 
 

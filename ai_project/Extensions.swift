@@ -1,4 +1,5 @@
 import UIKit
+import Foundation
 
 extension UIViewController {
     func hideNavBarHairline() {
@@ -12,4 +13,8 @@ extension UIViewController {
         nav.navigationBar.scrollEdgeAppearance = appearance
         nav.navigationBar.compactAppearance = appearance
     }
+}
+
+extension Notification.Name {
+    static let videoAnalysisCompleted = Notification.Name("videoAnalysisCompleted")
 }

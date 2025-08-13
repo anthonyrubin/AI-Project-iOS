@@ -3,7 +3,7 @@ import RealmSwift
 enum RealmProvider {
     static func config() -> Realm.Configuration {
         Realm.Configuration(
-            schemaVersion: 1,
+            schemaVersion: 2,
             migrationBlock: { _, _ in /* add rules when you bump versions */ }
         )
     }

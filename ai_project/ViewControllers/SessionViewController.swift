@@ -63,6 +63,11 @@ final class SessionViewController: UIViewController {
             print("Video analysis failed: \(error)")
             // Show error message to user
         }
+        
+        viewModel.onDataRefreshNeeded = { [weak self] in
+            // Notify LessonsViewController to refresh data
+            NotificationCenter.default.post(name: .videoAnalysisCompleted, object: nil)
+        }
     }
     
     private func setupUI() {
@@ -189,7 +194,7 @@ extension SessionViewController: PHPickerViewControllerDelegate {
     }
 
     private func handlePickedVideo(at url: URL) {
-        // Upload video using the view model
-        viewModel.uploadVideo(fileURL: url)
+        // Upload video using the view model with loading overlay
+        viewModel.uploadVideo(fileURL: url, on: self)
     }
 }
