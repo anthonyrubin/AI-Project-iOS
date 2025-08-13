@@ -47,8 +47,7 @@ final class SetBirthdayViewController: UIViewController {
         viewModel.onSuccess = ({ [weak self] in
             print("Set Birthday Success")
             self?.setLoading(false)
-//            let vc = SetBirthdayViewController()
-//            self?.navigationController?.pushViewController(vc, animated: true)
+            self?.finishOnboarding()
             print("Pushed view controller")
         })
 
@@ -72,6 +71,15 @@ final class SetBirthdayViewController: UIViewController {
     @objc private func nextButtonTapped() {
         setLoading(true)
         viewModel.setBirthday(birthday: datePicker.date)
+    }
+    
+    private func finishOnboarding() {
+        // mark logged in (your SceneDelegate checks this at launch)
+        UserDefaults.standard.set(true, forKey: "isLoggedIn")
+        UserDefaults.standard.synchronize()
+
+        // tell SceneDelegate to mount the tab bar and drop the signup flow
+        NotificationCenter.default.post(name: .authDidSucceed, object: nil)
     }
 
     private func setLoading(_ loading: Bool) {

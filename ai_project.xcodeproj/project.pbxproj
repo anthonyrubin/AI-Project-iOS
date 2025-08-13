@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		DE276C162E42C66900392987 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = DE276C152E42C66900392987 /* Alamofire */; };
+		DE2C62702E4C1AC800E1EA9B /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = DE2C626F2E4C1AC800E1EA9B /* RealmSwift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -82,6 +83,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DE2C62702E4C1AC800E1EA9B /* RealmSwift in Frameworks */,
 				DE276C162E42C66900392987 /* Alamofire in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -153,6 +155,7 @@
 			name = ai_project;
 			packageProductDependencies = (
 				DE276C152E42C66900392987 /* Alamofire */,
+				DE2C626F2E4C1AC800E1EA9B /* RealmSwift */,
 			);
 			productName = ai_project;
 			productReference = DE276BD32E4287CC00392987 /* ai_project.app */;
@@ -238,6 +241,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				DE276C082E42B7AD00392987 /* XCRemoteSwiftPackageReference "Alamofire" */,
+				DE2C626E2E4C1AC800E1EA9B /* XCRemoteSwiftPackageReference "realm-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DE276BD42E4287CC00392987 /* Products */;
@@ -602,6 +606,14 @@
 				minimumVersion = 5.10.2;
 			};
 		};
+		DE2C626E2E4C1AC800E1EA9B /* XCRemoteSwiftPackageReference "realm-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/realm/realm-swift";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -609,6 +621,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = DE276C082E42B7AD00392987 /* XCRemoteSwiftPackageReference "Alamofire" */;
 			productName = Alamofire;
+		};
+		DE2C626F2E4C1AC800E1EA9B /* RealmSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DE2C626E2E4C1AC800E1EA9B /* XCRemoteSwiftPackageReference "realm-swift" */;
+			productName = RealmSwift;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

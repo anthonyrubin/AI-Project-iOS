@@ -28,6 +28,46 @@ class NetworkManager {
             }
     }
     
+    func logout(completion: @escaping () -> Void) {
+        let url = "\(baseURL)/logout/"
+
+        // Refresh token is what the server needs. If missing, just do local logout.
+        guard let refresh = TokenManager.shared.getRefreshToken() else {
+            completion()
+            return
+        }
+
+        // Access header optional. Include if you have it; server doesn’t require it here.
+        var headers: HTTPHeaders = [:]
+        if let access = TokenManager.shared.getAccessToken() {
+            headers.add(name: "Authorization", value: "Bearer \(access)")
+        }
+
+        AF.request(url,
+                   method: .post,
+                   parameters: ["refresh": refresh],
+                   encoder: JSONParameterEncoder.default,
+                   headers: headers)
+        .validate(statusCode: 200..<300)   // server returns 204
+        .response { _ in
+            // Best-effort: regardless of network errors, proceed to local logout.
+            completion()
+        }
+    }
+    
+    func fetchCheckpoint(completion: @escaping (Result<CheckpointResponse, AFError>) -> Void) {
+        guard let token = TokenManager.shared.getAccessToken() else {
+            completion(.failure(AFError.explicitlyCancelled)); return
+        }
+        let url = "\(baseURL)/checkpoint/"
+        let headers: HTTPHeaders = ["Authorization": "Bearer \(token)"]
+        AF.request(url, method: .get, headers: headers)
+            .validate(statusCode: 200..<300)
+            .responseDecodable(of: CheckpointResponse.self) { resp in
+                completion(resp.result)
+            }
+    }
+    
     func createAccount(
         username: String,
         email: String,

@@ -8,6 +8,9 @@ class LoginViewController: UIViewController {
         let tf = UITextField()
         tf.placeholder = "Username"
         tf.borderStyle = .roundedRect
+        tf.autocapitalizationType = .none
+        tf.autocorrectionType = .no
+        tf.textContentType = .username
         tf.translatesAutoresizingMaskIntoConstraints = false
         return tf
     }()
@@ -97,13 +100,17 @@ class LoginViewController: UIViewController {
     func setupViewModelBindings() {
         viewModel.onLoginSuccess = { user in
             print("Logged in")
-            // Navigate to next screen
-            UserDefaults.standard.set(true, forKey: "isLoggedIn")
-            // notify SceneDelegate to swap root
-            NotificationCenter.default.post(name: .authDidSucceed, object: nil)
-            let uploadVC = UploadImageViewController()
-            DispatchQueue.main.async {
-                self.navigationController?.pushViewController(uploadVC, animated: true)
+
+            NetworkManager.shared.fetchCheckpoint { [weak self] result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success(let payload):
+                        self?.route(from: payload)
+                    case .failure(let err):
+                        // fallback: go to verify page if you expect that first
+                        print("checkpoint error:", err)
+                    }
+                }
             }
         }
 
@@ -128,6 +135,28 @@ class LoginViewController: UIViewController {
         let createAccountVC = CreateAccountViewController()
         print(navigationController)
         navigationController?.pushViewController(createAccountVC, animated: true)
+    }
+    
+    private func route(from payload: CheckpointResponse) {
+        switch payload.checkpoint {
+        case .verify_code:
+            let email = payload.email ?? ""   // or the login email the user typed
+            let vc = VerifyAccountViewController(email: email)
+            navigationController?.pushViewController(vc, animated: true)
+
+        case .name:
+            let vc = SetNameViewController()
+            navigationController?.pushViewController(vc, animated: true)
+
+        case .birthday:
+            let vc = SetBirthdayViewController()
+            navigationController?.pushViewController(vc, animated: true)
+
+        case .home:
+            // mark logged-in and ask SceneDelegate to mount the tab bar
+            UserDefaults.standard.set(true, forKey: "isLoggedIn")
+            NotificationCenter.default.post(name: .authDidSucceed, object: nil)
+        }
     }
 
 }
