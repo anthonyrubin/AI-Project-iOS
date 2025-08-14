@@ -3,9 +3,14 @@ import UIKit
 import PhotosUI
 import UniformTypeIdentifiers
 import RealmSwift
+import Combine
 
 final class SessionViewController: UIViewController {
-    private let viewModel = VideoUploadViewModel()
+    // MARK: - ViewModels
+    private let uploadViewModel = VideoUploadViewModel()
+    private let sessionViewModel = SessionViewModel()
+    
+    // MARK: - UI Components
     private let floatingBar = UIView()
     private let startButton: UIButton = {
         var c = UIButton.Configuration.filled()
@@ -25,9 +30,8 @@ final class SessionViewController: UIViewController {
     // MARK: - UI Components
     private let tableView = UITableView()
     
-    // MARK: - Data
-    private var userAnalyses: [VideoAnalysisObject] = []
-    private var currentUser: UserObject?
+    // MARK: - Combine
+    private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Section Types
     private enum Section: Int, CaseIterable {
@@ -41,9 +45,11 @@ final class SessionViewController: UIViewController {
         view.backgroundColor = UIColor(red: 0.95, green: 0.95, blue: 0.97, alpha: 1.0) // Light purple-gray background
         hideNavBarHairline()
         
-        setupViewModel()
+        setupViewModels()
         setupUI()
-        loadAnalyses()
+        setupBindings()
+        sessionViewModel.loadUserData()
+        sessionViewModel.loadAnalyses()
         setupNotifications()
 
         // bar visuals
@@ -63,39 +69,57 @@ final class SessionViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         installFloatingBarIfNeeded()
-        loadUserData()
-        loadAnalyses()
+        sessionViewModel.refreshData()
         
         // Ensure tab bar has correct background
         tabBarController?.tabBar.backgroundColor = .white
         tabBarController?.tabBar.barTintColor = .white
     }
     
-    private func setupViewModel() {
-        viewModel.onUploadSuccess = { [weak self] videoId in
+    private func setupViewModels() {
+        uploadViewModel.onUploadSuccess = { videoId, analysisId in
             print("Video uploaded successfully with ID: \(videoId)")
             // Show success message or navigate to analysis view
         }
         
-        viewModel.onUploadFailure = { [weak self] error in
+        uploadViewModel.onUploadFailure = { error in
             print("Video upload failed: \(error)")
             // Show error message to user
         }
         
-        viewModel.onAnalysisComplete = { [weak self] analysisId in
-            print("Video analysis completed with ID: \(analysisId)")
-            // Navigate to results view or show success message
-        }
-        
-        viewModel.onAnalysisFailure = { [weak self] error in
-            print("Video analysis failed: \(error)")
-            // Show error message to user
-        }
-        
-        viewModel.onDataRefreshNeeded = { [weak self] in
+        uploadViewModel.onDataRefreshNeeded = {
             // Notify LessonsViewController to refresh data
             NotificationCenter.default.post(name: .videoAnalysisCompleted, object: nil)
         }
+    }
+    
+    private func setupBindings() {
+        // Bind session data to table view updates
+        sessionViewModel.$userAnalyses
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.tableView.reloadData()
+            }
+            .store(in: &cancellables)
+        
+        // Bind user data updates
+        sessionViewModel.$currentUser
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.tableView.reloadData()
+            }
+            .store(in: &cancellables)
+        
+        // Bind error messages
+        sessionViewModel.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] errorMessage in
+                if let errorMessage = errorMessage {
+                    ErrorModalManager.shared.showError(errorMessage, from: self!)
+                    self?.sessionViewModel.clearError()
+                }
+            }
+            .store(in: &cancellables)
     }
     
     private func setupUI() {
@@ -131,46 +155,6 @@ final class SessionViewController: UIViewController {
         ])
     }
     
-    private func loadUserData() {
-        // Get current user using UserService
-        print("Loading user data")
-        currentUser = UserService.shared.getCurrentUser()
-        print(currentUser)
-    }
-    
-    private func loadAnalyses() {
-        // Load analyses from Realm
-        if let realm = try? RealmProvider.make() {
-            userAnalyses = Array(realm.objects(VideoAnalysisObject.self).sorted(byKeyPath: "createdAt", ascending: false))
-            updateUI()
-        }
-    }
-
-    private func updateUI() {
-        tableView.reloadData()
-    }
-    
-    private func calculateTotalMinutes() -> Int {
-        let calendar = Calendar.current
-        let now = Date()
-        let startOfMonth = calendar.dateInterval(of: .month, for: now)?.start ?? now
-        
-        return userAnalyses
-            .filter { $0.createdAt >= startOfMonth }
-            .compactMap { $0.video?.durationSeconds }
-            .reduce(0, +) / 60 // Convert seconds to minutes
-    }
-    
-    private func calculateAverageScore() -> Double {
-        guard !userAnalyses.isEmpty else { return 0.0 }
-        
-        let totalScore = userAnalyses
-            .compactMap { $0.professionalScore }
-            .reduce(0.0, +)
-        
-        return totalScore / Double(userAnalyses.count)
-    }
-    
     private func setupNotifications() {
         NotificationCenter.default.addObserver(
             self,
@@ -181,11 +165,12 @@ final class SessionViewController: UIViewController {
     }
     
     @objc private func refreshData() {
-        loadAnalyses()
+        sessionViewModel.refreshData()
     }
     
     deinit {
         NotificationCenter.default.removeObserver(self)
+        cancellables.removeAll()
     }
 
 }
@@ -203,9 +188,9 @@ extension SessionViewController: UITableViewDataSource {
         case .greeting:
             return 1
         case .sessionHistory:
-            return userAnalyses.isEmpty ? 0 : 1
+            return sessionViewModel.hasAnalyses() ? 1 : 0
         case .lastSession:
-            return userAnalyses.isEmpty ? 0 : 1
+            return sessionViewModel.hasAnalyses() ? 1 : 0
         }
     }
     
@@ -217,17 +202,15 @@ extension SessionViewController: UITableViewDataSource {
         switch sectionType {
         case .greeting:
             let cell = tableView.dequeueReusableCell(withIdentifier: "GreetingCell", for: indexPath) as! GreetingCell
-            cell.configure(with: currentUser)
+            cell.configure(with: sessionViewModel.currentUser)
             return cell
         case .sessionHistory:
             let cell = tableView.dequeueReusableCell(withIdentifier: "SessionHistoryCell", for: indexPath) as! SessionHistoryCell
-            let totalMinutes = calculateTotalMinutes()
-            let averageScore = calculateAverageScore()
-            cell.configure(totalMinutes: totalMinutes, averageScore: averageScore)
+            cell.configure(totalMinutes: sessionViewModel.totalMinutesAnalyzed, averageScore: sessionViewModel.averageScore)
             return cell
         case .lastSession:
             let cell = tableView.dequeueReusableCell(withIdentifier: "VideoAnalysisCell", for: indexPath) as! VideoAnalysisCell
-            if let lastAnalysis = userAnalyses.first {
+            if let lastAnalysis = sessionViewModel.lastSession {
                 cell.configure(with: lastAnalysis)
             }
             return cell
@@ -241,9 +224,9 @@ extension SessionViewController: UITableViewDataSource {
         case .greeting:
             return nil
         case .sessionHistory:
-            return userAnalyses.isEmpty ? nil : "Session History"
+            return sessionViewModel.hasAnalyses() ? "Session History" : nil
         case .lastSession:
-            return userAnalyses.isEmpty ? nil : "Last Session"
+            return sessionViewModel.hasAnalyses() ? "Last Session" : nil
         }
     }
 }
@@ -270,9 +253,9 @@ extension SessionViewController: UITableViewDelegate {
         case .greeting:
             return 0
         case .sessionHistory:
-            return userAnalyses.isEmpty ? 0 : 30
+            return sessionViewModel.hasAnalyses() ? 30 : 0
         case .lastSession:
-            return userAnalyses.isEmpty ? 0 : 30
+            return sessionViewModel.hasAnalyses() ? 30 : 0
         }
     }
     
@@ -310,7 +293,7 @@ extension SessionViewController: UITableViewDelegate {
             return 0
         case .sessionHistory:
             // gap before “Last Session” (only if that section will show)
-            return userAnalyses.isEmpty ? 0 : 20
+            return sessionViewModel.userAnalyses.isEmpty ? 0 : 20
         case .lastSession:
             return 0
         }
@@ -334,7 +317,7 @@ extension SessionViewController: UITableViewDelegate {
         case .sessionHistory:
             break
         case .lastSession:
-            if let lastAnalysis = userAnalyses.first {
+            if let lastAnalysis = sessionViewModel.lastSession {
                 let lessonViewController = LessonViewController(analysis: lastAnalysis)
                 navigationController?.pushViewController(lessonViewController, animated: true)
             }
@@ -457,6 +440,6 @@ extension SessionViewController: PHPickerViewControllerDelegate {
 
     private func handlePickedVideo(at url: URL) {
         // Upload video using the view model with loading overlay
-        viewModel.uploadVideo(fileURL: url, on: self)
+        uploadViewModel.uploadVideo(fileURL: url, on: self)
     }
 }

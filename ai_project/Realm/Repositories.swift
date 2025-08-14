@@ -15,6 +15,7 @@ protocol UserRepository {
     func setName(serverId: Int, first: String, last: String) throws
     func setBirthday(serverId: Int, date: Date) throws
     func load(serverId: Int) -> UserObject?
+    func clearAllData() throws
 }
 
 protocol AnalysisRepository {
@@ -48,6 +49,13 @@ final class RealmUserRepository: UserRepository {
     }
     func load(serverId: Int) -> UserObject? {
         (try? RealmProvider.make())?.object(ofType: UserObject.self, forPrimaryKey: serverId)
+    }
+    
+    func clearAllData() throws {
+        let realm = try RealmProvider.make()
+        try realm.write {
+            realm.deleteAll()
+        }
     }
 }
 

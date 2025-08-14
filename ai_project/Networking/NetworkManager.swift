@@ -2,31 +2,6 @@ import Foundation
 import Alamofire
 import UIKit
 
-// MARK: - Network Error Types
-enum NetworkError: Error {
-    case unauthorized
-    case tokenRefreshFailed
-    case noRefreshToken
-    case refreshTokenExpired
-    case requestFailed(Error)
-    
-    var localizedDescription: String {
-        switch self {
-        case .unauthorized:
-            return "Unauthorized access"
-        case .tokenRefreshFailed:
-            return "Failed to refresh authentication token"
-        case .noRefreshToken:
-            return "No refresh token available"
-        case .refreshTokenExpired:
-            return "Session expired. Please log in again."
-        case .requestFailed(let error):
-            return error.localizedDescription
-        }
-    }
-}
-
-
 class NetworkManager {
     static let shared = NetworkManager()
     private init() {}

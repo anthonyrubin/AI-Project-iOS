@@ -1,10 +1,5 @@
 import UIKit
 
-extension Notification.Name {
-    static let authDidSucceed = Notification.Name("authDidSucceed")
-    static let didLogout      = Notification.Name("didLogout")
-}
-
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
 

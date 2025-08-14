@@ -1,7 +1,10 @@
 import Foundation
 import UIKit
+import Combine
 
 class ProfileViewController: UIViewController {
+    
+    // MARK: - UI Components
     let topLabel: UILabel = {
         let label = UILabel()
         label.text = "Profile"
@@ -18,34 +21,21 @@ class ProfileViewController: UIViewController {
         c.baseForegroundColor = .white
         c.cornerStyle = .medium
         b.configuration = c
-        b.translatesAutoresizingMaskIntoConstraints = false                        // start disabled
+        b.translatesAutoresizingMaskIntoConstraints = false
         return b
     }()
+
+    // MARK: - ViewModel
+    private let viewModel = ProfileViewModel()
+    private var cancellables = Set<AnyCancellable>()
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         hideNavBarHairline()
         setupUI()
-        
-//        viewModel.onFailure = ({ [weak self] response in
-//            print("Set Name Failure")
-//            self?.setLoading(false)
-//        })
-//        
-//        viewModel.onSuccess = ({ [weak self] in
-//            print("Set Name Success")
-//            self?.setLoading(false)
-//            let vc = SetBirthdayViewController()
-//            self?.navigationController?.pushViewController(vc, animated: true)
-//            print("Pushed view controller")
-//        })
-//
-//        updateNextEnabled()
+        setupBindings()
     }
-
-//    private let viewModel = SetNameViewModel()
-    private var isLoading = false
 
     func setupUI() {
         view.addSubview(topLabel)
@@ -67,27 +57,38 @@ class ProfileViewController: UIViewController {
     }
 
 
-    @objc func logoutButtonTapped() {
-        performLogout()
+    private func setupBindings() {
+        // Bind loading state to button
+        viewModel.$isLoading
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading in
+                self?.logoutButton.isEnabled = !isLoading
+                if isLoading {
+                    self?.logoutButton.configuration?.showsActivityIndicator = true
+                } else {
+                    self?.logoutButton.configuration?.showsActivityIndicator = false
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Bind error messages
+        viewModel.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] errorMessage in
+                if let errorMessage = errorMessage {
+                    ErrorModalManager.shared.showError(errorMessage, from: self!)
+                    self?.viewModel.clearError()
+                }
+            }
+            .store(in: &cancellables)
     }
     
-    func performLogout() {
-        NetworkManager.shared.logout {
-            // wipe local state
-            TokenManager.shared.clearTokens()
-            // TODO: Come back to this and clear UserDefaults on logout
-            UserDefaults.standard.removeObject(forKey: "currentUserId")
-            UserDefaults.standard.set(false, forKey: "isLoggedIn")
-
-            // optional: clear Realm cache if you want a clean slate
-            // TODO: Come back to this and clear realm on logout
-            if let realm = try? RealmProvider.make() {
-                try? realm.write { realm.deleteAll() }
-            }
-
-            // tell SceneDelegate to mount login
-            NotificationCenter.default.post(name: .didLogout, object: nil)
-        }
+    @objc func logoutButtonTapped() {
+        viewModel.logout()
+    }
+    
+    deinit {
+        cancellables.removeAll()
     }
 
     // loading also locks the button

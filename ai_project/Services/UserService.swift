@@ -77,4 +77,13 @@ class UserService {
             print("❌ Failed to update user birthday in Realm: \(error)")
         }
     }
+    
+    func clearAllData() {
+        do {
+            try userRepository.clearAllData()
+            print("✅ All user data cleared from Realm")
+        } catch {
+            print("❌ Failed to clear user data from Realm: \(error)")
+        }
+    }
 }

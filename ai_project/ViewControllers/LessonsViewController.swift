@@ -1,27 +1,30 @@
 import Foundation
 import UIKit
-import RealmSwift
+import Combine
 
 class LessonsViewController: UIViewController {
     
+    // MARK: - UI Components
     private let tableView = UITableView()
-    private let repository = VideoAnalysisRepository.shared
-    private var analyses: Results<VideoAnalysisObject>?
-    private var notificationToken: NotificationToken?
+    
+    // MARK: - ViewModel
+    private let viewModel = LessonsViewModel()
+    private var cancellables = Set<AnyCancellable>()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         hideNavBarHairline()
         setupUI()
         setupTableView()
-        loadData()
+        setupBindings()
+        viewModel.loadAnalyses()
         setupNotifications()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         // Refresh data when view appears
-        refreshData()
+        viewModel.refreshAnalyses()
     }
     
     private func setupUI() {
@@ -31,6 +34,37 @@ class LessonsViewController: UIViewController {
         let refreshControl = UIRefreshControl()
         refreshControl.addTarget(self, action: #selector(refreshData), for: .valueChanged)
         tableView.refreshControl = refreshControl
+    }
+    
+    private func setupBindings() {
+        // Bind analyses to table view updates
+        viewModel.$analyses
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.tableView.reloadData()
+            }
+            .store(in: &cancellables)
+        
+        // Bind loading state to refresh control
+        viewModel.$isRefreshing
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isRefreshing in
+                if !isRefreshing {
+                    self?.tableView.refreshControl?.endRefreshing()
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Bind error messages
+        viewModel.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] errorMessage in
+                if let errorMessage = errorMessage {
+                    ErrorModalManager.shared.showError(errorMessage, from: self!)
+                    self?.viewModel.clearError()
+                }
+            }
+            .store(in: &cancellables)
     }
     
     private func setupTableView() {
@@ -50,41 +84,8 @@ class LessonsViewController: UIViewController {
         ])
     }
     
-    private func loadData() {
-        do {
-            analyses = repository.getAllAnalyses()
-            
-            print("Analysis be")
-            print(analyses)
-            
-            // Observe changes
-            notificationToken = analyses?.observe { [weak self] changes in
-                DispatchQueue.main.async {
-                    self?.tableView.reloadData()
-                }
-            }
-        } catch {
-            print("❌ Error loading data: \(error)")
-            // Show error modal
-            ErrorModalManager.shared.showError(error, from: self)
-        }
-    }
-    
     @objc private func refreshData() {
-        repository.fetchAndStoreNewAnalyses { [weak self] result in
-            DispatchQueue.main.async {
-                self?.tableView.refreshControl?.endRefreshing()
-                
-                switch result {
-                case .success(let newAnalyses):
-                    print("Fetched \(newAnalyses.count) new analyses")
-                case .failure(let error):
-                    print("Error fetching analyses: \(error)")
-                    // Show error modal
-                    ErrorModalManager.shared.showError(error, from: self!)
-                }
-            }
-        }
+        viewModel.refreshAnalyses()
     }
     
     private func setupNotifications() {
@@ -98,42 +99,26 @@ class LessonsViewController: UIViewController {
     
     @objc private func handleVideoAnalysisCompleted() {
         // Refresh data when new analysis is completed
-        refreshData()
+        viewModel.refreshAnalyses()
     }
-    
-    // This method is no longer needed since we use ErrorModalManager
-    // private func showErrorAlert(message: String) {
-    //     let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
-    //     alert.addAction(UIAlertAction(title: "OK", style: .default))
-    //     present(alert, animated: true)
-    // }
     
     deinit {
         NotificationCenter.default.removeObserver(self)
+        cancellables.removeAll()
     }
 }
 
 // MARK: - UITableViewDataSource
 extension LessonsViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        do {
-            return analyses?.count ?? 0
-        } catch {
-            print("❌ Error getting analysis count: \(error)")
-            return 0
-        }
+        return viewModel.getAnalysesCount()
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "VideoAnalysisCell", for: indexPath) as! VideoAnalysisCell
         
-        do {
-            if let analysis = analyses?[indexPath.row] {
-                cell.configure(with: analysis)
-            }
-        } catch {
-            print("❌ Error configuring cell at index \(indexPath.row): \(error)")
-            // Configure with placeholder data or show error state
+        if let analysis = viewModel.getAnalysis(at: indexPath.row) {
+            cell.configure(with: analysis)
         }
         
         return cell
@@ -149,7 +134,7 @@ extension LessonsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
-        if let analysis = analyses?[indexPath.row] {
+        if let analysis = viewModel.getAnalysis(at: indexPath.row) {
             let lessonViewController = LessonViewController(analysis: analysis)
             navigationController?.pushViewController(lessonViewController, animated: true)
         }

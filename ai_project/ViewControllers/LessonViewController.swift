@@ -394,7 +394,7 @@ class LessonViewController: UIViewController {
     }
     
     @objc private func sliderValueChanged() {
-        guard let duration = player?.currentItem?.duration else { return }
+        guard (player?.currentItem?.duration) != nil else { return }
         let targetTime = CMTime(seconds: Double(progressSlider.value), preferredTimescale: CMTimeScale(NSEC_PER_SEC))
         player?.seek(to: targetTime)
     }
