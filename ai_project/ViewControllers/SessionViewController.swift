@@ -42,25 +42,14 @@ final class SessionViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(red: 0.95, green: 0.95, blue: 0.97, alpha: 1.0) // Light purple-gray background
-        hideNavBarHairline()
-        
+        customBackgroundColor()
+
         setupViewModels()
         setupUI()
         setupBindings()
         sessionViewModel.loadUserData()
         sessionViewModel.loadAnalyses()
         setupNotifications()
-
-        // bar visuals
-        floatingBar.backgroundColor = .white
-        floatingBar.layer.cornerRadius = 20
-        floatingBar.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-        floatingBar.layer.masksToBounds = false
-        floatingBar.layer.shadowColor = UIColor.black.cgColor
-        floatingBar.layer.shadowOpacity = 0.5
-        floatingBar.layer.shadowRadius = 12
-        floatingBar.layer.shadowOffset = .init(width: 0, height: 6)
 
         startButton.translatesAutoresizingMaskIntoConstraints = false
         startButton.addTarget(self, action: #selector(startSession), for: .touchUpInside)
@@ -123,6 +112,7 @@ final class SessionViewController: UIViewController {
     }
     
     private func setupUI() {
+        setupFloatingBar()
         setupTableView()
         setupConstraints()
     }
@@ -143,7 +133,16 @@ final class SessionViewController: UIViewController {
         tableView.register(VideoAnalysisCell.self, forCellReuseIdentifier: "VideoAnalysisCell")
     }
     
-
+    private func setupFloatingBar() {
+        floatingBar.backgroundColor = .white
+        floatingBar.layer.cornerRadius = 20
+        floatingBar.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        floatingBar.layer.masksToBounds = false
+        floatingBar.layer.shadowColor = UIColor.black.cgColor
+        floatingBar.layer.shadowOpacity = 0.5
+        floatingBar.layer.shadowRadius = 12
+        floatingBar.layer.shadowOffset = .init(width: 0, height: 6)
+    }
     
     private func setupConstraints() {
         NSLayoutConstraint.activate([
@@ -238,7 +237,7 @@ extension SessionViewController: UITableViewDelegate {
         
         switch sectionType {
         case .greeting:
-            return 80
+            return UITableView.automaticDimension
         case .sessionHistory:
             return 120
         case .lastSession:
@@ -290,7 +289,7 @@ extension SessionViewController: UITableViewDelegate {
         switch s {
         case .greeting:
             // gap before “Session History” (only if that section will show)
-            return 0
+            return 20
         case .sessionHistory:
             // gap before “Last Session” (only if that section will show)
             return sessionViewModel.userAnalyses.isEmpty ? 0 : 20

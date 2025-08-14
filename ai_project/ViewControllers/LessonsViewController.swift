@@ -7,13 +7,17 @@ class LessonsViewController: UIViewController {
     // MARK: - UI Components
     private let tableView = UITableView()
     
+    // MARK: - Title Cell Components
+    private let titleLabel = UILabel()
+    private let inboxButton = UIButton(type: .system)
+    
     // MARK: - ViewModel
     private let viewModel = LessonsViewModel()
     private var cancellables = Set<AnyCancellable>()
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        hideNavBarHairline()
+        customBackgroundColor()
         setupUI()
         setupTableView()
         setupBindings()
@@ -71,6 +75,7 @@ class LessonsViewController: UIViewController {
         tableView.delegate = self
         tableView.dataSource = self
         tableView.register(VideoAnalysisCell.self, forCellReuseIdentifier: "VideoAnalysisCell")
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "TitleCell")
         tableView.separatorStyle = .none // Remove separator lines for card design
         tableView.backgroundColor = .systemGroupedBackground // Better background for cards
         tableView.translatesAutoresizingMaskIntoConstraints = false
@@ -86,6 +91,11 @@ class LessonsViewController: UIViewController {
     
     @objc private func refreshData() {
         viewModel.refreshAnalyses()
+    }
+    
+    @objc private func inboxButtonTapped() {
+        let inboxViewController = InboxViewController()
+        navigationController?.pushViewController(inboxViewController, animated: true)
     }
     
     private func setupNotifications() {
@@ -111,32 +121,76 @@ class LessonsViewController: UIViewController {
 // MARK: - UITableViewDataSource
 extension LessonsViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return viewModel.getAnalysesCount()
+        // Add 1 for the title cell, plus the number of analysis cells
+        return 1 + viewModel.getAnalysesCount()
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "VideoAnalysisCell", for: indexPath) as! VideoAnalysisCell
-        
-        if let analysis = viewModel.getAnalysis(at: indexPath.row) {
-            cell.configure(with: analysis)
+        if indexPath.row == 0 {
+            // Title cell (first row)
+            let cell = tableView.dequeueReusableCell(withIdentifier: "TitleCell", for: indexPath)
+            cell.selectionStyle = .none
+            cell.backgroundColor = .clear
+            
+            // Remove any existing subviews
+            cell.contentView.subviews.forEach { $0.removeFromSuperview() }
+            
+            // Configure title label (matching GreetingCell style exactly)
+            titleLabel.text = "History"
+            titleLabel.font = .systemFont(ofSize: 28, weight: .bold)
+            titleLabel.textColor = .label
+            titleLabel.translatesAutoresizingMaskIntoConstraints = false
+            cell.contentView.addSubview(titleLabel)
+            
+            // Configure inbox button
+            inboxButton.setImage(UIImage(systemName: "tray"), for: .normal)
+            inboxButton.tintColor = .label
+            inboxButton.translatesAutoresizingMaskIntoConstraints = false
+            inboxButton.addTarget(self, action: #selector(inboxButtonTapped), for: .touchUpInside)
+            cell.contentView.addSubview(inboxButton)
+            
+            // Setup constraints (matching GreetingCell exactly)
+            NSLayoutConstraint.activate([
+                titleLabel.topAnchor.constraint(equalTo: cell.contentView.topAnchor),
+                titleLabel.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor, constant: 20),
+                titleLabel.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor, constant: -20),
+                titleLabel.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor),
+                
+                inboxButton.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor, constant: -20),
+                inboxButton.centerYAnchor.constraint(equalTo: cell.contentView.centerYAnchor),
+                inboxButton.widthAnchor.constraint(equalToConstant: 44),
+                inboxButton.heightAnchor.constraint(equalToConstant: 44)
+            ])
+            
+            return cell
+        } else {
+            // Analysis cells (offset by 1 for title cell)
+            let cell = tableView.dequeueReusableCell(withIdentifier: "VideoAnalysisCell", for: indexPath) as! VideoAnalysisCell
+            
+            if let analysis = viewModel.getAnalysis(at: indexPath.row - 1) {
+                cell.configure(with: analysis)
+            }
+            
+            return cell
         }
-        
-        return cell
     }
 }
 
 // MARK: - UITableViewDelegate
 extension LessonsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 160 // Increased height to accommodate better spacing
+            return UITableView.automaticDimension
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
-        if let analysis = viewModel.getAnalysis(at: indexPath.row) {
-            let lessonViewController = LessonViewController(analysis: analysis)
-            navigationController?.pushViewController(lessonViewController, animated: true)
+        // Only handle selection for analysis cells (not title cell)
+        if indexPath.row > 0 {
+            if let analysis = viewModel.getAnalysis(at: indexPath.row - 1) {
+                let lessonViewController = LessonViewController(analysis: analysis)
+                navigationController?.pushViewController(lessonViewController, animated: true)
+            }
         }
     }
 }
