@@ -104,6 +104,7 @@ final class SessionViewController: UIViewController {
     }
     
     private func setupTableView() {
+        tableView.sectionHeaderTopPadding = 0
         tableView.delegate = self
         tableView.dataSource = self
         tableView.backgroundColor = .clear
@@ -299,6 +300,27 @@ extension SessionViewController: UITableViewDelegate {
             
             return headerView
         }
+    }
+    
+    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+        guard let s = Section(rawValue: section) else { return 0 }
+        switch s {
+        case .greeting:
+            // gap before “Session History” (only if that section will show)
+            return 0
+        case .sessionHistory:
+            // gap before “Last Session” (only if that section will show)
+            return userAnalyses.isEmpty ? 0 : 20
+        case .lastSession:
+            return 0
+        }
+    }
+
+    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+        // transparent spacer view
+        let v = UIView()
+        v.backgroundColor = .clear
+        return v
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
