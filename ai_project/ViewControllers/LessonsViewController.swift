@@ -37,6 +37,8 @@ class LessonsViewController: UIViewController {
         tableView.delegate = self
         tableView.dataSource = self
         tableView.register(VideoAnalysisCell.self, forCellReuseIdentifier: "VideoAnalysisCell")
+        tableView.separatorStyle = .none // Remove separator lines for card design
+        tableView.backgroundColor = .systemGroupedBackground // Better background for cards
         tableView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(tableView)
         
@@ -141,15 +143,15 @@ extension LessonsViewController: UITableViewDataSource {
 // MARK: - UITableViewDelegate
 extension LessonsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 120
+        return 160 // Increased height to accommodate better spacing
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
         if let analysis = analyses?[indexPath.row] {
-            // TODO: Navigate to analysis detail view
-            print("Selected analysis: \(analysis.serverId)")
+            let lessonViewController = LessonViewController(analysis: analysis)
+            navigationController?.pushViewController(lessonViewController, animated: true)
         }
     }
 }

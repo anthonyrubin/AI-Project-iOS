@@ -272,10 +272,9 @@ class NetworkManager {
                 switch resp.result {
                 case .success(let payload):
                     TokenManager.shared.saveTokens(payload.tokens)
-                    // optionally persist the user too
-                    if let data = try? JSONEncoder().encode(payload.user) {
-                        UserDefaults.standard.set(data, forKey: "currentUser")
-                    }
+                    // Store user ID and user data
+                    UserDefaults.standard.set(payload.user.id, forKey: "currentUserId")
+                    UserService.shared.storeUser(payload.user)
                     completion(.success(()))
                 case .failure(let err):
                     completion(.failure(err))

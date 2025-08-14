@@ -81,6 +81,10 @@ final class SetBirthdayViewController: UIViewController {
 
     @objc private func nextButtonTapped() {
         setLoading(true)
+        
+        // Store birthday in Realm immediately for local access
+        UserService.shared.updateUserBirthday(datePicker.date)
+        
         viewModel.setBirthday(birthday: datePicker.date)
     }
     

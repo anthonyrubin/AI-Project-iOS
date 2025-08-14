@@ -4,4 +4,7 @@ struct User: Codable {
     let id: Int
     let username: String
     let email: String
+    let first_name: String?
+    let last_name: String?
+    let birthday: String? // ISO date string from Django
 }

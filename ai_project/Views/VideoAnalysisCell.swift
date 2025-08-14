@@ -1,13 +1,35 @@
 import UIKit
 import SkeletonView
 
+final class DiagonalGradientView: UIView {
+    override class var layerClass: AnyClass { CAGradientLayer.self }
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let g = layer as! CAGradientLayer
+        g.colors = [
+            UIColor(red: 33/255, green: 83/255,  blue: 124/255, alpha: 1).cgColor,
+            UIColor(red: 74/255, green: 116/255, blue: 151/255, alpha: 1).cgColor
+        ]
+        g.locations = [0, 1]
+        g.startPoint = CGPoint(x: 0, y: 0)
+        g.endPoint   = CGPoint(x: 1, y: 1)
+    }
+}
+
+
 class VideoAnalysisCell: UITableViewCell {
     
+    // MARK: - UI Components
+    private let cardView = DiagonalGradientView()
     private let thumbnailImageView = UIImageView()
-    private let titleLabel = UILabel()
+    private let topStackView = UIStackView()
     private let sportLabel = UILabel()
     private let scoreLabel = UILabel()
+    private let arrowImageView = UIImageView()
+    private let dividerLine = UIView()
+    private let bottomStackView = UIStackView()
     private let dateLabel = UILabel()
+    private let durationLabel = UILabel()
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -21,48 +43,82 @@ class VideoAnalysisCell: UITableViewCell {
     
     private func setupUI() {
         selectionStyle = .none
+        backgroundColor = .clear
         
-        // Thumbnail image view
+        // Card view - dark blue background
+        cardView.backgroundColor = UIColor(red: 0.1, green: 0.2, blue: 0.4, alpha: 1.0) // Dark blue
+        cardView.layer.cornerRadius = 12
+        cardView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(cardView)
+        
+        // Thumbnail image view - small square-ish
         thumbnailImageView.contentMode = .scaleAspectFill
         thumbnailImageView.clipsToBounds = true
         thumbnailImageView.layer.cornerRadius = 8
         thumbnailImageView.backgroundColor = .systemGray5
         thumbnailImageView.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(thumbnailImageView)
+        cardView.addSubview(thumbnailImageView)
         
-        // Title label
-        titleLabel.font = .systemFont(ofSize: 16, weight: .semibold)
-        titleLabel.textColor = .label
-        titleLabel.numberOfLines = 2
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(titleLabel)
+        // Top stack view for sport and score
+        topStackView.axis = .vertical
+        topStackView.spacing = 8
+        topStackView.alignment = .leading
+        topStackView.translatesAutoresizingMaskIntoConstraints = false
+        cardView.addSubview(topStackView)
         
-        // Sport label
-        sportLabel.font = .systemFont(ofSize: 14, weight: .medium)
-        sportLabel.textColor = .systemBlue
+        // Sport label - white text
+        sportLabel.font = .systemFont(ofSize: 16, weight: .medium)
+        sportLabel.textColor = .white
         sportLabel.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(sportLabel)
+        topStackView.addArrangedSubview(sportLabel)
         
-        // Score label
-        scoreLabel.font = .systemFont(ofSize: 14, weight: .semibold)
-        scoreLabel.textColor = .systemGreen
+        // Score label - white text
+        scoreLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+        scoreLabel.textColor = .white
         scoreLabel.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(scoreLabel)
+        topStackView.addArrangedSubview(scoreLabel)
         
-        // Date label
-        dateLabel.font = .systemFont(ofSize: 12, weight: .regular)
-        dateLabel.textColor = .secondaryLabel
+        // Arrow image view - white chevron
+        arrowImageView.image = UIImage(systemName: "chevron.right")
+        arrowImageView.tintColor = .white
+        arrowImageView.contentMode = .scaleAspectFit
+        arrowImageView.translatesAutoresizingMaskIntoConstraints = false
+        cardView.addSubview(arrowImageView)
+        
+        // Divider line
+        dividerLine.backgroundColor = .white
+        dividerLine.translatesAutoresizingMaskIntoConstraints = false
+        cardView.addSubview(dividerLine)
+        
+        // Bottom stack view for date and duration
+        bottomStackView.axis = .vertical
+        bottomStackView.spacing = 8
+        bottomStackView.alignment = .leading
+        bottomStackView.translatesAutoresizingMaskIntoConstraints = false
+        cardView.addSubview(bottomStackView)
+        
+        // Date label - white text
+        dateLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        dateLabel.textColor = .white
         dateLabel.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(dateLabel)
+        bottomStackView.addArrangedSubview(dateLabel)
+        
+        // Duration label - white text
+        durationLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        durationLabel.textColor = .white
+        durationLabel.translatesAutoresizingMaskIntoConstraints = false
+        bottomStackView.addArrangedSubview(durationLabel)
         
         // Configure SkeletonView for thumbnail
         thumbnailImageView.isSkeletonable = true
-        thumbnailImageView.skeletonCornerRadius = 8
+        thumbnailImageView.skeletonCornerRadius = 12
         
-        // Configure SkeletonView for labels
-        titleLabel.isSkeletonable = true
+        // Configure SkeletonView for card and labels
+        cardView.isSkeletonable = true
+        cardView.skeletonCornerRadius = 12
         sportLabel.isSkeletonable = true
         scoreLabel.isSkeletonable = true
+        durationLabel.isSkeletonable = true
         dateLabel.isSkeletonable = true
         
         setupConstraints()
@@ -70,50 +126,66 @@ class VideoAnalysisCell: UITableViewCell {
     
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            // Thumbnail
-            thumbnailImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            thumbnailImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
-            thumbnailImageView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12),
-            thumbnailImageView.widthAnchor.constraint(equalToConstant: 80),
-            thumbnailImageView.heightAnchor.constraint(equalToConstant: 96),
+            // Card view
+            cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            cardView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
+            cardView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
             
-            // Title
-            titleLabel.leadingAnchor.constraint(equalTo: thumbnailImageView.trailingAnchor, constant: 12),
-            titleLabel.topAnchor.constraint(equalTo: thumbnailImageView.topAnchor),
-            titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            // Thumbnail - small square-ish on left
+            thumbnailImageView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
+            thumbnailImageView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 16),
+            thumbnailImageView.widthAnchor.constraint(equalToConstant: 60),
+            thumbnailImageView.heightAnchor.constraint(equalToConstant: 60),
             
-            // Sport
-            sportLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-            sportLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
+            // Top stack view (sport and score)
+            topStackView.leadingAnchor.constraint(equalTo: thumbnailImageView.trailingAnchor, constant: 16),
+            topStackView.topAnchor.constraint(equalTo: thumbnailImageView.topAnchor),
+            topStackView.trailingAnchor.constraint(equalTo: arrowImageView.leadingAnchor, constant: -16),
             
-            // Score
-            scoreLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-            scoreLabel.topAnchor.constraint(equalTo: sportLabel.bottomAnchor, constant: 4),
+            // Arrow - center right
+            arrowImageView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -16),
+            arrowImageView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 16),
+            arrowImageView.widthAnchor.constraint(equalToConstant: 20),
+            arrowImageView.heightAnchor.constraint(equalToConstant: 20),
             
-            // Date
-            dateLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-            dateLabel.bottomAnchor.constraint(equalTo: thumbnailImageView.bottomAnchor),
+            // Divider line
+            dividerLine.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
+            dividerLine.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -16),
+            dividerLine.topAnchor.constraint(equalTo: topStackView.bottomAnchor, constant: 20),
+            dividerLine.heightAnchor.constraint(equalToConstant: 1),
             
-
+            // Bottom stack view (date and duration)
+            bottomStackView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
+            bottomStackView.topAnchor.constraint(equalTo: dividerLine.bottomAnchor, constant: 20),
+            bottomStackView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -16),
+            bottomStackView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -16)
         ])
     }
     
     func configure(with analysis: VideoAnalysisObject) {
-        // Set text
-        titleLabel.text = analysis.clipSummary.isEmpty ? "Video Analysis" : analysis.clipSummary
+        // Set sport
         sportLabel.text = analysis.sport.isEmpty ? "Unknown Sport" : analysis.sport
         
+        // Set AI score
         if let score = analysis.professionalScore {
-            scoreLabel.text = String(format: "Score: %.1f/10", score)
+            scoreLabel.text = String(format: "AI Score: %.0f", score * 10) // Convert to 0-100 scale
         } else {
-            scoreLabel.text = "Score: N/A"
+            scoreLabel.text = "AI Score: N/A"
         }
         
         // Format date
         let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        dateLabel.text = formatter.string(from: analysis.createdAt)
+        formatter.dateStyle = .short
+        formatter.timeStyle = .none
+        dateLabel.text = "Date: \(formatter.string(from: analysis.createdAt))"
+        
+        // Set duration - only show if available
+        if let video = analysis.video, video.hasDuration {
+            durationLabel.text = "Duration: \(video.formattedDuration)"
+        } else {
+            durationLabel.text = ""
+        }
         
         // Load thumbnail
         if let video = analysis.video, !video.thumbnailUrl.isEmpty {
@@ -160,13 +232,13 @@ class VideoAnalysisCell: UITableViewCell {
         // Clear any existing content
         thumbnailImageView.image = nil
         
-        // Show skeleton loading on the thumbnail specifically
-        thumbnailImageView.showAnimatedGradientSkeleton()
+        // Show skeleton loading on the card
+        cardView.showAnimatedGradientSkeleton()
     }
     
     private func hideSkeleton() {
         // Hide skeleton loading
-        thumbnailImageView.hideSkeleton()
+        cardView.hideSkeleton()
     }
     
     private func showPlaceholderImage() {
@@ -179,6 +251,6 @@ class VideoAnalysisCell: UITableViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         thumbnailImageView.image = nil
-        thumbnailImageView.hideSkeleton()
+        cardView.hideSkeleton()
     }
 }

@@ -16,6 +16,7 @@ class VideoAnalysisRepository {
     // MARK: - Fetch and Store Methods
     
     func fetchAndStoreNewAnalyses(completion: @escaping (Result<[VideoAnalysisObject], Error>) -> Void) {
+
         // Get the last sync timestamp
         let lastSyncTimestamp = getLastSyncTimestamp()
         
@@ -123,19 +124,36 @@ class VideoAnalysisRepository {
                     }
                     
                     // Add events if available
+                    print("📊 Processing \(analysis.events?.count ?? 0) events for analysis \(analysis.id)")
                     if let events = analysis.events {
-                        for event in events {
+                        for (index, event) in events.enumerated() {
+                            print("🔍 Processing event \(index + 1): \(event.label) at \(event.t)s")
                             do {
                                 let eventObject = AnalysisEventObject(analysisServerId: analysis.id, event: event)
                                 analysisObject.events.append(eventObject)
+                                print("✅ Successfully added event: \(event.label)")
                             } catch {
-                                print("⚠️ Failed to create event object: \(error)")
+                                print("❌ Failed to create event object: \(error)")
                                 // Continue with other events instead of failing completely
                             }
                         }
+                        print("📊 Total events added to analysis object: \(analysisObject.events.count)")
+                    } else {
+                        print("⚠️ No events found in analysis")
+                    }
+                    
+                    // Store analysis data as JSON string
+                    do {
+                        let jsonData = try JSONSerialization.data(withJSONObject: analysis.analysis_data.mapValues { $0.value })
+                        if let jsonString = String(data: jsonData, encoding: .utf8) {
+                            analysisObject.analysisData = jsonString
+                        }
+                    } catch {
+                        print("⚠️ Failed to serialize analysis data: \(error)")
                     }
                     
                         realm.add(analysisObject, update: .modified)
+                        print("📊 Analysis object added to Realm with \(analysisObject.events.count) events")
                         storedObjects.append(analysisObject)
                     } catch {
                         // Continue with other analyses instead of failing completely

@@ -23,6 +23,32 @@ final class VideoObject: Object {
     @Persisted var duration: Double?
     @Persisted var uploadedAt: Date = Date()
     @Persisted var userServerId: Int
+    
+    // MARK: - Helper Methods
+    
+    /// Get formatted duration string (e.g., "2:30" for 2 minutes 30 seconds)
+    var formattedDuration: String {
+        guard let duration = duration else { return "Unknown" }
+        
+        let minutes = Int(duration) / 60
+        let seconds = Int(duration) % 60
+        
+        if minutes > 0 {
+            return String(format: "%d:%02d", minutes, seconds)
+        } else {
+            return String(format: "0:%02d", seconds)
+        }
+    }
+    
+    /// Get duration in seconds
+    var durationSeconds: Int {
+        return Int(duration ?? 0)
+    }
+    
+    /// Check if duration is available
+    var hasDuration: Bool {
+        return duration != nil && duration! > 0
+    }
 }
 
 // MARK: - Analysis Event
@@ -36,6 +62,7 @@ final class AnalysisEventObject: Object {
     
     convenience init(analysisServerId: Int, event: AnalysisEvent) {
         self.init()
+        print("🔧 Creating AnalysisEventObject for: \(event.label)")
         self.analysisServerId = analysisServerId
         self.timestamp = event.t
         self.label = event.label
@@ -43,13 +70,16 @@ final class AnalysisEventObject: Object {
         
         // Clear existing metrics and add new ones
         self.metrics.removeAll()
-        for metric in event.metrics {
+        print("📊 Adding \(event.metrics.count) metrics to event")
+        for (index, metric) in event.metrics.enumerated() {
             let metricObject = AnalysisMetricObject()
             metricObject.name = metric.name
             metricObject.value = metric.value
             metricObject.estimationMethod = metric.estimation_method
             self.metrics.append(metricObject)
+            print("✅ Added metric \(index + 1): \(metric.name) = \(metric.value)")
         }
+        print("✅ AnalysisEventObject created successfully with \(self.metrics.count) metrics")
     }
 }
 
@@ -74,6 +104,7 @@ final class VideoAnalysisObject: Object {
     @Persisted var metricsCatalog: List<String> = List<String>()
     @Persisted var createdAt: Date = Date()
     @Persisted var events: List<AnalysisEventObject> = List<AnalysisEventObject>()
+    @Persisted var analysisData: String = "" // JSON string of analysis data
     
     // Computed property to get the video object
     var video: VideoObject? {
@@ -84,6 +115,20 @@ final class VideoAnalysisObject: Object {
             print("❌ Error accessing video object: \(error)")
             return nil
         }
+    }
+    
+    // Computed property to get parsed analysis data
+    var analysisDataDict: [String: Any]? {
+        guard !analysisData.isEmpty else { return nil }
+        
+        do {
+            if let data = analysisData.data(using: .utf8) {
+                return try JSONSerialization.jsonObject(with: data) as? [String: Any]
+            }
+        } catch {
+            print("❌ Error parsing analysis data: \(error)")
+        }
+        return nil
     }
     
 

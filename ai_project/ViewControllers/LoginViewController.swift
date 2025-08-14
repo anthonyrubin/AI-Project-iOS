@@ -135,11 +135,11 @@ class LoginViewController: UIViewController {
         case .name, .birthday, .home:
             if let tokens = payload.tokens {
                 TokenManager.shared.saveTokens(tokens)
-//                if let u = payload.user, let data = try? JSONEncoder().encode(u) {
-//                    // TODO: Figure out what to set here
-//                    UserDefaults.standard.set(data, forKey: "currentUser")
-//                    UserDefaults.standard.set(u.id, forKey: "currentUserId")
-//                }
+                if let u = payload.user {
+                    UserDefaults.standard.set(u.id, forKey: "currentUserId")
+                    // Store user in Realm
+                    UserService.shared.storeUser(u)
+                }
             }
             // If server already told us final checkpoint, route directly; otherwise you can still call /checkpoint
             routeFromCheckpoint(payload.checkpoint)
