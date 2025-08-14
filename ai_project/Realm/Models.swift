@@ -32,7 +32,7 @@ final class AnalysisEventObject: Object {
     @Persisted var timestamp: Double = 0.0
     @Persisted var label: String = ""
     @Persisted var feedback: String = ""
-    @Persisted var metrics: List<AnalysisMetricObject>
+    @Persisted var metrics: List<AnalysisMetricObject> = List<AnalysisMetricObject>()
     
     convenience init(analysisServerId: Int, event: AnalysisEvent) {
         self.init()
@@ -40,8 +40,9 @@ final class AnalysisEventObject: Object {
         self.timestamp = event.t
         self.label = event.label
         self.feedback = event.feedback
-        self.metrics = List<AnalysisMetricObject>()
         
+        // Clear existing metrics and add new ones
+        self.metrics.removeAll()
         for metric in event.metrics {
             let metricObject = AnalysisMetricObject()
             metricObject.name = metric.name
@@ -69,15 +70,20 @@ final class VideoAnalysisObject: Object {
     @Persisted var professionalScore: Double?
     @Persisted var confidence: Double?
     @Persisted var clipSummary: String = ""
-    @Persisted var overallTips: List<String>
-    @Persisted var metricsCatalog: List<String>
+    @Persisted var overallTips: List<String> = List<String>()
+    @Persisted var metricsCatalog: List<String> = List<String>()
     @Persisted var createdAt: Date = Date()
-    @Persisted var events: List<AnalysisEventObject>
+    @Persisted var events: List<AnalysisEventObject> = List<AnalysisEventObject>()
     
     // Computed property to get the video object
     var video: VideoObject? {
-        let realm = try! RealmProvider.make()
-        return realm.object(ofType: VideoObject.self, forPrimaryKey: videoServerId)
+        do {
+            let realm = try RealmProvider.make()
+            return realm.object(ofType: VideoObject.self, forPrimaryKey: videoServerId)
+        } catch {
+            print("❌ Error accessing video object: \(error)")
+            return nil
+        }
     }
     
 

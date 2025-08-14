@@ -1,6 +1,14 @@
 import Foundation
 import RealmSwift
 
+// Extension to make DateFormatter configuration easier
+extension DateFormatter {
+    func then(_ configure: (DateFormatter) -> Void) -> DateFormatter {
+        configure(self)
+        return self
+    }
+}
+
 class VideoAnalysisRepository {
     static let shared = VideoAnalysisRepository()
     private init() {}
@@ -8,13 +16,17 @@ class VideoAnalysisRepository {
     // MARK: - Fetch and Store Methods
     
     func fetchAndStoreNewAnalyses(completion: @escaping (Result<[VideoAnalysisObject], Error>) -> Void) {
-        // Get the latest analysis timestamp from local storage
-        let latestTimestamp = getLatestAnalysisTimestamp()
+        // Get the last sync timestamp
+        let lastSyncTimestamp = getLastSyncTimestamp()
         
-        NetworkManager.shared.getUserAnalyses { [weak self] result in
+        NetworkManager.shared.getUserAnalyses(lastSyncTimestamp: lastSyncTimestamp) { [weak self] result in
             switch result {
-            case .success(let analyses):
-                self?.storeNewAnalyses(analyses, since: latestTimestamp, completion: completion)
+            case .success(let deltaResponse):
+                // Store the new sync timestamp
+                self?.storeLastSyncTimestamp(deltaResponse.sync_timestamp)
+                
+                // Store the new analyses
+                self?.storeNewAnalyses(deltaResponse.analyses, since: nil, completion: completion)
             case .failure(let error):
                 completion(.failure(error))
             }
@@ -25,22 +37,33 @@ class VideoAnalysisRepository {
         do {
             let realm = try RealmProvider.make()
             
-            // Filter new analyses
-            let newAnalyses = analyses.filter { analysis in
-                guard let timestamp = timestamp else { return true }
-                let analysisDate = ISO8601DateFormatter().date(from: analysis.created_at) ?? Date()
-                return analysisDate > timestamp
-            }
+            // With delta sync, all returned analyses are new/changed
+            let newAnalyses = analyses
             
             var storedObjects: [VideoAnalysisObject] = []
             
             try realm.write {
                 for analysis in newAnalyses {
-                    // Store video first
-                    let videoObject = VideoObject()
-                    videoObject.serverId = analysis.video.id
-                    videoObject.s3Url = analysis.video.s3_url
-                    videoObject.thumbnailUrl = analysis.video.thumbnail_url ?? analysis.video.s3_url.replacingOccurrences(of: ".mp4", with: "_thumb.jpg")
+                    do {
+                        // Store video first
+                        let videoObject = VideoObject()
+                        videoObject.serverId = analysis.video.id
+                        videoObject.s3Url = analysis.video.s3_url
+                    // Set thumbnail URL properly
+                    if let thumbnailUrl = analysis.video.thumbnail_url, !thumbnailUrl.isEmpty {
+                        videoObject.thumbnailUrl = thumbnailUrl
+                    } else {
+                        // Fallback: construct thumbnail URL from video URL
+                        let videoUrl = analysis.video.s3_url
+                        
+                        if videoUrl.contains("/video.") {
+                            videoObject.thumbnailUrl = videoUrl.replacingOccurrences(of: "/video.", with: "/thumbnail.jpg")
+                        } else {
+                            // Remove .mp4 extension and add /thumbnail.jpg
+                            let baseUrl = videoUrl.replacingOccurrences(of: ".mp4", with: "")
+                            videoObject.thumbnailUrl = baseUrl + "/thumbnail.jpg"
+                        }
+                    }
                     videoObject.originalFilename = analysis.video.original_filename
                     videoObject.fileSize = analysis.video.file_size
                     videoObject.duration = analysis.video.duration
@@ -59,7 +82,35 @@ class VideoAnalysisRepository {
                     analysisObject.professionalScore = analysis.professional_score
                     analysisObject.confidence = analysis.confidence
                     analysisObject.clipSummary = analysis.clip_summary
-                    analysisObject.createdAt = ISO8601DateFormatter().date(from: analysis.created_at) ?? Date()
+                    
+                    // Parse timestamp
+                    let dateFormatter = ISO8601DateFormatter()
+                    if let parsedDate = dateFormatter.date(from: analysis.created_at) {
+                        analysisObject.createdAt = parsedDate
+                    } else {
+                        // Try alternative date formats
+                        let alternativeFormatters = [
+                            DateFormatter().then { $0.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'" },
+                            DateFormatter().then { $0.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'" },
+                            DateFormatter().then { $0.dateFormat = "yyyy-MM-dd'T'HH:mm:ss" },
+                            DateFormatter().then { $0.dateFormat = "yyyy-MM-dd HH:mm:ss" }
+                        ]
+                        
+                        var foundDate: Date?
+                        for formatter in alternativeFormatters {
+                            if let date = formatter.date(from: analysis.created_at) {
+                                foundDate = date
+                                break
+                            }
+                        }
+                        
+                        if let foundDate = foundDate {
+                            analysisObject.createdAt = foundDate
+                        } else {
+                            // Only use current date as last resort
+                            analysisObject.createdAt = Date()
+                        }
+                    }
                     
                     // Add overall tips
                     for tip in analysis.overall_tips {
@@ -74,13 +125,21 @@ class VideoAnalysisRepository {
                     // Add events if available
                     if let events = analysis.events {
                         for event in events {
-                            let eventObject = AnalysisEventObject(analysisServerId: analysis.id, event: event)
-                            analysisObject.events.append(eventObject)
+                            do {
+                                let eventObject = AnalysisEventObject(analysisServerId: analysis.id, event: event)
+                                analysisObject.events.append(eventObject)
+                            } catch {
+                                print("⚠️ Failed to create event object: \(error)")
+                                // Continue with other events instead of failing completely
+                            }
                         }
                     }
                     
-                    realm.add(analysisObject, update: .modified)
-                    storedObjects.append(analysisObject)
+                        realm.add(analysisObject, update: .modified)
+                        storedObjects.append(analysisObject)
+                    } catch {
+                        // Continue with other analyses instead of failing completely
+                    }
                 }
             }
             
@@ -94,8 +153,15 @@ class VideoAnalysisRepository {
     // MARK: - Local Data Access
     
     func getAllAnalyses() -> Results<VideoAnalysisObject> {
-        let realm = try! RealmProvider.make()
-        return realm.objects(VideoAnalysisObject.self).sorted(byKeyPath: "createdAt", ascending: false)
+        do {
+            let realm = try RealmProvider.make()
+            return realm.objects(VideoAnalysisObject.self).sorted(byKeyPath: "createdAt", ascending: false)
+        } catch {
+            print("❌ Error accessing Realm in getAllAnalyses: \(error)")
+            // Return empty results instead of crashing
+            let realm = try! RealmProvider.make()
+            return realm.objects(VideoAnalysisObject.self).filter("serverId == -1") // Empty results
+        }
     }
     
     func getAnalysis(by serverId: Int) -> VideoAnalysisObject? {
@@ -119,6 +185,16 @@ class VideoAnalysisRepository {
         return latestAnalysis?.createdAt
     }
     
+    // Get the last sync timestamp from UserDefaults
+    private func getLastSyncTimestamp() -> String? {
+        return UserDefaults.standard.string(forKey: "last_sync_timestamp")
+    }
+    
+    // Store the last sync timestamp in UserDefaults
+    private func storeLastSyncTimestamp(_ timestamp: String) {
+        UserDefaults.standard.set(timestamp, forKey: "last_sync_timestamp")
+    }
+    
     func clearAllData() {
         do {
             let realm = try RealmProvider.make()
@@ -126,8 +202,21 @@ class VideoAnalysisRepository {
                 realm.delete(realm.objects(VideoAnalysisObject.self))
                 realm.delete(realm.objects(VideoObject.self))
             }
+            // Clear sync timestamp to force full refresh next time
+            UserDefaults.standard.removeObject(forKey: "last_sync_timestamp")
         } catch {
             print("Error clearing data: \(error)")
         }
+    }
+    
+    func forceFullSync(completion: @escaping (Result<[VideoAnalysisObject], Error>) -> Void) {
+        // Clear sync timestamp to force full sync
+        UserDefaults.standard.removeObject(forKey: "last_sync_timestamp")
+        fetchAndStoreNewAnalyses(completion: completion)
+    }
+    
+    // Clear sync timestamp (useful for testing or when user logs out)
+    func clearSyncTimestamp() {
+        UserDefaults.standard.removeObject(forKey: "last_sync_timestamp")
     }
 }

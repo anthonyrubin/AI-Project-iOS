@@ -45,9 +45,14 @@ class NetworkManager {
         completion: @escaping (Result<T, Error>) -> Void
     ) {
         guard let token = TokenManager.shared.getAccessToken() else {
-            completion(.failure(NetworkError.unauthorized))
+            print("❌ No access token available")
+            let error = NetworkError.unauthorized
+            showErrorModal(error)
+            completion(.failure(error))
             return
         }
+        
+        print("🔐 Making authenticated request to: \(url)")
         
         let headers: HTTPHeaders = [
             "Authorization": "Bearer \(token)"
@@ -93,6 +98,7 @@ class NetworkManager {
                                     completion: completion
                                 )
                             case .failure(let refreshError):
+                                self?.showErrorModal(refreshError)
                                 completion(.failure(refreshError))
                             }
                         }
@@ -104,8 +110,11 @@ class NetworkManager {
     }
     
     private func handleTokenRefresh(completion: @escaping (Result<Void, Error>) -> Void) {
+        print("🔄 Starting token refresh")
+        
         // If already refreshing, add to pending requests
         if isRefreshingToken {
+            print("🔄 Token refresh already in progress, adding to pending requests")
             pendingRequests.append(completion)
             return
         }
@@ -113,13 +122,19 @@ class NetworkManager {
         isRefreshingToken = true
         
         guard let refreshToken = TokenManager.shared.getRefreshToken() else {
+            print("❌ No refresh token available")
             isRefreshingToken = false
             completion(.failure(NetworkError.noRefreshToken))
             return
         }
         
+        print("🔄 Refresh token found, attempting refresh")
+        
         let url = "\(baseURL)/token/refresh/"
         let params = ["refresh": refreshToken]
+        
+        print("🔄 Token refresh URL: \(url)")
+        print("🔄 Refresh token: \(refreshToken.prefix(50))...")
         
         AF.request(url, method: .post, parameters: params, encoder: JSONParameterEncoder.default)
             .validate(statusCode: 200..<300)
@@ -130,11 +145,13 @@ class NetworkManager {
                 
                 switch response.result {
                 case .success(let tokenResponse):
+                    print("✅ Token refresh successful")
                     // Convert TokenRefreshResponse to TokenResponse
                     let tokenData = TokenResponse(refresh: tokenResponse.refresh, access: tokenResponse.access)
                     
                     // Save new tokens
                     TokenManager.shared.saveTokens(tokenData)
+                    print("💾 New tokens saved")
                     
                     // Complete current request
                     completion(.success(()))
@@ -144,8 +161,14 @@ class NetworkManager {
                     self?.pendingRequests.removeAll()
                     
                 case .failure(let error):
+                    print("❌ Token refresh failed: \(error)")
+                    if let statusCode = response.response?.statusCode {
+                        print("❌ HTTP status code: \(statusCode)")
+                    }
+                    
                     // Check if it's a 401 (refresh token expired)
                     if let statusCode = response.response?.statusCode, statusCode == 401 {
+                        print("❌ Refresh token expired, handling session expiration")
                         // Handle session expiration
                         AuthenticationManager.shared.handleSessionExpired()
                         
@@ -156,6 +179,7 @@ class NetworkManager {
                         self?.pendingRequests.forEach { $0(.failure(NetworkError.refreshTokenExpired)) }
                         self?.pendingRequests.removeAll()
                     } else {
+                        print("❌ Other token refresh error")
                         // Other network error
                         completion(.failure(NetworkError.tokenRefreshFailed))
                         
@@ -354,7 +378,7 @@ class NetworkManager {
         }
     }
     
-    func uploadVideo(fileURL: URL, completion: @escaping (Result<String, Error>) -> Void) {
+    func uploadVideo(fileURL: URL, completion: @escaping (Result<VideoUploadResponse, Error>) -> Void) {
         guard let token = TokenManager.shared.getAccessToken() else {
             completion(.failure(NetworkError.unauthorized))
             return
@@ -381,7 +405,7 @@ class NetworkManager {
         .responseDecodable(of: VideoUploadResponse.self) { [weak self] response in
             switch response.result {
             case .success(let uploadResponse):
-                completion(.success(uploadResponse.video_id))
+                completion(.success(uploadResponse))
             case .failure(let error):
                 // Check if it's an authentication error (401)
                 if let statusCode = response.response?.statusCode, statusCode == 401 {
@@ -401,64 +425,28 @@ class NetworkManager {
         }
     }
     
-    func analyzeVideo(videoId: String, completion: @escaping (Result<String, Error>) -> Void) {
-        let url = "\(baseURL)/analyze-video/"
-        let params = ["video_id": videoId]
-
+    // analyzeVideo method removed - analysis now happens in uploadVideo
+    
+    func getUserAnalyses(lastSyncTimestamp: String? = nil, completion: @escaping (Result<DeltaSyncResponse, Error>) -> Void) {
+        var url = "\(baseURL)/user-analyses/"
+        
+        // Add last_sync parameter if provided
+        if let lastSync = lastSyncTimestamp {
+            url += "?last_sync=\(lastSync.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? lastSync)"
+        }
+        
         performAuthenticatedRequest(
             url: url,
-            method: .post,
-            parameters: params,
-            responseType: VideoAnalysisResponse.self
+            method: .get,
+            responseType: DeltaSyncResponse.self
         ) { result in
             switch result {
-            case .success(let analysisResponse):
-                completion(.success(analysisResponse.analysis_id))
+            case .success(let deltaResponse):
+                completion(.success(deltaResponse))
             case .failure(let error):
                 completion(.failure(error))
             }
         }
-    }
-    
-    func getUserAnalyses(completion: @escaping (Result<[VideoAnalysis], Error>) -> Void) {
-        let url = "\(baseURL)/user-analyses/"
-        
-        guard let token = TokenManager.shared.getAccessToken() else {
-            completion(.failure(NetworkError.unauthorized))
-            return
-        }
-        
-        let headers: HTTPHeaders = [
-            "Authorization": "Bearer \(token)"
-        ]
-        
-        // First, get the raw response to see what we're actually receiving
-        AF.request(url, method: .get, headers: headers)
-            .validate(statusCode: 200..<300)
-            .response { response in
-                switch response.result {
-                case .success:
-                    if let data = response.data {
-                        if let jsonString = String(data: data, encoding: .utf8) {
-                            print("📄 Raw JSON response from getUserAnalyses:")
-                            print(jsonString)
-                        }
-                        
-                        // Now try to decode it
-                        do {
-                            let analyses = try JSONDecoder().decode([VideoAnalysis].self, from: data)
-                            completion(.success(analyses))
-                        } catch {
-                            print("❌ Manual decoding failed: \(error)")
-                            completion(.failure(NetworkError.requestFailed(AFError.responseSerializationFailed(reason: .decodingFailed(error: error)))))
-                        }
-                    } else {
-                        completion(.failure(NetworkError.requestFailed(AFError.responseSerializationFailed(reason: .decodingFailed(error: NSError(domain: "No data", code: -1, userInfo: nil))))))
-                    }
-                case .failure(let error):
-                    completion(.failure(NetworkError.requestFailed(error)))
-                }
-            }
     }
 
 
@@ -473,6 +461,37 @@ class NetworkManager {
         body.append("--\(boundary)--\r\n")
 
         return body
+    }
+    
+    // MARK: - Error Modal Display
+    private func showErrorModal(_ error: Error) {
+        // Get the top view controller to show the error modal
+        if let topViewController = getTopViewController() {
+            ErrorModalManager.shared.showError(error, from: topViewController)
+        }
+    }
+    
+    private func getTopViewController() -> UIViewController? {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first(where: { $0.isKeyWindow }) else {
+            return nil
+        }
+        
+        var topViewController = window.rootViewController
+        
+        while let presentedViewController = topViewController?.presentedViewController {
+            topViewController = presentedViewController
+        }
+        
+        if let navigationController = topViewController as? UINavigationController {
+            topViewController = navigationController.visibleViewController
+        }
+        
+        if let tabBarController = topViewController as? UITabBarController {
+            topViewController = tabBarController.selectedViewController
+        }
+        
+        return topViewController
     }
 }
 

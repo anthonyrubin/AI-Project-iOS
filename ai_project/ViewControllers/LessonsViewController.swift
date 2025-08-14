@@ -26,7 +26,6 @@ class LessonsViewController: UIViewController {
     
     private func setupUI() {
         view.backgroundColor = .systemBackground
-        title = "Lessons"
         
         // Add refresh control
         let refreshControl = UIRefreshControl()
@@ -50,13 +49,22 @@ class LessonsViewController: UIViewController {
     }
     
     private func loadData() {
-        analyses = repository.getAllAnalyses()
-        
-        // Observe changes
-        notificationToken = analyses?.observe { [weak self] changes in
-            DispatchQueue.main.async {
-                self?.tableView.reloadData()
+        do {
+            analyses = repository.getAllAnalyses()
+            
+            print("Analysis be")
+            print(analyses)
+            
+            // Observe changes
+            notificationToken = analyses?.observe { [weak self] changes in
+                DispatchQueue.main.async {
+                    self?.tableView.reloadData()
+                }
             }
+        } catch {
+            print("❌ Error loading data: \(error)")
+            // Show error modal
+            ErrorModalManager.shared.showError(error, from: self)
         }
     }
     
@@ -70,8 +78,8 @@ class LessonsViewController: UIViewController {
                     print("Fetched \(newAnalyses.count) new analyses")
                 case .failure(let error):
                     print("Error fetching analyses: \(error)")
-                    // Show error alert
-                    self?.showErrorAlert(message: error.localizedDescription)
+                    // Show error modal
+                    ErrorModalManager.shared.showError(error, from: self!)
                 }
             }
         }
@@ -91,11 +99,12 @@ class LessonsViewController: UIViewController {
         refreshData()
     }
     
-    private func showErrorAlert(message: String) {
-        let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
-    }
+    // This method is no longer needed since we use ErrorModalManager
+    // private func showErrorAlert(message: String) {
+    //     let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
+    //     alert.addAction(UIAlertAction(title: "OK", style: .default))
+    //     present(alert, animated: true)
+    // }
     
     deinit {
         NotificationCenter.default.removeObserver(self)
@@ -105,14 +114,24 @@ class LessonsViewController: UIViewController {
 // MARK: - UITableViewDataSource
 extension LessonsViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return analyses?.count ?? 0
+        do {
+            return analyses?.count ?? 0
+        } catch {
+            print("❌ Error getting analysis count: \(error)")
+            return 0
+        }
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "VideoAnalysisCell", for: indexPath) as! VideoAnalysisCell
         
-        if let analysis = analyses?[indexPath.row] {
-            cell.configure(with: analysis)
+        do {
+            if let analysis = analyses?[indexPath.row] {
+                cell.configure(with: analysis)
+            }
+        } catch {
+            print("❌ Error configuring cell at index \(indexPath.row): \(error)")
+            // Configure with placeholder data or show error state
         }
         
         return cell

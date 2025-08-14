@@ -130,3 +130,10 @@ struct Video: Codable {
     let duration: Double?
     let uploaded_at: String
 }
+
+// MARK: - Delta Sync Response
+struct DeltaSyncResponse: Codable {
+    let analyses: [VideoAnalysis]
+    let sync_timestamp: String
+    let has_more: Bool
+}

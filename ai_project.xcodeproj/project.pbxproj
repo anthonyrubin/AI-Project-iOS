@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		DE276C162E42C66900392987 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = DE276C152E42C66900392987 /* Alamofire */; };
 		DE2C62702E4C1AC800E1EA9B /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = DE2C626F2E4C1AC800E1EA9B /* RealmSwift */; };
+		DE2C62702E4D185B00BF5C7B /* SkeletonView in Frameworks */ = {isa = PBXBuildFile; productRef = DEA183B42E4D185B00BF5C7B /* SkeletonView */; };
 		DEA183B22E4D185B00BF5C7B /* SDWebImage in Frameworks */ = {isa = PBXBuildFile; productRef = DEA183B12E4D185B00BF5C7B /* SDWebImage */; };
 /* End PBXBuildFile section */
 
@@ -85,6 +86,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				DEA183B22E4D185B00BF5C7B /* SDWebImage in Frameworks */,
+				DE2C62702E4D185B00BF5C7B /* SkeletonView in Frameworks */,
 				DE2C62702E4C1AC800E1EA9B /* RealmSwift in Frameworks */,
 				DE276C162E42C66900392987 /* Alamofire in Frameworks */,
 			);
@@ -246,6 +248,7 @@
 				DE276C082E42B7AD00392987 /* XCRemoteSwiftPackageReference "Alamofire" */,
 				DE2C626E2E4C1AC800E1EA9B /* XCRemoteSwiftPackageReference "realm-swift" */,
 				DEA183B02E4D185B00BF5C7B /* XCRemoteSwiftPackageReference "SDWebImage" */,
+				DEA183B32E4D185B00BF5C7B /* XCRemoteSwiftPackageReference "SkeletonView" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DE276BD42E4287CC00392987 /* Products */;
@@ -626,6 +629,14 @@
 				minimumVersion = 5.21.1;
 			};
 		};
+		DEA183B32E4D185B00BF5C7B /* XCRemoteSwiftPackageReference "SkeletonView" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Juanpe/SkeletonView.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.30.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -643,6 +654,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = DEA183B02E4D185B00BF5C7B /* XCRemoteSwiftPackageReference "SDWebImage" */;
 			productName = SDWebImage;
+		};
+		DEA183B42E4D185B00BF5C7B /* SkeletonView */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DEA183B32E4D185B00BF5C7B /* XCRemoteSwiftPackageReference "SkeletonView" */;
+			productName = SkeletonView;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -1,4 +1,5 @@
 import UIKit
+import SkeletonView
 
 class VideoAnalysisCell: UITableViewCell {
     
@@ -7,7 +8,6 @@ class VideoAnalysisCell: UITableViewCell {
     private let sportLabel = UILabel()
     private let scoreLabel = UILabel()
     private let dateLabel = UILabel()
-    private let skeletonView = UIView()
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -55,11 +55,15 @@ class VideoAnalysisCell: UITableViewCell {
         dateLabel.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(dateLabel)
         
-        // Skeleton view
-        skeletonView.backgroundColor = .systemGray5
-        skeletonView.layer.cornerRadius = 8
-        skeletonView.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(skeletonView)
+        // Configure SkeletonView for thumbnail
+        thumbnailImageView.isSkeletonable = true
+        thumbnailImageView.skeletonCornerRadius = 8
+        
+        // Configure SkeletonView for labels
+        titleLabel.isSkeletonable = true
+        sportLabel.isSkeletonable = true
+        scoreLabel.isSkeletonable = true
+        dateLabel.isSkeletonable = true
         
         setupConstraints()
     }
@@ -90,12 +94,7 @@ class VideoAnalysisCell: UITableViewCell {
             dateLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
             dateLabel.bottomAnchor.constraint(equalTo: thumbnailImageView.bottomAnchor),
             
-            // Skeleton (same constraints as thumbnail)
-            skeletonView.leadingAnchor.constraint(equalTo: thumbnailImageView.leadingAnchor),
-            skeletonView.topAnchor.constraint(equalTo: thumbnailImageView.topAnchor),
-            skeletonView.bottomAnchor.constraint(equalTo: thumbnailImageView.bottomAnchor),
-            skeletonView.widthAnchor.constraint(equalTo: thumbnailImageView.widthAnchor),
-            skeletonView.heightAnchor.constraint(equalTo: thumbnailImageView.heightAnchor)
+
         ])
     }
     
@@ -126,56 +125,60 @@ class VideoAnalysisCell: UITableViewCell {
     
     private func loadThumbnail(from urlString: String) {
         guard let url = URL(string: urlString) else {
-            showSkeleton()
+            showPlaceholderImage()
             return
         }
         
-        // Hide skeleton and show loading
-        skeletonView.isHidden = true
-        thumbnailImageView.alpha = 0.7
+        // Show skeleton loading
+        showSkeleton()
         
-        // Use native URLSession for image loading
-        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+        // Create a session with timeout
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 10.0
+        config.timeoutIntervalForResource = 15.0
+        let session = URLSession(configuration: config)
+        
+        // Use session for image loading
+        session.dataTask(with: url) { [weak self] data, response, error in
             DispatchQueue.main.async {
+                if let error = error {
+                    self?.showPlaceholderImage()
+                    return
+                }
+                
                 if let data = data, let image = UIImage(data: data) {
+                    self?.hideSkeleton()
                     self?.thumbnailImageView.image = image
-                    self?.thumbnailImageView.alpha = 1.0
                 } else {
-                    self?.showSkeleton()
+                    self?.showPlaceholderImage()
                 }
             }
         }.resume()
     }
     
     private func showSkeleton() {
-        skeletonView.isHidden = false
-        thumbnailImageView.alpha = 0.3
+        // Clear any existing content
+        thumbnailImageView.image = nil
         
-        // Add shimmer animation
-        let gradientLayer = CAGradientLayer()
-        gradientLayer.frame = skeletonView.bounds
-        gradientLayer.colors = [
-            UIColor.systemGray5.cgColor,
-            UIColor.systemGray4.cgColor,
-            UIColor.systemGray5.cgColor
-        ]
-        gradientLayer.startPoint = CGPoint(x: 0, y: 0.5)
-        gradientLayer.endPoint = CGPoint(x: 1, y: 0.5)
-        
-        let animation = CABasicAnimation(keyPath: "transform.translation.x")
-        animation.duration = 1.5
-        animation.fromValue = -skeletonView.frame.width
-        animation.toValue = skeletonView.frame.width
-        animation.repeatCount = .infinity
-        
-        gradientLayer.add(animation, forKey: "shimmer")
-        skeletonView.layer.addSublayer(gradientLayer)
+        // Show skeleton loading on the thumbnail specifically
+        thumbnailImageView.showAnimatedGradientSkeleton()
+    }
+    
+    private func hideSkeleton() {
+        // Hide skeleton loading
+        thumbnailImageView.hideSkeleton()
+    }
+    
+    private func showPlaceholderImage() {
+        // Hide skeleton and show placeholder
+        thumbnailImageView.hideSkeleton()
+        thumbnailImageView.image = UIImage(named: "EmptyStateThumbnail")
+        thumbnailImageView.alpha = 1.0
     }
     
     override func prepareForReuse() {
         super.prepareForReuse()
         thumbnailImageView.image = nil
-        skeletonView.isHidden = true
-        skeletonView.layer.sublayers?.removeAll()
+        thumbnailImageView.hideSkeleton()
     }
 }

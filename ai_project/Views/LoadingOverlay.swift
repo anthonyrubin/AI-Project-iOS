@@ -66,8 +66,20 @@ class LoadingOverlay: UIView {
         messageLabel.text = message
         activityIndicator.startAnimating()
         
-        frame = viewController.view.bounds
-        viewController.view.addSubview(self)
+        // Get the window to ensure we cover the entire screen including status bar and tab bar
+        let window: UIWindow?
+        
+        window = viewController.view.window?.windowScene?.windows.first(where: { $0.isKeyWindow })
+        
+        if let window = window {
+            // Cover the entire window including status bar and tab bar
+            frame = window.bounds
+            window.addSubview(self)
+        } else {
+            // Fallback to view controller's view if window is not available
+            frame = viewController.view.bounds
+            viewController.view.addSubview(self)
+        }
         
         alpha = 0
         UIView.animate(withDuration: 0.3) {
