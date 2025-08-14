@@ -5,6 +5,13 @@ import UniformTypeIdentifiers
 import RealmSwift
 import Combine
 
+// Custom table view that makes section headers scroll with content
+class NonStickyTableView: UITableView {
+    override var style: UITableView.Style {
+        return .plain
+    }
+}
+
 final class SessionViewController: UIViewController {
     // MARK: - ViewModels
     private let uploadViewModel = VideoUploadViewModel()
@@ -28,7 +35,7 @@ final class SessionViewController: UIViewController {
     private weak var host: UIView?            // lives in tabBarController.view
     
     // MARK: - UI Components
-    private let tableView = UITableView()
+    private let tableView = NonStickyTableView()
     
     // MARK: - Combine
     private var cancellables = Set<AnyCancellable>()
@@ -38,6 +45,16 @@ final class SessionViewController: UIViewController {
         case greeting = 0
         case sessionHistory = 1
         case lastSession = 2
+    }
+    
+    // MARK: - Row Types
+    private enum RowType {
+        case greeting
+        case sessionHistoryHeader
+        case sessionHistoryCell
+        case lastSessionHeader
+        case lastSessionCell
+        case none
     }
 
     override func viewDidLoad() {
@@ -118,19 +135,24 @@ final class SessionViewController: UIViewController {
     }
     
     private func setupTableView() {
-        tableView.sectionHeaderTopPadding = 0
         tableView.delegate = self
         tableView.dataSource = self
         tableView.backgroundColor = .clear
         tableView.separatorStyle = .none
         tableView.showsVerticalScrollIndicator = false
         tableView.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Remove top spacing
+        tableView.sectionHeaderTopPadding = 0
+        tableView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+        
         view.addSubview(tableView)
         
         // Register cell classes
         tableView.register(GreetingCell.self, forCellReuseIdentifier: "GreetingCell")
         tableView.register(SessionHistoryCell.self, forCellReuseIdentifier: "SessionHistoryCell")
         tableView.register(VideoAnalysisCell.self, forCellReuseIdentifier: "VideoAnalysisCell")
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "HeaderCell")
     }
     
     private func setupFloatingBar() {
@@ -146,8 +168,8 @@ final class SessionViewController: UIViewController {
     
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            // Table view
-            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            // Table view - attach directly to top edge for flush greeting cell
+            tableView.topAnchor.constraint(equalTo: view.topAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -floatingHeight - shadowPad)
@@ -171,132 +193,153 @@ final class SessionViewController: UIViewController {
         NotificationCenter.default.removeObserver(self)
         cancellables.removeAll()
     }
+    
+    // MARK: - Helper Methods
+    private func getRowType(for row: Int) -> RowType {
+        var currentRow = 0
+        
+        // Greeting cell (row 0)
+        if row == currentRow {
+            return .greeting
+        }
+        currentRow += 1
+        
+        // Session History section (if has analyses)
+        if sessionViewModel.hasAnalyses() {
+            // Session History header
+            if row == currentRow {
+                return .sessionHistoryHeader
+            }
+            currentRow += 1
+            
+            // Session History cell
+            if row == currentRow {
+                return .sessionHistoryCell
+            }
+            currentRow += 1
+        }
+        
+        // Last Session section (if has analyses)
+        if sessionViewModel.hasAnalyses() {
+            // Last Session header
+            if row == currentRow {
+                return .lastSessionHeader
+            }
+            currentRow += 1
+            
+            // Last Session cell
+            if row == currentRow {
+                return .lastSessionCell
+            }
+        }
+        
+        return .none
+    }
 
 }
 
 // MARK: - UITableViewDataSource
 extension SessionViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
-        return Section.allCases.count
+        return 1 // Single section with all content
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        guard let sectionType = Section(rawValue: section) else { return 0 }
+        var rowCount = 0
         
-        switch sectionType {
-        case .greeting:
-            return 1
-        case .sessionHistory:
-            return sessionViewModel.hasAnalyses() ? 1 : 0
-        case .lastSession:
-            return sessionViewModel.hasAnalyses() ? 1 : 0
+        // Greeting cell (always present)
+        rowCount += 1
+        
+        // Session History section header + cell (if has analyses)
+        if sessionViewModel.hasAnalyses() {
+            rowCount += 2 // Header + cell
         }
+        
+        // Last Session section header + cell (if has analyses)
+        if sessionViewModel.hasAnalyses() {
+            rowCount += 2 // Header + cell
+        }
+        
+        return rowCount
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let sectionType = Section(rawValue: indexPath.section) else {
-            return UITableViewCell()
-        }
+        let row = indexPath.row
+        var currentRow = 0
         
-        switch sectionType {
-        case .greeting:
+        // Greeting cell (row 0)
+        if row == currentRow {
             let cell = tableView.dequeueReusableCell(withIdentifier: "GreetingCell", for: indexPath) as! GreetingCell
             cell.configure(with: sessionViewModel.currentUser)
             return cell
-        case .sessionHistory:
-            let cell = tableView.dequeueReusableCell(withIdentifier: "SessionHistoryCell", for: indexPath) as! SessionHistoryCell
-            cell.configure(totalMinutes: sessionViewModel.totalMinutesAnalyzed, averageScore: sessionViewModel.averageScore)
-            return cell
-        case .lastSession:
-            let cell = tableView.dequeueReusableCell(withIdentifier: "VideoAnalysisCell", for: indexPath) as! VideoAnalysisCell
-            if let lastAnalysis = sessionViewModel.lastSession {
-                cell.configure(with: lastAnalysis)
-            }
-            return cell
         }
+        currentRow += 1
+        
+        // Session History section (if has analyses)
+        if sessionViewModel.hasAnalyses() {
+            // Session History header
+            if row == currentRow {
+                return setHeaderCell(title: "Session History", indexPath: indexPath)
+            }
+            currentRow += 1
+            
+            // Session History cell
+            if row == currentRow {
+                let cell = tableView.dequeueReusableCell(withIdentifier: "SessionHistoryCell", for: indexPath) as! SessionHistoryCell
+                cell.configure(totalMinutes: sessionViewModel.totalMinutesAnalyzed, averageScore: sessionViewModel.averageScore)
+                return cell
+            }
+            currentRow += 1
+        }
+        
+        // Last Session section (if has analyses)
+        if sessionViewModel.hasAnalyses() {
+            // Last Session header
+            if row == currentRow {
+                return setHeaderCell(title: "Last Session", indexPath: indexPath)
+            }
+            currentRow += 1
+            
+            // Last Session cell
+            if row == currentRow {
+                let cell = tableView.dequeueReusableCell(withIdentifier: "VideoAnalysisCell", for: indexPath) as! VideoAnalysisCell
+                if let lastAnalysis = sessionViewModel.lastSession {
+                    cell.configure(with: lastAnalysis)
+                }
+                return cell
+            }
+        }
+        
+        // Fallback
+        return UITableViewCell()
     }
     
-    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        guard let sectionType = Section(rawValue: section) else { return nil }
+    func setHeaderCell(title: String, indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "HeaderCell", for: indexPath)
+        cell.selectionStyle = .none
+        cell.backgroundColor = .clear
         
-        switch sectionType {
-        case .greeting:
-            return nil
-        case .sessionHistory:
-            return sessionViewModel.hasAnalyses() ? "Session History" : nil
-        case .lastSession:
-            return sessionViewModel.hasAnalyses() ? "Last Session" : nil
-        }
+        // Remove any existing subviews
+        cell.contentView.subviews.forEach { $0.removeFromSuperview() }
+        
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 20, weight: .bold)
+        label.textColor = .label
+        label.text = title
+        label.translatesAutoresizingMaskIntoConstraints = false
+        cell.contentView.addSubview(label)
+        
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor, constant: 20),
+            label.centerYAnchor.constraint(equalTo: cell.contentView.centerYAnchor)
+        ])
+        
+        return cell
     }
 }
 
 // MARK: - UITableViewDelegate
 extension SessionViewController: UITableViewDelegate {
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        guard let sectionType = Section(rawValue: indexPath.section) else { return 0 }
-        
-        switch sectionType {
-        case .greeting:
-            return UITableView.automaticDimension
-        case .sessionHistory:
-            return 120
-        case .lastSession:
-            return 160
-        }
-    }
-    
-    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        guard let sectionType = Section(rawValue: section) else { return 0 }
-        
-        switch sectionType {
-        case .greeting:
-            return 0
-        case .sessionHistory:
-            return sessionViewModel.hasAnalyses() ? 30 : 0
-        case .lastSession:
-            return sessionViewModel.hasAnalyses() ? 30 : 0
-        }
-    }
-    
-    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        guard let sectionType = Section(rawValue: section) else { return nil }
-        
-        switch sectionType {
-        case .greeting:
-            return nil
-        case .sessionHistory, .lastSession:
-            let headerView = UIView()
-            headerView.backgroundColor = .clear
-            
-            let label = UILabel()
-            label.font = .systemFont(ofSize: 20, weight: .bold)
-            label.textColor = .label
-            label.text = sectionType == .sessionHistory ? "Session History" : "Last Session"
-            label.translatesAutoresizingMaskIntoConstraints = false
-            headerView.addSubview(label)
-            
-            NSLayoutConstraint.activate([
-                label.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 20),
-                label.centerYAnchor.constraint(equalTo: headerView.centerYAnchor)
-            ])
-            
-            return headerView
-        }
-    }
-    
-    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
-        guard let s = Section(rawValue: section) else { return 0 }
-        switch s {
-        case .greeting:
-            // gap before “Session History” (only if that section will show)
-            return 20
-        case .sessionHistory:
-            // gap before “Last Session” (only if that section will show)
-            return sessionViewModel.userAnalyses.isEmpty ? 0 : 20
-        case .lastSession:
-            return 0
-        }
-    }
 
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
         // transparent spacer view
@@ -308,18 +351,18 @@ extension SessionViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
-        guard let sectionType = Section(rawValue: indexPath.section) else { return }
+        let rowType = getRowType(for: indexPath.row)
         
-        switch sectionType {
-        case .greeting:
-            break
-        case .sessionHistory:
-            break
-        case .lastSession:
+        switch rowType {
+        case .greeting, .sessionHistoryHeader, .sessionHistoryCell, .lastSessionHeader:
+            return // No action for these rows
+        case .lastSessionCell:
             if let lastAnalysis = sessionViewModel.lastSession {
                 let lessonViewController = LessonViewController(analysis: lastAnalysis)
                 navigationController?.pushViewController(lessonViewController, animated: true)
             }
+        case .none:
+            return
         }
     }
 

@@ -75,7 +75,7 @@ class LessonsViewController: UIViewController {
         tableView.delegate = self
         tableView.dataSource = self
         tableView.register(VideoAnalysisCell.self, forCellReuseIdentifier: "VideoAnalysisCell")
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "TitleCell")
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "TitleInboxCell")
         tableView.separatorStyle = .none // Remove separator lines for card design
         tableView.backgroundColor = .systemGroupedBackground // Better background for cards
         tableView.translatesAutoresizingMaskIntoConstraints = false
@@ -128,7 +128,7 @@ extension LessonsViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if indexPath.row == 0 {
             // Title cell (first row)
-            let cell = tableView.dequeueReusableCell(withIdentifier: "TitleCell", for: indexPath)
+            let cell = tableView.dequeueReusableCell(withIdentifier: "TitleInboxCell", for: indexPath)
             cell.selectionStyle = .none
             cell.backgroundColor = .clear
             

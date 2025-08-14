@@ -26,7 +26,7 @@ class GreetingCell: UITableViewCell {
             greetingLabel.topAnchor.constraint(equalTo: contentView.topAnchor),
             greetingLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             greetingLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            greetingLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
+            greetingLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10)
         ])
     }
     
