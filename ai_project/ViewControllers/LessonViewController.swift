@@ -225,7 +225,7 @@ class LessonViewController: UIViewController {
     
     // MARK: - Video Player Setup
     private func setupVideoPlayer() {
-        guard let videoUrl = URL(string: analysis.video?.s3Url ?? "") else {
+        guard let videoUrl = URL(string: analysis.video?.gcsUrl ?? "") else {
             print("❌ Invalid video URL")
             return
         }

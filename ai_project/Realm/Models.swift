@@ -16,8 +16,8 @@ final class UserObject: Object {
 // MARK: - Video
 final class VideoObject: Object {
     @Persisted(primaryKey: true) var serverId: Int
-    @Persisted var s3Url: String = ""
-    @Persisted var thumbnailUrl: String = ""
+    @Persisted var gcsUrl: String = ""
+    @Persisted var thumbnailGcsUrl: String = ""
     @Persisted var originalFilename: String = ""
     @Persisted var fileSize: Int = 0
     @Persisted var duration: Double?

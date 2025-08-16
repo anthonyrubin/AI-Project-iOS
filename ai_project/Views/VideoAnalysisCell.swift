@@ -188,8 +188,8 @@ class VideoAnalysisCell: UITableViewCell {
         }
         
         // Load thumbnail
-        if let video = analysis.video, !video.thumbnailUrl.isEmpty {
-            loadThumbnail(from: video.thumbnailUrl)
+        if let video = analysis.video, !video.thumbnailGcsUrl.isEmpty {
+            loadThumbnail(from: video.thumbnailGcsUrl)
         } else {
             showSkeleton()
         }
@@ -254,4 +254,5 @@ class VideoAnalysisCell: UITableViewCell {
         cardView.hideSkeleton()
     }
 }
+
 

@@ -49,114 +49,115 @@ class VideoAnalysisRepository {
                         // Store video first
                         let videoObject = VideoObject()
                         videoObject.serverId = analysis.video.id
-                        videoObject.s3Url = analysis.video.s3_url
-                    // Set thumbnail URL properly
-                    if let thumbnailUrl = analysis.video.thumbnail_url, !thumbnailUrl.isEmpty {
-                        videoObject.thumbnailUrl = thumbnailUrl
-                    } else {
-                        // Fallback: construct thumbnail URL from video URL
-                        let videoUrl = analysis.video.s3_url
-                        
-                        if videoUrl.contains("/video.") {
-                            videoObject.thumbnailUrl = videoUrl.replacingOccurrences(of: "/video.", with: "/thumbnail.jpg")
+                        videoObject.gcsUrl = analysis.video.video_gcs_url
+                        // Set thumbnail URL properly
+                        if let thumbnailUrl = analysis.video.thumbnail_gcs_url, !thumbnailUrl.isEmpty {
+                            videoObject.thumbnailGcsUrl = thumbnailUrl
                         } else {
-                            // Remove .mp4 extension and add /thumbnail.jpg
-                            let baseUrl = videoUrl.replacingOccurrences(of: ".mp4", with: "")
-                            videoObject.thumbnailUrl = baseUrl + "/thumbnail.jpg"
+                            // Fallback: construct thumbnail URL from video URL
+                            let videoUrl = analysis.video.video_gcs_url
+                            
+                            if videoUrl.contains("/video.") {
+                                videoObject.thumbnailGcsUrl = videoUrl.replacingOccurrences(of: "/video.", with: "/thumbnail.jpg")
+                            } else {
+                                // Remove .mp4 extension and add /thumbnail.jpg
+                                let baseUrl = videoUrl.replacingOccurrences(of: ".mp4", with: "")
+                                videoObject.thumbnailGcsUrl = baseUrl + "/thumbnail.jpg"
+                            }
                         }
-                    }
-                    videoObject.originalFilename = analysis.video.original_filename
-                    videoObject.fileSize = analysis.video.file_size
-                    videoObject.duration = analysis.video.duration
-                    videoObject.uploadedAt = ISO8601DateFormatter().date(from: analysis.video.uploaded_at) ?? Date()
-                    videoObject.userServerId = analysis.video.id // This should be the user ID, not video ID
-                    
-                    realm.add(videoObject, update: .modified)
-                    
-                    // Store analysis using the new structured approach
-                    let analysisObject = VideoAnalysisObject()
-                    analysisObject.serverId = analysis.id
-                    analysisObject.videoServerId = analysis.video.id
-                    analysisObject.userServerId = analysis.id // This should be the actual user ID
-                    analysisObject.sport = analysis.sport
-                    analysisObject.sportCategory = analysis.sport_category
-                    analysisObject.professionalScore = analysis.professional_score
-                    analysisObject.confidence = analysis.confidence
-                    analysisObject.clipSummary = analysis.clip_summary
-                    
-                    // Parse timestamp
-                    let dateFormatter = ISO8601DateFormatter()
-                    if let parsedDate = dateFormatter.date(from: analysis.created_at) {
-                        analysisObject.createdAt = parsedDate
-                    } else {
-                        // Try alternative date formats
-                        let alternativeFormatters = [
-                            DateFormatter().then { $0.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'" },
-                            DateFormatter().then { $0.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'" },
-                            DateFormatter().then { $0.dateFormat = "yyyy-MM-dd'T'HH:mm:ss" },
-                            DateFormatter().then { $0.dateFormat = "yyyy-MM-dd HH:mm:ss" }
-                        ]
+                        videoObject.originalFilename = analysis.video.original_filename
+                        videoObject.fileSize = analysis.video.file_size
+                        videoObject.duration = analysis.video.duration
+                        videoObject.uploadedAt = ISO8601DateFormatter().date(from: analysis.video.uploaded_at) ?? Date()
+                        videoObject.userServerId = analysis.video.id // This should be the user ID, not video ID
                         
-                        var foundDate: Date?
-                        for formatter in alternativeFormatters {
-                            if let date = formatter.date(from: analysis.created_at) {
-                                foundDate = date
-                                break
+                        realm.add(videoObject, update: .modified)
+                        
+                        // Store analysis using the new structured approach
+                        let analysisObject = VideoAnalysisObject()
+                        analysisObject.serverId = analysis.id
+                        analysisObject.videoServerId = analysis.video.id
+                        analysisObject.userServerId = analysis.id // This should be the actual user ID
+                        analysisObject.sport = analysis.sport
+                        analysisObject.sportCategory = analysis.sport_category
+                        analysisObject.professionalScore = analysis.professional_score
+                        analysisObject.confidence = analysis.confidence
+                        analysisObject.clipSummary = analysis.clip_summary
+                        
+                        // Parse timestamp
+                        let dateFormatter = ISO8601DateFormatter()
+                        if let parsedDate = dateFormatter.date(from: analysis.created_at) {
+                            analysisObject.createdAt = parsedDate
+                        } else {
+                            // Try alternative date formats
+                            let alternativeFormatters = [
+                                DateFormatter().then { $0.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'" },
+                                DateFormatter().then { $0.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'" },
+                                DateFormatter().then { $0.dateFormat = "yyyy-MM-dd'T'HH:mm:ss" },
+                                DateFormatter().then { $0.dateFormat = "yyyy-MM-dd HH:mm:ss" }
+                            ]
+                            
+                            var foundDate: Date?
+                            for formatter in alternativeFormatters {
+                                if let date = formatter.date(from: analysis.created_at) {
+                                    foundDate = date
+                                    break
+                                }
+                            }
+                            
+                            if let foundDate = foundDate {
+                                analysisObject.createdAt = foundDate
+                            } else {
+                                // Only use current date as last resort
+                                analysisObject.createdAt = Date()
                             }
                         }
                         
-                        if let foundDate = foundDate {
-                            analysisObject.createdAt = foundDate
-                        } else {
-                            // Only use current date as last resort
-                            analysisObject.createdAt = Date()
+                        // Add overall tips
+                        for tip in analysis.overall_tips {
+                            analysisObject.overallTips.append(tip)
                         }
-                    }
-                    
-                    // Add overall tips
-                    for tip in analysis.overall_tips {
-                        analysisObject.overallTips.append(tip)
-                    }
-                    
-                    // Add metrics catalog
-                    for metric in analysis.metrics_catalog {
-                        analysisObject.metricsCatalog.append(metric)
-                    }
-                    
-                    // Add events if available
-                    print("📊 Processing \(analysis.events?.count ?? 0) events for analysis \(analysis.id)")
-                    if let events = analysis.events {
-                        for (index, event) in events.enumerated() {
-                            print("🔍 Processing event \(index + 1): \(event.label) at \(event.t)s")
-                            do {
-                                let eventObject = AnalysisEventObject(analysisServerId: analysis.id, event: event)
-                                analysisObject.events.append(eventObject)
-                                print("✅ Successfully added event: \(event.label)")
-                            } catch {
-                                print("❌ Failed to create event object: \(error)")
-                                // Continue with other events instead of failing completely
+                        
+                        // Add metrics catalog
+                        for metric in analysis.metrics_catalog {
+                            analysisObject.metricsCatalog.append(metric)
+                        }
+                        
+                        // Add events if available
+                        print("📊 Processing \(analysis.events?.count ?? 0) events for analysis \(analysis.id)")
+                        if let events = analysis.events {
+                            for (index, event) in events.enumerated() {
+                                print("🔍 Processing event \(index + 1): \(event.label) at \(event.t)s")
+                                do {
+                                    let eventObject = AnalysisEventObject(analysisServerId: analysis.id, event: event)
+                                    analysisObject.events.append(eventObject)
+                                    print("✅ Successfully added event: \(event.label)")
+                                } catch {
+                                    print("❌ Failed to create event object: \(error)")
+                                    // Continue with other events instead of failing completely
+                                }
                             }
+                            print("📊 Total events added to analysis object: \(analysisObject.events.count)")
+                        } else {
+                            print("⚠️ No events found in analysis")
                         }
-                        print("📊 Total events added to analysis object: \(analysisObject.events.count)")
-                    } else {
-                        print("⚠️ No events found in analysis")
-                    }
-                    
-                    // Store analysis data as JSON string
-                    do {
-                        let jsonData = try JSONSerialization.data(withJSONObject: analysis.analysis_data.mapValues { $0.value })
-                        if let jsonString = String(data: jsonData, encoding: .utf8) {
-                            analysisObject.analysisData = jsonString
+                        
+                        // Store analysis data as JSON string
+                        do {
+                            let jsonData = try JSONSerialization.data(withJSONObject: analysis.analysis_data.mapValues { $0.value })
+                            if let jsonString = String(data: jsonData, encoding: .utf8) {
+                                analysisObject.analysisData = jsonString
+                            }
+                        } catch {
+                            print("⚠️ Failed to serialize analysis data: \(error)")
                         }
-                    } catch {
-                        print("⚠️ Failed to serialize analysis data: \(error)")
-                    }
-                    
+                        
                         realm.add(analysisObject, update: .modified)
                         print("📊 Analysis object added to Realm with \(analysisObject.events.count) events")
                         storedObjects.append(analysisObject)
                     } catch {
                         // Continue with other analyses instead of failing completely
+                        print("❌ Failed to process analysis \(analysis.id): \(error)")
                     }
                 }
             }
@@ -238,4 +239,5 @@ class VideoAnalysisRepository {
         UserDefaults.standard.removeObject(forKey: "last_sync_timestamp")
     }
 }
+
 

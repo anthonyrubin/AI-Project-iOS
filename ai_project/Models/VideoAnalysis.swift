@@ -159,8 +159,8 @@ struct AnalysisMetric: Codable {
 
 struct Video: Codable {
     let id: Int
-    let s3_url: String
-    let thumbnail_url: String?
+    let video_gcs_url: String
+    let thumbnail_gcs_url: String?
     let original_filename: String
     let file_size: Int
     let duration: Double?
@@ -173,4 +173,5 @@ struct DeltaSyncResponse: Codable {
     let sync_timestamp: String
     let has_more: Bool
 }
+
 
