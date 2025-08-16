@@ -254,3 +254,4 @@ class VideoAnalysisCell: UITableViewCell {
         cardView.hideSkeleton()
     }
 }
+

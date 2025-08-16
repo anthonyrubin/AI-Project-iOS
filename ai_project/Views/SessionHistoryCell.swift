@@ -146,3 +146,4 @@ class SessionHistoryCell: UITableViewCell {
         averageScoreLabel.text = "\(percentage)%"
     }
 }
+
