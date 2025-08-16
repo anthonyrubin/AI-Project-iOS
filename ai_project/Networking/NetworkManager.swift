@@ -85,6 +85,8 @@ class NetworkManager {
             }
     }
     
+
+    
     private func handleTokenRefresh(completion: @escaping (Result<Void, Error>) -> Void) {
         print("🔄 Starting token refresh")
         
@@ -294,7 +296,7 @@ class NetworkManager {
             url: url,
             method: .post,
             parameters: params,
-            responseType: SetBirthdayResponse.self
+            responseType: EmptyResponse.self
         ) { result in
             switch result {
             case .success:

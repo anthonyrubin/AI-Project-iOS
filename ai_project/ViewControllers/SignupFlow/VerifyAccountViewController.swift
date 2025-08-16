@@ -1,4 +1,5 @@
 import UIKit
+import Combine
 
 // Minimal addition: detect backspace on an empty box so we can move left.
 final class OTPTextField: UITextField {
@@ -22,6 +23,8 @@ final class VerifyAccountViewController: UIViewController, UITextFieldDelegate {
     required init?(coder: NSCoder) { fatalError() }
     
     private let viewModel = VerifyAccountViewModel()
+    
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - UI
     private let titleLabel: UILabel = {
@@ -91,18 +94,7 @@ final class VerifyAccountViewController: UIViewController, UITextFieldDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         hideNavBarHairline()
-        viewModel.onFailure = ({ [weak self] response in
-            print("Create Verify Account Failure")
-            self?.setLoading(false)
-        })
-        
-        viewModel.onSuccess = ({ [weak self] in
-            print("On verify Account Success")
-            self?.setLoading(false)
-            let vc = SetNameViewController()
-            self?.navigationController?.pushViewController(vc, animated: true)
-            print("Pushed view controller")
-        })
+        setupViewModelBindings()
         
         view.backgroundColor = .systemBackground
         let tap = UITapGestureRecognizer(target: self, action: #selector(focusFirstEditableBox))
@@ -167,6 +159,38 @@ final class VerifyAccountViewController: UIViewController, UITextFieldDelegate {
         }
 
         codeFields.first?.becomeFirstResponder()
+    }
+    
+    private func setupViewModelBindings() {
+        // Bind loading state
+        viewModel.$isLoading
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading in
+                self?.setLoading(isLoading)
+            }
+            .store(in: &cancellables)
+        
+        // Bind error messages
+        viewModel.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] errorMessage in
+                if let errorMessage = errorMessage {
+                    ErrorModalManager.shared.showError(errorMessage, from: self!)
+                    self?.viewModel.clearError()
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Bind name set success
+        viewModel.$isAccountVerified
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isBirthdaySet in
+                if isBirthdaySet {
+                    let vc = SetNameViewController()
+                    self?.navigationController?.pushViewController(vc, animated: true)
+                }
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Actions

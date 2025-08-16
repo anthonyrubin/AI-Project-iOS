@@ -2,14 +2,16 @@ import UIKit
 import AVKit
 import AVFoundation
 import RealmSwift
+import Combine
 
-class LessonViewController: UIViewController {
+class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     
     // MARK: - Properties
-    private let analysis: VideoAnalysisObject
-    private var player: AVPlayer?
+    private let viewModel: LessonViewModel
     private var playerLayer: AVPlayerLayer?
+    private var player: AVPlayer?
     private var timeObserver: Any?
+    private var cancellables = Set<AnyCancellable>()
     
     // MARK: - UI Components
     private let scrollView = UIScrollView()
@@ -24,7 +26,7 @@ class LessonViewController: UIViewController {
     
     // MARK: - Initialization
     init(analysis: VideoAnalysisObject) {
-        self.analysis = analysis
+        self.viewModel = LessonViewModel(analysis: analysis)
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -36,6 +38,7 @@ class LessonViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupViewModelBindings()
         setupVideoPlayer()
         setupAnalysisData()
         setupEventsTable()
@@ -51,19 +54,31 @@ class LessonViewController: UIViewController {
         playerLayer?.frame = videoContainerView.bounds
     }
     
+    // MARK: - ViewModel Bindings
+    
+    private func setupViewModelBindings() {
+        // Bind error messages
+        viewModel.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] errorMessage in
+                if let errorMessage = errorMessage {
+                    ErrorModalManager.shared.showError(errorMessage, from: self!)
+                    self?.viewModel.clearError()
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
     // MARK: - Video Aspect Ratio Management
     private func updateVideoAspectRatio() {
         guard let playerItem = player?.currentItem else { return }
-        
         let videoSize = playerItem.presentationSize
-        guard videoSize.width > 0 && videoSize.height > 0 else { 
+        guard videoSize.width > 0 && videoSize.height > 0 else {
             print("📐 Video size not available yet, using default 16:9")
-            return 
+            return
         }
-        
         let aspectRatio = videoSize.height / videoSize.width
-        print("📐 Video size: \(videoSize), Aspect ratio: \(aspectRatio)")
-        
+
         // Update the height constraint with the correct aspect ratio
         videoHeightConstraint?.isActive = false
         videoHeightConstraint = videoContainerView.heightAnchor.constraint(equalTo: videoContainerView.widthAnchor, multiplier: aspectRatio)
@@ -87,6 +102,42 @@ class LessonViewController: UIViewController {
             playerItem.removeObserver(self, forKeyPath: "status")
             playerItem.removeObserver(self, forKeyPath: "presentationSize")
         }
+    }
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        let analysis = viewModel.analysis
+        print("📊 LessonViewController: Found \(analysis.events.count) events")
+        print("📊 Analysis data: \(analysis.analysisData)")
+        if let analysisDataDict = analysis.analysisDataDict {
+            print("📊 Parsed analysis data keys: \(analysisDataDict.keys)")
+            if let events = analysisDataDict["events"] as? [[String: Any]] {
+                print("📊 Raw events count: \(events.count)")
+                for (index, event) in events.enumerated() {
+                    print("📊 Event \(index + 1): \(event)")
+                }
+            }
+        }
+        return analysis.events.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "EventCell", for: indexPath) as! EventTableViewCell
+        
+        let event = viewModel.analysis.events[indexPath.row]
+        cell.configure(with: event)
+        
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 80
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        
+        let event = viewModel.analysis.events[indexPath.row]
+        seekToTimestamp(event.timestamp)
     }
     
     // MARK: - UI Setup
@@ -219,46 +270,46 @@ class LessonViewController: UIViewController {
             eventsTableView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             eventsTableView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             eventsTableView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16),
-            eventsTableView.heightAnchor.constraint(equalToConstant: CGFloat(analysis.events.count * 80)) // Approximate height
+            eventsTableView.heightAnchor.constraint(equalToConstant: CGFloat(viewModel.analysis.events.count * 80)) // Approximate height
         ])
     }
     
     // MARK: - Video Player Setup
     private func setupVideoPlayer() {
-        guard let video = analysis.video else {
-            print("❌ No video object found")
-            return
-        }
-        
-        setupVideoPlayerWithUrl(video.signedVideoUrl)
-    }
-    
-    private func setupVideoPlayerWithUrl(_ urlString: String) {
-        guard let videoUrl = URL(string: urlString) else {
+        guard let videoUrlString = viewModel.getVideoUrl(),
+              let videoUrl = URL(string: videoUrlString) else {
             print("❌ Invalid video URL")
             return
         }
         
-        player = AVPlayer(url: videoUrl)
-        playerLayer = AVPlayerLayer(player: player)
-        playerLayer?.videoGravity = .resizeAspectFill
-        
-        if let playerLayer = playerLayer {
-            videoContainerView.layer.addSublayer(playerLayer)
-            playerLayer.frame = videoContainerView.bounds
-        }
+        let player = AVPlayer(url: videoUrl)
+        setupPlayerLayer(with: player)
         
         // Add time observer
         let interval = CMTime(seconds: 0.5, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
-        timeObserver = player?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
+        let timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             self?.updatePlaybackUI(time: time)
         }
         
+        // Store references for cleanup
+        self.player = player
+        self.timeObserver = timeObserver
+        
         // Add observer for when video is ready to play
-        player?.currentItem?.addObserver(self, forKeyPath: "status", options: [.new, .old], context: nil)
+        player.currentItem?.addObserver(self, forKeyPath: "status", options: [.new, .old], context: nil)
         
         // Add observer for video size changes
-        player?.currentItem?.addObserver(self, forKeyPath: "presentationSize", options: [.new, .old], context: nil)
+        player.currentItem?.addObserver(self, forKeyPath: "presentationSize", options: [.new, .old], context: nil)
+    }
+    
+    private func setupPlayerLayer(with player: AVPlayer) {
+        playerLayer?.removeFromSuperlayer()
+        playerLayer = AVPlayerLayer(player: player)
+        playerLayer?.videoGravity = .resizeAspectFill
+        videoContainerView.layer.addSublayer(playerLayer!)
+        
+        // Set initial frame
+        playerLayer?.frame = videoContainerView.bounds
     }
     
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
@@ -288,7 +339,7 @@ class LessonViewController: UIViewController {
     // MARK: - Analysis Data Setup
     private func setupAnalysisData() {
         // Add video info section
-        if let video = analysis.video {
+        if let video = viewModel.analysis.video {
             var videoInfo = "Filename: \(video.originalFilename)\n"
             videoInfo += "File size: \(formatFileSize(video.fileSize))\n"
             
@@ -301,7 +352,7 @@ class LessonViewController: UIViewController {
             addSection(title: "Video Information", content: videoInfo)
         }
         
-        guard let analysisData = analysis.analysisDataDict else {
+        guard let analysisData = viewModel.analysis.analysisDataDict else {
             addSection(title: "Analysis", content: "Analysis data not available")
             return
         }
@@ -446,47 +497,6 @@ class LessonViewController: UIViewController {
             player?.play()
             playButton.setImage(UIImage(systemName: "pause.fill"), for: .normal)
         }
-    }
-}
-
-// MARK: - UITableViewDataSource
-extension LessonViewController: UITableViewDataSource {
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        print("📊 LessonViewController: Found \(analysis.events.count) events")
-        print("📊 Analysis data: \(analysis.analysisData)")
-        if let analysisDataDict = analysis.analysisDataDict {
-            print("📊 Parsed analysis data keys: \(analysisDataDict.keys)")
-            if let events = analysisDataDict["events"] as? [[String: Any]] {
-                print("📊 Raw events count: \(events.count)")
-                for (index, event) in events.enumerated() {
-                    print("📊 Event \(index + 1): \(event)")
-                }
-            }
-        }
-        return analysis.events.count
-    }
-    
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "EventCell", for: indexPath) as! EventTableViewCell
-        
-        let event = analysis.events[indexPath.row]
-        cell.configure(with: event)
-        
-        return cell
-    }
-}
-
-// MARK: - UITableViewDelegate
-extension LessonViewController: UITableViewDelegate {
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 80
-    }
-    
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        
-        let event = analysis.events[indexPath.row]
-        seekToTimestamp(event.timestamp)
     }
 }
 

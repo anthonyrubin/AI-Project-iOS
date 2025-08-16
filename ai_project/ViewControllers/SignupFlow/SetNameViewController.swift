@@ -1,4 +1,5 @@
 import UIKit
+import Combine
 
 class SetNameViewController: UIViewController {
     let topLabel: UILabel = {
@@ -51,19 +52,7 @@ class SetNameViewController: UIViewController {
         view.backgroundColor = .systemBackground
         hideNavBarHairline()
         setupUI()
-        
-        viewModel.onFailure = ({ [weak self] response in
-            print("Set Name Failure")
-            self?.setLoading(false)
-        })
-        
-        viewModel.onSuccess = ({ [weak self] in
-            print("Set Name Success")
-            self?.setLoading(false)
-            let vc = SetBirthdayViewController()
-            self?.navigationController?.pushViewController(vc, animated: true)
-            print("Pushed view controller")
-        })
+        setupViewModelBindings()
 
         // update state on text change
         firstNameTextField.addTarget(self, action: #selector(textDidChange), for: .editingChanged)
@@ -83,7 +72,7 @@ class SetNameViewController: UIViewController {
     }
 
     private let viewModel = SetNameViewModel()
-    private var isLoading = false
+    private var cancellables = Set<AnyCancellable>()
 
     func setupUI() {
         view.addSubview(topLabel)
@@ -123,11 +112,10 @@ class SetNameViewController: UIViewController {
     private func updateNextEnabled() {
         let hasFirst = !(firstNameTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasLast  = !(lastNameTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        nextButton.isEnabled = !isLoading && hasFirst && hasLast
+        nextButton.isEnabled = !viewModel.isLoading && hasFirst && hasLast
     }
 
     @objc func nextButtonTapped() {
-        setLoading(true)
         guard let firstName = firstNameTextField.text,
               let lastName = lastNameTextField.text else { return }
         
@@ -136,10 +124,46 @@ class SetNameViewController: UIViewController {
         
         viewModel.setName(firstName: firstName, lastName: lastName)
     }
+    
+    // MARK: - ViewModel Bindings
+    
+    private func setupViewModelBindings() {
+        // Bind loading state
+        viewModel.$isLoading
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading in
+                self?.setLoading(isLoading)
+            }
+            .store(in: &cancellables)
+        
+        // Bind error messages
+        viewModel.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] errorMessage in
+                if let errorMessage = errorMessage {
+                    ErrorModalManager.shared.showError(errorMessage, from: self!)
+                    self?.viewModel.clearError()
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Bind name set success
+        viewModel.$isNameSet
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isNameSet in
+                if isNameSet {
+                    print("Set Name Success")
+                    let vc = SetBirthdayViewController()
+                    self?.navigationController?.pushViewController(vc, animated: true)
+                    print("Pushed view controller")
+                    self?.viewModel.resetNameSet()
+                }
+            }
+            .store(in: &cancellables)
+    }
 
     // loading also locks the button
     func setLoading(_ loading: Bool) {
-        isLoading = loading
         var c = nextButton.configuration ?? .filled()
         c.showsActivityIndicator = loading
         c.title = loading ? nil : "Next"

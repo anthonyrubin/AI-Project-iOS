@@ -83,20 +83,29 @@ final class SessionViewController: UIViewController {
     }
     
     private func setupViewModels() {
-        uploadViewModel.onUploadSuccess = { video in
-            print("Video uploaded successfully with ID: \(video.id)")
-            // Show success message or navigate to analysis view
-        }
+        // Bind to upload success
+        uploadViewModel.$uploadedVideo
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] video in
+                if let video = video {
+                    print("Video uploaded successfully with ID: \(video.id)")
+                    // Show success message or navigate to analysis view
+                    self?.uploadViewModel.resetUploadState()
+                }
+            }
+            .store(in: &cancellables)
         
-        uploadViewModel.onUploadFailure = { error in
-            print("Video upload failed: \(error)")
-            // Show error message to user
-        }
-        
-        uploadViewModel.onDataRefreshNeeded = {
-            // Notify LessonsViewController to refresh data
-            NotificationCenter.default.post(name: .videoAnalysisCompleted, object: nil)
-        }
+        // Bind to error messages
+        uploadViewModel.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] errorMessage in
+                if let errorMessage = errorMessage {
+                    print("Video upload failed: \(errorMessage)")
+                    // Error is already shown via ErrorModalManager in ViewModel
+                    self?.uploadViewModel.clearError()
+                }
+            }
+            .store(in: &cancellables)
     }
     
     private func setupBindings() {

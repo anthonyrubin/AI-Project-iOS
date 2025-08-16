@@ -1,4 +1,5 @@
 import UIKit
+import Combine
 
 final class SetBirthdayViewController: UIViewController {
     private let titleLabel: UILabel = {
@@ -29,27 +30,17 @@ final class SetBirthdayViewController: UIViewController {
         return b
     }()
     
-    let viewModel = SetBirthdayViewModel()
+    private let viewModel = SetBirthdayViewModel()
+    private var cancellables = Set<AnyCancellable>()
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
+        setupViewModelBindings()
 
         view.addSubview(titleLabel)
         view.addSubview(datePicker)
         view.addSubview(nextButton)
-        
-        viewModel.onFailure = ({ [weak self] response in
-            print("Set Birthday Failure")
-            self?.setLoading(false)
-        })
-        
-        viewModel.onSuccess = ({ [weak self] in
-            print("Set Birthday Success")
-            self?.setLoading(false)
-            self?.finishOnboarding()
-            print("Pushed view controller")
-        })
 
         NSLayoutConstraint.activate([
             titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 30),
@@ -77,6 +68,37 @@ final class SetBirthdayViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         navigationController?.interactivePopGestureRecognizer?.isEnabled = true
+    }
+    
+    private func setupViewModelBindings() {
+        // Bind loading state
+        viewModel.$isLoading
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading in
+                self?.setLoading(isLoading)
+            }
+            .store(in: &cancellables)
+        
+        // Bind error messages
+        viewModel.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] errorMessage in
+                if let errorMessage = errorMessage {
+                    ErrorModalManager.shared.showError(errorMessage, from: self!)
+                    self?.viewModel.clearError()
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Bind name set success
+        viewModel.$isBirthdaySet
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isBirthdaySet in
+                if isBirthdaySet {
+                    self?.finishOnboarding()
+                }
+            }
+            .store(in: &cancellables)
     }
 
     @objc private func nextButtonTapped() {

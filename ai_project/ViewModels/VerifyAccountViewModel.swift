@@ -1,22 +1,54 @@
 import Foundation
+import Combine
 
-class VerifyAccountViewModel {
-    var onSuccess: (() -> Void)?
-    var onFailure: ((String) -> Void)?
-
+@MainActor
+class VerifyAccountViewModel: ObservableObject {
+    
+    // MARK: - Published Properties
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+    @Published var isAccountVerified = false
+    
+    // MARK: - Dependencies
+    private let networkManager: NetworkManager
+    
+    // MARK: - Initialization
+    init(networkManager: NetworkManager = .shared) {
+        self.networkManager = networkManager
+    }
+    
+    // MARK: - Public Methods
+    
     func verifyAccount(email: String, code: String) {
-        NetworkManager.shared.verifyAccount(
+        isLoading = true
+        errorMessage = nil
+        isAccountVerified = false
+        
+        networkManager.verifyAccount(
             email: email,
             code: code
         ) { [weak self] result in
-            DispatchQueue.main.async {
+            Task { @MainActor in
+                self?.isLoading = false
+                
                 switch result {
                 case .success():
-                    self?.onSuccess?()
+                    self?.isAccountVerified = true
                 case .failure(let error):
-                    self?.onFailure?(error.localizedDescription)
+                    self?.errorMessage = error.localizedDescription
                 }
             }
         }
     }
+    
+    // MARK: - Error Handling
+    
+    func clearError() {
+        errorMessage = nil
+    }
+    
+    func resetVerificationState() {
+        isAccountVerified = false
+    }
 }
+

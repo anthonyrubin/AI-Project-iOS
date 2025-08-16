@@ -1,7 +1,7 @@
 
 import Foundation
-
 import UIKit
+import Combine
 
 class CreateAccountViewController: UIViewController, UITextFieldDelegate {
 
@@ -73,6 +73,7 @@ class CreateAccountViewController: UIViewController, UITextFieldDelegate {
     }()
 
     private let viewModel = CreateAccountViewModel()
+    private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Lifecycle
 
@@ -81,19 +82,7 @@ class CreateAccountViewController: UIViewController, UITextFieldDelegate {
         view.backgroundColor = .systemBackground
         hideNavBarHairline()
         setupUI()
-        viewModel.onCreateAccountFailure = ({ [weak self] response in
-            print("Create Account Failure")
-            self?.setLoading(false)
-        })
-        
-        viewModel.onCreateAccountSuccess = ({ [weak self] in
-            print("Create Account Success")
-            self?.setLoading(false)
-            let vc = VerifyAccountViewController(email: self!.email!)
-            self?.navigationController?.pushViewController(vc, animated: true)
-            print("Pushed view controller")
-            
-        })
+        setupViewModelBindings()
         usernameTextField.delegate = self
         password2TextField.delegate = self
         password1TextField.delegate = self
@@ -149,7 +138,6 @@ class CreateAccountViewController: UIViewController, UITextFieldDelegate {
 
     @objc func createAccountTapped() {
         email = emailTextField.text
-        setLoading(true)
         guard let email = emailTextField.text,
               let username = usernameTextField.text,
               let password1 = password1TextField.text,
@@ -162,13 +150,49 @@ class CreateAccountViewController: UIViewController, UITextFieldDelegate {
             return
         }
         
-        viewModel.CreateAccount(
+        viewModel.createAccount(
             username: username,
             email: email,
             password1: password1,
             password2: password2
         )
-
+    }
+    
+    // MARK: - ViewModel Bindings
+    
+    private func setupViewModelBindings() {
+        // Bind loading state
+        viewModel.$isLoading
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading in
+                self?.setLoading(isLoading)
+            }
+            .store(in: &cancellables)
+        
+        // Bind error messages
+        viewModel.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] errorMessage in
+                if let errorMessage = errorMessage {
+                    ErrorModalManager.shared.showError(errorMessage, from: self!)
+                    self?.viewModel.clearError()
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Bind account creation success
+        viewModel.$isAccountCreated
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isCreated in
+                if isCreated {
+                    print("Create Account Success")
+                    let vc = VerifyAccountViewController(email: self!.email!)
+                    self?.navigationController?.pushViewController(vc, animated: true)
+                    print("Pushed view controller")
+                    self?.viewModel.resetAccountCreated()
+                }
+            }
+            .store(in: &cancellables)
     }
     
     // call when starting/ending the API request

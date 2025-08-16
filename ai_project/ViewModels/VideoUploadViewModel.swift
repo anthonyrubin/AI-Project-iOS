@@ -1,56 +1,63 @@
 import Foundation
 import UIKit
+import Combine
 
-class VideoUploadViewModel {
+@MainActor
+class VideoUploadViewModel: ObservableObject {
     
-    var onUploadSuccess: ((_ video: Video) -> Void)?
-    var onUploadFailure: ((Error) -> Void)?
-    var onDataRefreshNeeded: (() -> Void)?
+    // MARK: - Published Properties
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+    @Published var uploadedVideo: Video?
+    @Published var shouldRefreshData = false
     
-    private var loadingOverlay: LoadingOverlay?
+    // MARK: - Dependencies
+    private let networkManager: NetworkManager
+    private var cancellables = Set<AnyCancellable>()
+    
+    // MARK: - Initialization
+    init(networkManager: NetworkManager = .shared) {
+        self.networkManager = networkManager
+    }
     
     func uploadVideo(fileURL: URL, on viewController: UIViewController) {
-        // Show loading overlay
-        loadingOverlay = LoadingOverlay()
-        loadingOverlay?.show(on: viewController, message: "Analyzing")
+        isLoading = true
+        errorMessage = nil
+        uploadedVideo = nil
+        shouldRefreshData = false
         
-        NetworkManager.shared.uploadVideo(fileURL: fileURL) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.loadingOverlay?.hide()
+        // Show loading overlay
+        let loadingOverlay = LoadingOverlay()
+        loadingOverlay.show(on: viewController, message: "Analyzing")
+        
+        networkManager.uploadVideo(fileURL: fileURL) { [weak self] result in
+            Task { @MainActor in
+                loadingOverlay.hide()
+                self?.isLoading = false
                 
                 switch result {
                 case .success(let video):
-                    self?.onUploadSuccess?(video)
+                    self?.uploadedVideo = video
+                    self?.shouldRefreshData = true
                     // Trigger data refresh in LessonsViewController
-                    self?.onDataRefreshNeeded?()
+                    NotificationCenter.default.post(name: .videoAnalysisCompleted, object: nil)
                 case .failure(let error):
+                    self?.errorMessage = error.localizedDescription
                     ErrorModalManager.shared.showError(error, from: viewController)
-                    self?.onUploadFailure?(error)
                 }
             }
         }
     }
     
-    private func getTopViewController() -> UIViewController? {
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let window = windowScene.windows.first(where: { $0.isKeyWindow }) else {
-            return nil
-        }
-        
-        var topViewController = window.rootViewController
-        
-        while let presentedViewController = topViewController?.presentedViewController {
-            topViewController = presentedViewController
-        }
-        
-        if let navigationController = topViewController as? UINavigationController {
-            topViewController = navigationController.visibleViewController
-        }
-        
-        if let tabBarController = topViewController as? UITabBarController {
-            topViewController = tabBarController.selectedViewController
-        }
-        
-        return topViewController
+    // MARK: - Error Handling
+    
+    func clearError() {
+        errorMessage = nil
+    }
+    
+    func resetUploadState() {
+        uploadedVideo = nil
+        shouldRefreshData = false
     }
 }
+
