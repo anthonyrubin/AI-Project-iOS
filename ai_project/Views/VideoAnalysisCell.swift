@@ -188,8 +188,8 @@ class VideoAnalysisCell: UITableViewCell {
         }
         
         // Load thumbnail
-        if let video = analysis.video, !video.thumbnailGcsUrl.isEmpty {
-            loadThumbnail(from: video.thumbnailGcsUrl)
+        if let video = analysis.video {
+            loadThumbnail(from: video.signedThumbnailUrl)
         } else {
             showSkeleton()
         }

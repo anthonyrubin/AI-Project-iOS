@@ -6,6 +6,7 @@ class LessonsViewController: UIViewController {
     
     // MARK: - UI Components
     private let tableView = UITableView()
+    private var isRefreshingUrls = false
     
     // MARK: - Title Cell Components
     private let titleLabel = UILabel()
@@ -23,12 +24,15 @@ class LessonsViewController: UIViewController {
         setupBindings()
         viewModel.loadAnalyses()
         setupNotifications()
+        checkAndRefreshExpiredUrls()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         // Refresh data when view appears
         viewModel.refreshAnalyses()
+        // Check for expired URLs when view appears
+        checkAndRefreshExpiredUrls()
     }
     
     private func setupUI() {
@@ -110,6 +114,38 @@ class LessonsViewController: UIViewController {
     @objc private func handleVideoAnalysisCompleted() {
         // Refresh data when new analysis is completed
         viewModel.refreshAnalyses()
+    }
+    
+    private func checkAndRefreshExpiredUrls() {
+        // Don't refresh if already refreshing
+        guard !isRefreshingUrls else {
+            print("🔧 URL refresh already in progress, skipping")
+            return
+        }
+        
+        isRefreshingUrls = true
+        
+        // Check if any videos have expired URLs and refresh them centrally
+        VideoAnalysisRepository.shared.refreshExpiredUrls { [weak self] result in
+            DispatchQueue.main.async {
+                self?.isRefreshingUrls = false
+                
+                switch result {
+                case .success(let updatedVideos):
+                    if !updatedVideos.isEmpty {
+                        print("🔧 Refreshed \(updatedVideos.count) expired URLs")
+                        // Reload the table view to show updated thumbnails
+                        self?.tableView.reloadData()
+                    } else {
+                        print("🔧 No expired URLs found")
+                    }
+                case .failure(let error):
+                    print("❌ Failed to refresh expired URLs: \(error)")
+                    // Don't show error to user for URL refresh failures
+                    // The cells will show placeholder images instead
+                }
+            }
+        }
     }
     
     deinit {

@@ -16,8 +16,8 @@ class VideoAnalysisRepository {
     // MARK: - Fetch and Store Methods
     
     func fetchAndStoreNewAnalyses(completion: @escaping (Result<[VideoAnalysisObject], Error>) -> Void) {
-
         // Get the last sync timestamp
+
         let lastSyncTimestamp = getLastSyncTimestamp()
         
         NetworkManager.shared.getUserAnalyses(lastSyncTimestamp: lastSyncTimestamp) { [weak self] result in
@@ -49,22 +49,18 @@ class VideoAnalysisRepository {
                         // Store video first
                         let videoObject = VideoObject()
                         videoObject.serverId = analysis.video.id
-                        videoObject.gcsUrl = analysis.video.video_gcs_url
-                        // Set thumbnail URL properly
-                        if let thumbnailUrl = analysis.video.thumbnail_gcs_url, !thumbnailUrl.isEmpty {
-                            videoObject.thumbnailGcsUrl = thumbnailUrl
-                        } else {
-                            // Fallback: construct thumbnail URL from video URL
-                            let videoUrl = analysis.video.video_gcs_url
-                            
-                            if videoUrl.contains("/video.") {
-                                videoObject.thumbnailGcsUrl = videoUrl.replacingOccurrences(of: "/video.", with: "/thumbnail.jpg")
-                            } else {
-                                // Remove .mp4 extension and add /thumbnail.jpg
-                                let baseUrl = videoUrl.replacingOccurrences(of: ".mp4", with: "")
-                                videoObject.thumbnailGcsUrl = baseUrl + "/thumbnail.jpg"
-                            }
+                        videoObject.signedVideoUrl = analysis.video.signedVideoUrl
+                        videoObject.signedThumbnailUrl = analysis.video.signedThumbnailUrl
+                        
+                        // Parse expiration dates
+                        let dateFormatter = ISO8601DateFormatter()
+                        if let videoExpiresAt = dateFormatter.date(from: analysis.video.videoExpiresAt) {
+                            videoObject.videoExpiresAt = videoExpiresAt
                         }
+                        if let thumbnailExpiresAt = dateFormatter.date(from: analysis.video.thumbnailExpiresAt) {
+                            videoObject.thumbnailExpiresAt = thumbnailExpiresAt
+                        }
+                        
                         videoObject.originalFilename = analysis.video.original_filename
                         videoObject.fileSize = analysis.video.file_size
                         videoObject.duration = analysis.video.duration
@@ -85,7 +81,6 @@ class VideoAnalysisRepository {
                         analysisObject.clipSummary = analysis.clip_summary
                         
                         // Parse timestamp
-                        let dateFormatter = ISO8601DateFormatter()
                         if let parsedDate = dateFormatter.date(from: analysis.created_at) {
                             analysisObject.createdAt = parsedDate
                         } else {
@@ -237,6 +232,90 @@ class VideoAnalysisRepository {
     // Clear sync timestamp (useful for testing or when user logs out)
     func clearSyncTimestamp() {
         UserDefaults.standard.removeObject(forKey: "last_sync_timestamp")
+    }
+    
+    // MARK: - URL Refresh Methods
+    
+    func refreshExpiredUrls(completion: @escaping (Result<[VideoObject], Error>) -> Void) {
+        do {
+            let realm = try RealmProvider.make()
+            
+            // Get all videos and manually check for expired URLs
+            let allVideos = realm.objects(VideoObject.self)
+            print("🔍 Total videos in Realm: \(allVideos.count)")
+            
+            let expiredVideos = allVideos.filter { video in
+                let videoExpired = video.isVideoUrlExpired
+                let thumbnailExpired = video.isThumbnailUrlExpired
+                let currentTime = Date()
+                print("🔍 Video \(video.serverId):")
+                print("   - Video expires at: \(video.videoExpiresAt)")
+                print("   - Thumbnail expires at: \(video.thumbnailExpiresAt)")
+                print("   - Current time: \(currentTime)")
+                print("   - Video expired: \(videoExpired)")
+                print("   - Thumbnail expired: \(thumbnailExpired)")
+                return videoExpired || thumbnailExpired
+            }
+            
+            print("🔍 Expired videos found: \(expiredVideos.count)")
+            
+            if expiredVideos.isEmpty {
+                print("🔍 No expired videos found, returning empty array")
+                completion(.success([]))
+                return
+            }
+            
+            let videoIds = Array(expiredVideos.map { $0.serverId })
+            print("🔍 Video IDs to refresh: \(videoIds)")
+            
+            // Call backend to refresh URLs
+            NetworkManager.shared.refreshSignedUrls(videoIds: videoIds) { [weak self] result in
+                switch result {
+                case .success(let refreshResponse):
+                    print("🔍 Received refresh response with \(refreshResponse.refreshed_urls.count) URLs")
+                    self?.updateVideosWithRefreshedUrls(refreshResponse.refreshed_urls, completion: completion)
+                case .failure(let error):
+                    print("❌ Failed to refresh URLs: \(error)")
+                    completion(.failure(error))
+                }
+            }
+            
+        } catch {
+            print("❌ Error in refreshExpiredUrls: \(error)")
+            completion(.failure(error))
+        }
+    }
+    
+    private func updateVideosWithRefreshedUrls(_ refreshedUrls: [RefreshedUrl], completion: @escaping (Result<[VideoObject], Error>) -> Void) {
+        do {
+            let realm = try RealmProvider.make()
+            let dateFormatter = ISO8601DateFormatter()
+            var updatedVideos: [VideoObject] = []
+            
+            try realm.write {
+                for refreshedUrl in refreshedUrls {
+                    if let videoObject = realm.object(ofType: VideoObject.self, forPrimaryKey: refreshedUrl.video_id) {
+                        videoObject.signedVideoUrl = refreshedUrl.signed_video_url
+                        videoObject.signedThumbnailUrl = refreshedUrl.signed_thumbnail_url
+                        
+                        // Update expiration dates
+                        if let videoExpiresAt = dateFormatter.date(from: refreshedUrl.video_expires_at) {
+                            videoObject.videoExpiresAt = videoExpiresAt
+                        }
+                        if let thumbnailExpiresAt = dateFormatter.date(from: refreshedUrl.thumbnail_expires_at) {
+                            videoObject.thumbnailExpiresAt = thumbnailExpiresAt
+                        }
+                        
+                        updatedVideos.append(videoObject)
+                    }
+                }
+            }
+            
+            completion(.success(updatedVideos))
+            
+        } catch {
+            completion(.failure(error))
+        }
     }
 }
 

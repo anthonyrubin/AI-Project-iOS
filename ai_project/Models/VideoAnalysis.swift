@@ -159,12 +159,26 @@ struct AnalysisMetric: Codable {
 
 struct Video: Codable {
     let id: Int
-    let video_gcs_url: String
-    let thumbnail_gcs_url: String?
+    let signedVideoUrl: String
+    let signedThumbnailUrl: String
+    let videoExpiresAt: String
+    let thumbnailExpiresAt: String
     let original_filename: String
     let file_size: Int
     let duration: Double?
     let uploaded_at: String
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case signedVideoUrl = "signed_video_url"
+        case signedThumbnailUrl = "signed_thumbnail_url"
+        case videoExpiresAt = "video_expires_at"
+        case thumbnailExpiresAt = "thumbnail_expires_at"
+        case original_filename
+        case file_size
+        case duration
+        case uploaded_at
+    }
 }
 
 // MARK: - Delta Sync Response
@@ -172,6 +186,21 @@ struct DeltaSyncResponse: Codable {
     let analyses: [VideoAnalysis]
     let sync_timestamp: String
     let has_more: Bool
+}
+
+// MARK: - URL Refresh Response
+struct UrlRefreshResponse: Codable {
+    let refreshed_urls: [RefreshedUrl]
+    let message: String
+}
+
+struct RefreshedUrl: Codable {
+    let video_id: Int
+    let signed_video_url: String
+    let signed_thumbnail_url: String
+    let video_expires_at: String
+    let thumbnail_expires_at: String
+    let error: String?
 }
 
 

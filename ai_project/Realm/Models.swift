@@ -16,8 +16,10 @@ final class UserObject: Object {
 // MARK: - Video
 final class VideoObject: Object {
     @Persisted(primaryKey: true) var serverId: Int
-    @Persisted var gcsUrl: String = ""
-    @Persisted var thumbnailGcsUrl: String = ""
+    @Persisted var signedVideoUrl: String = ""
+    @Persisted var signedThumbnailUrl: String = ""
+    @Persisted var videoExpiresAt: Date = Date()
+    @Persisted var thumbnailExpiresAt: Date = Date()
     @Persisted var originalFilename: String = ""
     @Persisted var fileSize: Int = 0
     @Persisted var duration: Double?
@@ -25,6 +27,21 @@ final class VideoObject: Object {
     @Persisted var userServerId: Int
     
     // MARK: - Helper Methods
+    
+    /// Check if video URL is expired
+    var isVideoUrlExpired: Bool {
+        return Date() >= videoExpiresAt
+    }
+    
+    /// Check if thumbnail URL is expired
+    var isThumbnailUrlExpired: Bool {
+        return Date() >= thumbnailExpiresAt
+    }
+    
+    /// Check if any URL is expired
+    var hasExpiredUrls: Bool {
+        return isVideoUrlExpired || isThumbnailUrlExpired
+    }
     
     /// Get formatted duration string (e.g., "2:30" for 2 minutes 30 seconds)
     var formattedDuration: String {

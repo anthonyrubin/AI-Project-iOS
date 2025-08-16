@@ -423,6 +423,31 @@ class NetworkManager {
             }
         }
     }
+    
+    func refreshSignedUrls(videoIds: [Int], completion: @escaping (Result<UrlRefreshResponse, Error>) -> Void) {
+        let url = "\(baseURL)/refresh-urls/"
+        let parameters: Parameters = ["video_ids": videoIds]
+        
+        print("🔍 Calling refreshSignedUrls with videoIds: \(videoIds)")
+        print("🔍 URL: \(url)")
+        print("🔍 Parameters: \(parameters)")
+        
+        performAuthenticatedRequest(
+            url: url,
+            method: .post,
+            parameters: parameters,
+            responseType: UrlRefreshResponse.self
+        ) { result in
+            switch result {
+            case .success(let refreshResponse):
+                print("🔍 Refresh successful: \(refreshResponse.message)")
+                completion(.success(refreshResponse))
+            case .failure(let error):
+                print("❌ Refresh failed: \(error)")
+                completion(.failure(error))
+            }
+        }
+    }
 
 
     private func createBody(boundary: String, data: Data, mimeType: String, fieldName: String, filename: String) -> Data {
