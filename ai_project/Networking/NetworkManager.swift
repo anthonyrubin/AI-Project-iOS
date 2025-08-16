@@ -304,56 +304,8 @@ class NetworkManager {
             }
         }
     }
-
     
-    func uploadImage(data: Data, completion: @escaping (Result<String, Error>) -> Void) {
-        guard let token = TokenManager.shared.getAccessToken() else {
-            completion(.failure(NetworkError.unauthorized))
-            return
-        }
-
-        let url = "\(baseURL)/upload-image/"
-        let headers: HTTPHeaders = [
-            "Authorization": "Bearer \(token)"
-        ]
-
-        AF.upload(
-            multipartFormData: { multipartFormData in
-                multipartFormData.append(
-                    data,
-                    withName: "image",
-                    fileName: "\(UUID().uuidString).jpg",
-                    mimeType: "image/jpeg"
-                )
-            },
-            to: url,
-            headers: headers
-        )
-        .validate()
-        .responseDecodable(of: UploadImageResponse.self) { [weak self] response in
-            switch response.result {
-            case .success(let uploadResponse):
-                completion(.success(uploadResponse.message))
-            case .failure(let error):
-                // Check if it's an authentication error (401)
-                if let statusCode = response.response?.statusCode, statusCode == 401 {
-                    self?.handleTokenRefresh { refreshResult in
-                        switch refreshResult {
-                        case .success:
-                            // Retry the upload with new token
-                            self?.uploadImage(data: data, completion: completion)
-                        case .failure(let refreshError):
-                            completion(.failure(refreshError))
-                        }
-                    }
-                } else {
-                    completion(.failure(NetworkError.requestFailed(error)))
-                }
-            }
-        }
-    }
-    
-    func uploadVideo(fileURL: URL, completion: @escaping (Result<VideoUploadResponse, Error>) -> Void) {
+    func uploadVideo(fileURL: URL, completion: @escaping (Result<Video, Error>) -> Void) {
         guard let token = TokenManager.shared.getAccessToken() else {
             completion(.failure(NetworkError.unauthorized))
             return
@@ -377,10 +329,10 @@ class NetworkManager {
             headers: headers
         )
         .validate()
-        .responseDecodable(of: VideoUploadResponse.self) { [weak self] response in
+        .responseDecodable(of: Video.self) { [weak self] response in
             switch response.result {
-            case .success(let uploadResponse):
-                completion(.success(uploadResponse))
+            case .success(let video):
+                completion(.success(video))
             case .failure(let error):
                 // Check if it's an authentication error (401)
                 if let statusCode = response.response?.statusCode, statusCode == 401 {

@@ -83,8 +83,8 @@ final class SessionViewController: UIViewController {
     }
     
     private func setupViewModels() {
-        uploadViewModel.onUploadSuccess = { videoId, analysisId in
-            print("Video uploaded successfully with ID: \(videoId)")
+        uploadViewModel.onUploadSuccess = { video in
+            print("Video uploaded successfully with ID: \(video.id)")
             // Show success message or navigate to analysis view
         }
         

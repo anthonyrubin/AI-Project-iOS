@@ -3,7 +3,7 @@ import UIKit
 
 class VideoUploadViewModel {
     
-    var onUploadSuccess: ((_ videoId: String, _ analysisId: String) -> Void)?
+    var onUploadSuccess: ((_ video: Video) -> Void)?
     var onUploadFailure: ((Error) -> Void)?
     var onDataRefreshNeeded: (() -> Void)?
     
@@ -19,8 +19,8 @@ class VideoUploadViewModel {
                 self?.loadingOverlay?.hide()
                 
                 switch result {
-                case .success(let response):
-                    self?.onUploadSuccess?(response.videoId, response.analysisId)
+                case .success(let video):
+                    self?.onUploadSuccess?(video)
                     // Trigger data refresh in LessonsViewController
                     self?.onDataRefreshNeeded?()
                 case .failure(let error):
