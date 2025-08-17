@@ -88,7 +88,6 @@ final class SessionViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         installFloatingBarIfNeeded()
-        sessionViewModel.refreshData()
         
         // Ensure tab bar has correct background
         tabBarController?.tabBar.backgroundColor = .white
