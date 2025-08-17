@@ -79,7 +79,6 @@ final class AnalysisEventObject: Object {
     
     convenience init(analysisServerId: Int, event: AnalysisEvent) {
         self.init()
-        print("🔧 Creating AnalysisEventObject for: \(event.label)")
         self.analysisServerId = analysisServerId
         self.timestamp = event.t
         self.label = event.label
@@ -87,16 +86,13 @@ final class AnalysisEventObject: Object {
         
         // Clear existing metrics and add new ones
         self.metrics.removeAll()
-        print("📊 Adding \(event.metrics.count) metrics to event")
         for (index, metric) in event.metrics.enumerated() {
             let metricObject = AnalysisMetricObject()
             metricObject.name = metric.name
             metricObject.value = metric.value
             metricObject.estimationMethod = metric.estimation_method
             self.metrics.append(metricObject)
-            print("✅ Added metric \(index + 1): \(metric.name) = \(metric.value)")
         }
-        print("✅ AnalysisEventObject created successfully with \(self.metrics.count) metrics")
     }
 }
 
@@ -129,7 +125,6 @@ final class VideoAnalysisObject: Object {
             let realm = try RealmProvider.make()
             return realm.object(ofType: VideoObject.self, forPrimaryKey: videoServerId)
         } catch {
-            print("❌ Error accessing video object: \(error)")
             return nil
         }
     }

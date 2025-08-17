@@ -23,10 +23,19 @@ class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDa
     private let analysisStackView = UIStackView()
     private let eventsTableView = UITableView()
     private var videoHeightConstraint: NSLayoutConstraint?
+    private lazy var errorModalManager = ErrorModalManager(viewController: self)
     
     // MARK: - Initialization
     init(analysis: VideoAnalysisObject) {
-        self.viewModel = LessonViewModel(analysis: analysis)
+        self.viewModel = LessonViewModel(
+            analysis: analysis,
+            repository: VideoAnalysisRepository(
+                networkManager: NetworkManager(
+                    tokenManager: TokenManager(),
+                    userService: UserService()
+                )
+            )
+        )
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -42,6 +51,7 @@ class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDa
         setupVideoPlayer()
         setupAnalysisData()
         setupEventsTable()
+        setupNotifications()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -62,9 +72,28 @@ class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDa
             .receive(on: DispatchQueue.main)
             .sink { [weak self] errorMessage in
                 if let errorMessage = errorMessage {
-                    ErrorModalManager.shared.showError(errorMessage, from: self!)
+                    self?.errorModalManager.showError(errorMessage)
                     self?.viewModel.clearError()
                 }
+            }
+            .store(in: &cancellables)
+        
+        // Bind video URL changes
+        viewModel.$videoUrl
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] videoUrl in
+                if let videoUrl = videoUrl {
+                    self?.setupVideoPlayerWithUrl(videoUrl)
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Bind URL refresh state
+        viewModel.$isRefreshingUrl
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isRefreshing in
+                // Could show loading indicator for URL refresh
+                print("🔄 LessonViewController: URL refresh state changed to: \(isRefreshing)")
             }
             .store(in: &cancellables)
     }
@@ -74,7 +103,6 @@ class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDa
         guard let playerItem = player?.currentItem else { return }
         let videoSize = playerItem.presentationSize
         guard videoSize.width > 0 && videoSize.height > 0 else {
-            print("📐 Video size not available yet, using default 16:9")
             return
         }
         let aspectRatio = videoSize.height / videoSize.width
@@ -104,27 +132,16 @@ class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDa
         }
     }
     
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        let analysis = viewModel.analysis
-        print("📊 LessonViewController: Found \(analysis.events.count) events")
-        print("📊 Analysis data: \(analysis.analysisData)")
-        if let analysisDataDict = analysis.analysisDataDict {
-            print("📊 Parsed analysis data keys: \(analysisDataDict.keys)")
-            if let events = analysisDataDict["events"] as? [[String: Any]] {
-                print("📊 Raw events count: \(events.count)")
-                for (index, event) in events.enumerated() {
-                    print("📊 Event \(index + 1): \(event)")
-                }
-            }
-        }
-        return analysis.events.count
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {        
+        return viewModel.getEventsCount()
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "EventCell", for: indexPath) as! EventTableViewCell
         
-        let event = viewModel.analysis.events[indexPath.row]
-        cell.configure(with: event)
+        if let event = viewModel.getEvent(at: indexPath.row) {
+            cell.configure(with: event)
+        }
         
         return cell
     }
@@ -136,8 +153,9 @@ class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDa
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
-        let event = viewModel.analysis.events[indexPath.row]
-        seekToTimestamp(event.timestamp)
+        if let event = viewModel.getEvent(at: indexPath.row) {
+            viewModel.seekToTimestamp(event.timestamp)
+        }
     }
     
     // MARK: - UI Setup
@@ -270,15 +288,18 @@ class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDa
             eventsTableView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             eventsTableView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             eventsTableView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16),
-            eventsTableView.heightAnchor.constraint(equalToConstant: CGFloat(viewModel.analysis.events.count * 80)) // Approximate height
+            eventsTableView.heightAnchor.constraint(equalToConstant: viewModel.getTableViewHeight()) // Approximate height
         ])
     }
     
     // MARK: - Video Player Setup
     private func setupVideoPlayer() {
-        guard let videoUrlString = viewModel.getVideoUrl(),
-              let videoUrl = URL(string: videoUrlString) else {
-            print("❌ Invalid video URL")
+        // Trigger video URL fetch - the binding will handle the response
+        viewModel.getVideoUrl()
+    }
+    
+    private func setupVideoPlayerWithUrl(_ urlString: String) {
+        guard let videoUrl = URL(string: urlString) else {
             return
         }
         
@@ -323,10 +344,13 @@ class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDa
                     // Update aspect ratio when video is ready
                     updateVideoAspectRatio()
                 case .failed:
+                    // TODO: Log this
                     print("❌ Video failed to load: \(item.error?.localizedDescription ?? "Unknown error")")
                 case .unknown:
+                    // TODO: Log this
                     break
                 @unknown default:
+                    // TODO: Log this
                     break
                 }
             }
@@ -485,6 +509,24 @@ class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDa
         formatter.allowedUnits = [.useMB, .useKB]
         formatter.countStyle = .file
         return formatter.string(fromByteCount: Int64(bytes))
+    }
+    
+    // MARK: - Notifications
+    
+    private func setupNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleSeekToTimestamp),
+            name: .seekToTimestamp,
+            object: nil
+        )
+    }
+    
+    @objc private func handleSeekToTimestamp(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let timestamp = userInfo["timestamp"] as? Double else { return }
+        
+        seekToTimestamp(timestamp)
     }
     
     // MARK: - Video Seeking

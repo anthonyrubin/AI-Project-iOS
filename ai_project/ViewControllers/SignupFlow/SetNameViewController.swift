@@ -2,6 +2,18 @@ import UIKit
 import Combine
 
 class SetNameViewController: UIViewController {
+
+    private let viewModel = SetNameViewModel(
+        networkManager: NetworkManager(
+            tokenManager: TokenManager(),
+            userService: UserService()
+        ),
+        userService: UserService()
+    )
+    private var cancellables = Set<AnyCancellable>()
+    
+    private lazy var errorModalManager = ErrorModalManager(viewController: self)
+    
     let topLabel: UILabel = {
         let label = UILabel()
         label.text = "What's Your Name?"
@@ -71,9 +83,6 @@ class SetNameViewController: UIViewController {
         navigationController?.interactivePopGestureRecognizer?.isEnabled = true
     }
 
-    private let viewModel = SetNameViewModel()
-    private var cancellables = Set<AnyCancellable>()
-
     func setupUI() {
         view.addSubview(topLabel)
         view.addSubview(firstNameTextField)
@@ -118,10 +127,6 @@ class SetNameViewController: UIViewController {
     @objc func nextButtonTapped() {
         guard let firstName = firstNameTextField.text,
               let lastName = lastNameTextField.text else { return }
-        
-        // Store name in Realm immediately for local access
-        UserService.shared.updateUserName(firstName: firstName, lastName: lastName)
-        
         viewModel.setName(firstName: firstName, lastName: lastName)
     }
     
@@ -141,7 +146,7 @@ class SetNameViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] errorMessage in
                 if let errorMessage = errorMessage {
-                    ErrorModalManager.shared.showError(errorMessage, from: self!)
+                    self?.errorModalManager.showError(errorMessage)
                     self?.viewModel.clearError()
                 }
             }
@@ -152,10 +157,8 @@ class SetNameViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isNameSet in
                 if isNameSet {
-                    print("Set Name Success")
                     let vc = SetBirthdayViewController()
                     self?.navigationController?.pushViewController(vc, animated: true)
-                    print("Pushed view controller")
                     self?.viewModel.resetNameSet()
                 }
             }

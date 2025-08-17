@@ -11,29 +11,36 @@ class LessonsViewController: UIViewController {
     private let titleLabel = UILabel()
     private let inboxButton = UIButton(type: .system)
     
+    private lazy var errorModalManager = ErrorModalManager(viewController: self)
+
+    
     // MARK: - ViewModel
-    private let viewModel = LessonsViewModel()
+    private let viewModel = LessonsViewModel(
+        repository: VideoAnalysisRepository(
+            networkManager: NetworkManager(
+                tokenManager: TokenManager(),
+                userService: UserService()
+            )
+        ),
+        networkManager: NetworkManager(
+            tokenManager: TokenManager(),
+            userService: UserService()
+        )
+    )
+
     private var cancellables = Set<AnyCancellable>()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         customBackgroundColor()
+        viewModel.refreshAnalyses()
         setupUI()
         setupTableView()
         setupBindings()
         viewModel.loadAnalyses()
         setupNotifications()
-        viewModel.checkAndRefreshExpiredUrls()
     }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        // Refresh data when view appears
-        viewModel.refreshAnalyses()
-        // Check for expired URLs when view appears
-        viewModel.checkAndRefreshExpiredUrls()
-    }
-    
+
     private func setupUI() {
         view.backgroundColor = .systemBackground
         
@@ -62,20 +69,14 @@ class LessonsViewController: UIViewController {
             }
             .store(in: &cancellables)
         
-        // Bind URL refresh state
-        viewModel.$isRefreshingUrls
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] isRefreshingUrls in
-                // Could add loading indicator for URL refresh if needed
-            }
-            .store(in: &cancellables)
+
         
         // Bind error messages
         viewModel.$errorMessage
             .receive(on: DispatchQueue.main)
             .sink { [weak self] errorMessage in
                 if let errorMessage = errorMessage {
-                    ErrorModalManager.shared.showError(errorMessage, from: self!)
+                    self?.errorModalManager.showError(errorMessage)
                     self?.viewModel.clearError()
                 }
             }

@@ -1,6 +1,4 @@
 class TokenManager {
-    static let shared = TokenManager()
-    private init() {}
 
     func saveTokens(_ tokenResponse: TokenResponse) {
         KeychainManager.shared.save(key: "accessToken", value: tokenResponse.access)

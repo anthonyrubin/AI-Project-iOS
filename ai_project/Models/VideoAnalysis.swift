@@ -17,15 +17,11 @@ struct VideoAnalysis: Codable {
     
     // Computed properties to extract data from analysis_data
     var events: [AnalysisEvent]? {
-        guard let eventsData = analysis_data["events"]?.value as? [[String: Any]] else { 
-            print("❌ No events data found in analysis_data")
+        guard let eventsData = analysis_data["events"]?.value as? [[String: Any]] else {
             return nil 
         }
         
-        print("📊 Found \(eventsData.count) events in raw data")
-        
         let parsedEvents = eventsData.compactMap { (eventDict: [String: Any]) -> AnalysisEvent? in
-            print("🔍 Parsing event: \(eventDict)")
             
             // Handle both Int and Double timestamps
             let t: Double
@@ -34,22 +30,18 @@ struct VideoAnalysis: Codable {
             } else if let timestampInt = eventDict["t"] as? Int {
                 t = Double(timestampInt)
             } else {
-                print("❌ Failed to parse timestamp: \(eventDict["t"] ?? "nil")")
                 return nil
             }
             
             guard let label = eventDict["label"] as? String else {
-                print("❌ Failed to parse label: \(eventDict["label"] ?? "nil")")
                 return nil
             }
             
             guard let feedback = eventDict["feedback"] as? String else {
-                print("❌ Failed to parse feedback: \(eventDict["feedback"] ?? "nil")")
                 return nil
             }
             
             guard let metricsData = eventDict["metrics"] as? [[String: Any]] else {
-                print("❌ Failed to parse metrics: \(eventDict["metrics"] ?? "nil")")
                 return nil
             }
             
@@ -57,17 +49,14 @@ struct VideoAnalysis: Codable {
                 guard let name = metricDict["name"] as? String,
                       let value = metricDict["value"] as? String,
                       let estimationMethod = metricDict["estimation_method"] as? String else { 
-                    print("❌ Failed to parse metric: \(metricDict)")
-                    return nil 
+                    return nil
                 }
                 return AnalysisMetric(name: name, value: value, estimation_method: estimationMethod)
             }
             
-            print("✅ Successfully parsed event: \(label) at \(t)s with \(metrics.count) metrics")
             return AnalysisEvent(t: t, label: label, metrics: metrics, feedback: feedback)
         }
         
-        print("📊 Parsed \(parsedEvents.count) events successfully")
         return parsedEvents
     }
     

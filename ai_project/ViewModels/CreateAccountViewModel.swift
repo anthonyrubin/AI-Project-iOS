@@ -14,7 +14,7 @@ class CreateAccountViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Initialization
-    init(networkManager: NetworkManager = .shared) {
+    init(networkManager: NetworkManager) {
         self.networkManager = networkManager
     }
     

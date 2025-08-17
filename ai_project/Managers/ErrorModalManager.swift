@@ -2,10 +2,14 @@ import UIKit
 import Alamofire
 
 class ErrorModalManager {
-    static let shared = ErrorModalManager()
-    private init() {}
     
-    func showError(_ error: Error, from viewController: UIViewController) {
+    weak var viewController: UIViewController?
+    
+    init(viewController: UIViewController) {
+        self.viewController = viewController
+    }
+    
+    func showError(_ error: Error) {
         DispatchQueue.main.async {
             let alert = UIAlertController(
                 title: "Error",
@@ -19,12 +23,12 @@ class ErrorModalManager {
             if let topViewController = self.getTopViewController() {
                 topViewController.present(alert, animated: true)
             } else {
-                viewController.present(alert, animated: true)
+                self.viewController?.present(alert, animated: true)
             }
         }
     }
     
-    func showError(_ message: String, from viewController: UIViewController) {
+    func showError(_ message: String) {
         DispatchQueue.main.async {
             let alert = UIAlertController(
                 title: "Error",
@@ -38,7 +42,7 @@ class ErrorModalManager {
             if let topViewController = self.getTopViewController() {
                 topViewController.present(alert, animated: true)
             } else {
-                viewController.present(alert, animated: true)
+                self.viewController?.present(alert, animated: true)
             }
         }
     }

@@ -4,6 +4,8 @@ import Combine
 
 class ProfileViewController: UIViewController {
     
+    private lazy var errorModalManager = ErrorModalManager(viewController: self)
+    
     // MARK: - UI Components
     let topLabel: UILabel = {
         let label = UILabel()
@@ -26,7 +28,13 @@ class ProfileViewController: UIViewController {
     }()
 
     // MARK: - ViewModel
-    private let viewModel = ProfileViewModel()
+    private let viewModel = ProfileViewModel(
+        networkManager: NetworkManager(
+            tokenManager: TokenManager(),
+            userService: UserService()),
+        userService: UserService()
+        
+    )
     private var cancellables = Set<AnyCancellable>()
 
     override func viewDidLoad() {
@@ -76,7 +84,7 @@ class ProfileViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] errorMessage in
                 if let errorMessage = errorMessage {
-                    ErrorModalManager.shared.showError(errorMessage, from: self!)
+                    self?.errorModalManager.showError(errorMessage)
                     self?.viewModel.clearError()
                 }
             }

@@ -50,4 +50,5 @@ extension Notification.Name {
     static let videoAnalysisCompleted = Notification.Name("videoAnalysisCompleted")
     static let authDidSucceed = Notification.Name("authDidSucceed")
     static let didLogout = Notification.Name("didLogout")
+    static let seekToTimestamp = Notification.Name("seekToTimestamp")
 }

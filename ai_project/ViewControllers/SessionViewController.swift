@@ -14,8 +14,23 @@ class NonStickyTableView: UITableView {
 
 final class SessionViewController: UIViewController {
     // MARK: - ViewModels
-    private let uploadViewModel = VideoUploadViewModel()
-    private let sessionViewModel = SessionViewModel()
+    //private let uploadViewModel = VideoUploadViewModel()
+    private let sessionViewModel = SessionViewModel(
+        userService: UserService(),
+        repository: VideoAnalysisRepository(
+            networkManager: NetworkManager(
+                tokenManager: TokenManager(),
+                userService: UserService()
+            )
+        ),
+        networkManager: NetworkManager(
+            tokenManager: TokenManager(),
+            userService: UserService()
+        )
+    )
+    
+    private lazy var loadingOverlay = LoadingOverlay(viewController: self)
+    private lazy var errorModalManager = ErrorModalManager(viewController: self)
     
     // MARK: - UI Components
     private let floatingBar = UIView()
@@ -60,8 +75,6 @@ final class SessionViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         customBackgroundColor()
-
-        setupViewModels()
         setupUI()
         setupBindings()
         sessionViewModel.loadUserData()
@@ -80,32 +93,6 @@ final class SessionViewController: UIViewController {
         // Ensure tab bar has correct background
         tabBarController?.tabBar.backgroundColor = .white
         tabBarController?.tabBar.barTintColor = .white
-    }
-    
-    private func setupViewModels() {
-        // Bind to upload success
-        uploadViewModel.$uploadedVideo
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] video in
-                if let video = video {
-                    print("Video uploaded successfully with ID: \(video.id)")
-                    // Show success message or navigate to analysis view
-                    self?.uploadViewModel.resetUploadState()
-                }
-            }
-            .store(in: &cancellables)
-        
-        // Bind to error messages
-        uploadViewModel.$errorMessage
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] errorMessage in
-                if let errorMessage = errorMessage {
-                    print("Video upload failed: \(errorMessage)")
-                    // Error is already shown via ErrorModalManager in ViewModel
-                    self?.uploadViewModel.clearError()
-                }
-            }
-            .store(in: &cancellables)
     }
     
     private func setupBindings() {
@@ -130,8 +117,29 @@ final class SessionViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] errorMessage in
                 if let errorMessage = errorMessage {
-                    ErrorModalManager.shared.showError(errorMessage, from: self!)
+                    self?.errorModalManager.showError(errorMessage)
                     self?.sessionViewModel.clearError()
+                }
+            }
+            .store(in: &cancellables)
+        
+        sessionViewModel.$uploadedVideo
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] video in
+                if video != nil {
+                    self?.sessionViewModel.resetUploadState()
+                }
+            }
+            .store(in: &cancellables)
+        
+        sessionViewModel.$isLoading
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading in
+                print("IS LOADING BE \(isLoading)")
+                if isLoading {
+                    self?.loadingOverlay.show()
+                } else {
+                    self?.loadingOverlay.hide()
                 }
             }
             .store(in: &cancellables)
@@ -491,6 +499,6 @@ extension SessionViewController: PHPickerViewControllerDelegate {
 
     private func handlePickedVideo(at url: URL) {
         // Upload video using the view model with loading overlay
-        uploadViewModel.uploadVideo(fileURL: url, on: self)
+        sessionViewModel.uploadVideo(fileURL: url)
     }
 }

@@ -11,10 +11,12 @@ class SetNameViewModel: ObservableObject {
     
     // MARK: - Dependencies
     private let networkManager: NetworkManager
+    private var userService: UserService
     
     // MARK: - Initialization
-    init(networkManager: NetworkManager = .shared) {
+    init(networkManager: NetworkManager, userService: UserService) {
         self.networkManager = networkManager
+        self.userService = userService
     }
     
     // MARK: - Public Methods
@@ -33,7 +35,10 @@ class SetNameViewModel: ObservableObject {
                 
                 switch result {
                 case .success(let response):
-                    // TODO: Do something with the response or get rid of this somehow
+                    self?.userService.updateUserName(
+                        firstName: firstName,
+                        lastName: lastName
+                    )
                     self?.isNameSet = true
                 case .failure(let error):
                     self?.errorMessage = error.localizedDescription

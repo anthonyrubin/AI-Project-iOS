@@ -15,6 +15,8 @@ final class VerifyAccountViewController: UIViewController, UITextFieldDelegate {
 
     // MARK: - Inputs
     private let email: String
+    
+    private lazy var errorModalManager = ErrorModalManager(viewController: self)
 
     init(email: String) {
         self.email = email
@@ -22,7 +24,12 @@ final class VerifyAccountViewController: UIViewController, UITextFieldDelegate {
     }
     required init?(coder: NSCoder) { fatalError() }
     
-    private let viewModel = VerifyAccountViewModel()
+    private let viewModel = VerifyAccountViewModel(
+        networkManager: NetworkManager(
+            tokenManager: TokenManager(),
+            userService: UserService()
+        )
+    )
     
     private var cancellables = Set<AnyCancellable>()
 
@@ -175,7 +182,7 @@ final class VerifyAccountViewController: UIViewController, UITextFieldDelegate {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] errorMessage in
                 if let errorMessage = errorMessage {
-                    ErrorModalManager.shared.showError(errorMessage, from: self!)
+                    self?.errorModalManager.showError(errorMessage)
                     self?.viewModel.clearError()
                 }
             }

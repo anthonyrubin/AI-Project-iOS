@@ -30,7 +30,15 @@ final class SetBirthdayViewController: UIViewController {
         return b
     }()
     
-    private let viewModel = SetBirthdayViewModel()
+    private let viewModel = SetBirthdayViewModel(
+        networkManager: NetworkManager(
+            tokenManager: TokenManager(),
+            userService: UserService()
+        )
+    )
+    
+    private lazy var errorModalManager = ErrorModalManager(viewController: self)
+
     private var cancellables = Set<AnyCancellable>()
 
     override func viewDidLoad() {
@@ -84,7 +92,7 @@ final class SetBirthdayViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] errorMessage in
                 if let errorMessage = errorMessage {
-                    ErrorModalManager.shared.showError(errorMessage, from: self!)
+                    self?.errorModalManager.showError(errorMessage)
                     self?.viewModel.clearError()
                 }
             }
@@ -105,7 +113,7 @@ final class SetBirthdayViewController: UIViewController {
         setLoading(true)
         
         // Store birthday in Realm immediately for local access
-        UserService.shared.updateUserBirthday(datePicker.date)
+        UserService().updateUserBirthday(datePicker.date)
         
         viewModel.setBirthday(birthday: datePicker.date)
     }

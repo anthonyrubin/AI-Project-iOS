@@ -10,7 +10,6 @@ class LessonsViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var isRefreshing = false
-    @Published var isRefreshingUrls = false
     
     // MARK: - Dependencies
     private let repository: VideoAnalysisRepository
@@ -19,8 +18,8 @@ class LessonsViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Initialization
-    init(repository: VideoAnalysisRepository = .shared, 
-         networkManager: NetworkManager = .shared) {
+    init(repository: VideoAnalysisRepository, 
+         networkManager: NetworkManager) {
         self.repository = repository
         self.networkManager = networkManager
         setupRealmObservers()
@@ -69,30 +68,7 @@ class LessonsViewModel: ObservableObject {
         return analyses.count
     }
     
-    func checkAndRefreshExpiredUrls() {
-        guard !isRefreshingUrls else { return }
-        isRefreshingUrls = true
-        
-        repository.refreshExpiredUrls { [weak self] result in
-            Task { @MainActor in
-                self?.isRefreshingUrls = false
-                
-                switch result {
-                case .success(let updatedVideos):
-                    if !updatedVideos.isEmpty {
-                        print("🔧 Refreshed \(updatedVideos.count) expired URLs")
-                        // The Realm observers will automatically update the UI
-                    } else {
-                        print("🔧 No expired URLs found")
-                    }
-                case .failure(let error):
-                    print("❌ Failed to refresh expired URLs: \(error)")
-                    // Don't show error to user for URL refresh failures
-                    // The cells will show placeholder images instead
-                }
-            }
-        }
-    }
+
     
     // MARK: - Private Methods
     

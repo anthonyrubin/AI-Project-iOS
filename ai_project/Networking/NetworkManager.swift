@@ -3,9 +3,20 @@ import Alamofire
 import UIKit
 
 class NetworkManager {
-    static let shared = NetworkManager()
-    private init() {}
-
+    
+    init(
+        tokenManager: TokenManager,
+        userService: UserService
+    ) {
+        self.tokenManager = tokenManager
+        self.userService = userService
+    }
+    
+    var onSessionExpired: (() -> Void)?
+    
+    private var tokenManager: TokenManager
+    private var userService: UserService
+    
     private let baseURL = "http://localhost:8000/api"
     
     // MARK: - Token Refresh Management
@@ -20,16 +31,13 @@ class NetworkManager {
         responseType: T.Type,
         completion: @escaping (Result<T, Error>) -> Void
     ) {
-        guard let token = TokenManager.shared.getAccessToken() else {
-            print("❌ No access token available")
+        guard let token = tokenManager.getAccessToken() else {
             let error = NetworkError.unauthorized
             showErrorModal(error)
             completion(.failure(error))
             return
         }
-        
-        print("🔐 Making authenticated request to: \(url)")
-        
+
         let headers: HTTPHeaders = [
             "Authorization": "Bearer \(token)"
         ]
@@ -41,25 +49,6 @@ class NetworkManager {
                 case .success(let data):
                     completion(.success(data))
                 case .failure(let error):
-                    // Add debug logging for decoding errors
-                    if let afError = error as? AFError {
-                        switch afError {
-                        case .responseSerializationFailed(let reason):
-                            print("❌ Response serialization failed: \(reason)")
-                            if case .decodingFailed(let decodingError) = reason {
-                                print("❌ Decoding error: \(decodingError)")
-                                // Log the raw response data
-                                if let responseData = response.data {
-                                    if let jsonString = String(data: responseData, encoding: .utf8) {
-                                        print("📄 Raw JSON response: \(jsonString)")
-                                    }
-                                }
-                            }
-                        default:
-                            print("❌ Other AFError: \(afError)")
-                        }
-                    }
-                    
                     // Check if it's an authentication error (401)
                     if let statusCode = response.response?.statusCode, statusCode == 401 {
                         self?.handleTokenRefresh { refreshResult in
@@ -88,31 +77,22 @@ class NetworkManager {
 
     
     private func handleTokenRefresh(completion: @escaping (Result<Void, Error>) -> Void) {
-        print("🔄 Starting token refresh")
-        
         // If already refreshing, add to pending requests
         if isRefreshingToken {
-            print("🔄 Token refresh already in progress, adding to pending requests")
             pendingRequests.append(completion)
             return
         }
         
         isRefreshingToken = true
         
-        guard let refreshToken = TokenManager.shared.getRefreshToken() else {
-            print("❌ No refresh token available")
+        guard let refreshToken = tokenManager.getRefreshToken() else {
             isRefreshingToken = false
             completion(.failure(NetworkError.noRefreshToken))
             return
         }
-        
-        print("🔄 Refresh token found, attempting refresh")
-        
+                
         let url = "\(baseURL)/token/refresh/"
         let params = ["refresh": refreshToken]
-        
-        print("🔄 Token refresh URL: \(url)")
-        print("🔄 Refresh token: \(refreshToken.prefix(50))...")
         
         AF.request(url, method: .post, parameters: params, encoder: JSONParameterEncoder.default)
             .validate(statusCode: 200..<300)
@@ -123,15 +103,10 @@ class NetworkManager {
                 
                 switch response.result {
                 case .success(let tokenResponse):
-                    print("✅ Token refresh successful")
-                    // Convert TokenRefreshResponse to TokenResponse
                     let tokenData = TokenResponse(refresh: tokenResponse.refresh, access: tokenResponse.access)
                     
                     // Save new tokens
-                    TokenManager.shared.saveTokens(tokenData)
-                    print("💾 New tokens saved")
-                    
-                    // Complete current request
+                    self?.tokenManager.saveTokens(tokenData)
                     completion(.success(()))
                     
                     // Complete all pending requests
@@ -139,16 +114,11 @@ class NetworkManager {
                     self?.pendingRequests.removeAll()
                     
                 case .failure(let error):
-                    print("❌ Token refresh failed: \(error)")
-                    if let statusCode = response.response?.statusCode {
-                        print("❌ HTTP status code: \(statusCode)")
-                    }
                     
                     // Check if it's a 401 (refresh token expired)
                     if let statusCode = response.response?.statusCode, statusCode == 401 {
-                        print("❌ Refresh token expired, handling session expiration")
                         // Handle session expiration
-                        AuthenticationManager.shared.handleSessionExpired()
+                        self?.handleSessionExpired()
                         
                         // Complete current request with expired error
                         completion(.failure(NetworkError.refreshTokenExpired))
@@ -157,7 +127,6 @@ class NetworkManager {
                         self?.pendingRequests.forEach { $0(.failure(NetworkError.refreshTokenExpired)) }
                         self?.pendingRequests.removeAll()
                     } else {
-                        print("❌ Other token refresh error")
                         // Other network error
                         completion(.failure(NetworkError.tokenRefreshFailed))
                         
@@ -178,7 +147,10 @@ class NetworkManager {
             let params = ["username": username, "password": password]
             AF.request(url, method: .post, parameters: params, encoder: JSONParameterEncoder.default)
                 .validate(statusCode: 200..<300)
-                .responseDecodable(of: LoginOrCheckpointResponse.self) { resp in
+                .responseDecodable(of: LoginOrCheckpointResponse.self) { [weak self] resp in
+                    if let tokens = resp.value?.tokens {
+                        self?.tokenManager.saveTokens(tokens)
+                    }
                     completion(resp.result)
                 }
         }
@@ -187,14 +159,15 @@ class NetworkManager {
         let url = "\(baseURL)/logout/"
 
         // Refresh token is what the server needs. If missing, just do local logout.
-        guard let refresh = TokenManager.shared.getRefreshToken() else {
+        guard let refresh = tokenManager.getRefreshToken() else {
+            tokenManager.clearTokens()
             completion()
             return
         }
 
         // Access header optional. Include if you have it; server doesn’t require it here.
         var headers: HTTPHeaders = [:]
-        if let access = TokenManager.shared.getAccessToken() {
+        if let access = tokenManager.getAccessToken() {
             headers.add(name: "Authorization", value: "Bearer \(access)")
         }
 
@@ -204,9 +177,21 @@ class NetworkManager {
                    encoder: JSONParameterEncoder.default,
                    headers: headers)
         .validate(statusCode: 200..<300)   // server returns 204
-        .response { _ in
+        .response { [weak self] _ in
+            self?.tokenManager.clearTokens()
             // Best-effort: regardless of network errors, proceed to local logout.
             completion()
+        }
+    }
+
+    func handleSessionExpired() {
+        // Clear all stored data
+        tokenManager.clearTokens()
+        UserDefaults.standard.removeObject(forKey: "currentUser")
+        
+        // Notify app that session has expired
+        DispatchQueue.main.async {
+            self.onSessionExpired?()
         }
     }
     
@@ -225,12 +210,8 @@ class NetworkManager {
             .response { resp in                     // no decoding
                 switch resp.result {
                 case .success:
-                    print("switched success")
                     completion(.success(()))
                 case .failure(let err):
-                    print("Switched failure")
-                    // optional: inspect server error body
-                    // let body = String(data: resp.data ?? Data(), encoding: .utf8)
                     completion(.failure(err))
                 }
             }
@@ -246,13 +227,13 @@ class NetworkManager {
 
         AF.request(url, method: .post, parameters: params, encoder: JSONParameterEncoder.default)
             .validate(statusCode: 200..<300)
-            .responseDecodable(of: VerifyAccountResponse.self) { resp in
+            .responseDecodable(of: VerifyAccountResponse.self) { [weak self] resp in
                 switch resp.result {
                 case .success(let payload):
-                    TokenManager.shared.saveTokens(payload.tokens)
+                    self?.tokenManager.saveTokens(payload.tokens)
                     // Store user ID and user data
                     UserDefaults.standard.set(payload.user.id, forKey: "currentUserId")
-                    UserService.shared.storeUser(payload.user)
+                    self?.userService.storeUser(payload.user)
                     completion(.success(()))
                 case .failure(let err):
                     completion(.failure(err))
@@ -308,7 +289,7 @@ class NetworkManager {
     }
     
     func uploadVideo(fileURL: URL, completion: @escaping (Result<Video, Error>) -> Void) {
-        guard let token = TokenManager.shared.getAccessToken() else {
+        guard let token = tokenManager.getAccessToken() else {
             completion(.failure(NetworkError.unauthorized))
             return
         }
@@ -382,10 +363,6 @@ class NetworkManager {
         let url = "\(baseURL)/refresh-urls/"
         let parameters: Parameters = ["video_ids": videoIds]
         
-        print("🔍 Calling refreshSignedUrls with videoIds: \(videoIds)")
-        print("🔍 URL: \(url)")
-        print("🔍 Parameters: \(parameters)")
-        
         performAuthenticatedRequest(
             url: url,
             method: .post,
@@ -394,10 +371,8 @@ class NetworkManager {
         ) { result in
             switch result {
             case .success(let refreshResponse):
-                print("🔍 Refresh successful: \(refreshResponse.message)")
                 completion(.success(refreshResponse))
             case .failure(let error):
-                print("❌ Refresh failed: \(error)")
                 completion(.failure(error))
             }
         }
@@ -421,7 +396,7 @@ class NetworkManager {
     private func showErrorModal(_ error: Error) {
         // Get the top view controller to show the error modal
         if let topViewController = getTopViewController() {
-            ErrorModalManager.shared.showError(error, from: topViewController)
+            ErrorModalManager(viewController: topViewController).showError(error)
         }
     }
     

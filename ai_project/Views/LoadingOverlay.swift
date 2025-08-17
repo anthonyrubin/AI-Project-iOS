@@ -5,6 +5,12 @@ class LoadingOverlay: UIView {
     private let activityIndicator = UIActivityIndicatorView(style: .large)
     private let messageLabel = UILabel()
     private let containerView = UIView()
+    private var viewController: UIViewController?
+    
+    convenience init(viewController: UIViewController) {
+        self.init(frame: .zero)
+        self.viewController = viewController
+    }
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -62,14 +68,14 @@ class LoadingOverlay: UIView {
         ])
     }
     
-    func show(on viewController: UIViewController, message: String = "Analyzing your video...") {
+    func show(message: String = "Analyzing your video...") {
         messageLabel.text = message
         activityIndicator.startAnimating()
         
         // Get the window to ensure we cover the entire screen including status bar and tab bar
         let window: UIWindow?
         
-        window = viewController.view.window?.windowScene?.windows.first(where: { $0.isKeyWindow })
+        window = viewController?.view.window?.windowScene?.windows.first(where: { $0.isKeyWindow })
         
         if let window = window {
             // Cover the entire window including status bar and tab bar
@@ -77,8 +83,8 @@ class LoadingOverlay: UIView {
             window.addSubview(self)
         } else {
             // Fallback to view controller's view if window is not available
-            frame = viewController.view.bounds
-            viewController.view.addSubview(self)
+            frame = viewController!.view.bounds
+            viewController?.view.addSubview(self)
         }
         
         alpha = 0

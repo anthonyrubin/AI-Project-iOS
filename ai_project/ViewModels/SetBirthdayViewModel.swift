@@ -13,7 +13,7 @@ class SetBirthdayViewModel: ObservableObject {
     private let networkManager: NetworkManager
     
     // MARK: - Initialization
-    init(networkManager: NetworkManager = .shared) {
+    init(networkManager: NetworkManager) {
         self.networkManager = networkManager
     }
     
@@ -23,9 +23,6 @@ class SetBirthdayViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         isBirthdaySet = false
-        
-        print("Birthday be")
-        print(birthday)
         
         networkManager.setBirthday(
             birthday: birthday

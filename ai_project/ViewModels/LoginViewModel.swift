@@ -14,19 +14,14 @@ class LoginViewModel: ObservableObject {
     
     // MARK: - Dependencies
     private let networkManager: NetworkManager
-    private let tokenManager: TokenManager
     private let userService: UserService
     
-    // MARK: - Callbacks
-    var onLoginSuccess: ((LoginOrCheckpointResponse) -> Void)?
-    var onLoginFailure: ((String) -> Void)?
-    
     // MARK: - Initialization
-    init(networkManager: NetworkManager = .shared,
-         tokenManager: TokenManager = .shared,
-         userService: UserService = .shared) {
+    init(
+        networkManager: NetworkManager,
+        userService: UserService
+    ) {
         self.networkManager = networkManager
-        self.tokenManager = tokenManager
         self.userService = userService
     }
 
@@ -43,7 +38,6 @@ class LoginViewModel: ObservableObject {
                     self?.handleLoginResponse(response)
                 case .failure(let error):
                     self?.errorMessage = error.localizedDescription
-                    self?.onLoginFailure?(error.localizedDescription)
                 }
             }
         }
@@ -52,11 +46,6 @@ class LoginViewModel: ObservableObject {
     // MARK: - Private Methods
     
     private func handleLoginResponse(_ response: LoginOrCheckpointResponse) {
-        // Store tokens if available
-        if let tokens = response.tokens {
-            tokenManager.saveTokens(tokens)
-        }
-        
         // Store user if available
         if let user = response.user {
             UserDefaults.standard.set(user.id, forKey: "currentUserId")
@@ -77,8 +66,7 @@ class LoginViewModel: ObservableObject {
             NotificationCenter.default.post(name: .authDidSucceed, object: nil)
         }
         
-        // Call original callback for backward compatibility
-        onLoginSuccess?(response)
+
     }
     
     // MARK: - Navigation Reset Methods

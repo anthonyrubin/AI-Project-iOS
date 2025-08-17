@@ -10,15 +10,14 @@ class ProfileViewModel: ObservableObject {
     
     // MARK: - Dependencies
     private let networkManager: NetworkManager
-    private let tokenManager: TokenManager
     private let userService: UserService
     
     // MARK: - Initialization
-    init(networkManager: NetworkManager = .shared,
-         tokenManager: TokenManager = .shared,
-         userService: UserService = .shared) {
+    init(
+        networkManager: NetworkManager,
+        userService: UserService
+    ) {
         self.networkManager = networkManager
-        self.tokenManager = tokenManager
         self.userService = userService
     }
     
@@ -39,9 +38,6 @@ class ProfileViewModel: ObservableObject {
     // MARK: - Private Methods
     
     private func performLocalLogout() {
-        // Clear tokens
-        tokenManager.clearTokens()
-        
         // Clear user defaults
         UserDefaults.standard.removeObject(forKey: "currentUserId")
         UserDefaults.standard.set(false, forKey: "isLoggedIn")

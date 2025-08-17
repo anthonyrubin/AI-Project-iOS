@@ -13,7 +13,7 @@ class VerifyAccountViewModel: ObservableObject {
     private let networkManager: NetworkManager
     
     // MARK: - Initialization
-    init(networkManager: NetworkManager = .shared) {
+    init(networkManager: NetworkManager) {
         self.networkManager = networkManager
     }
     

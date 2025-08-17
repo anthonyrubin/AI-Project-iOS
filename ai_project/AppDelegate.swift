@@ -9,12 +9,17 @@ import UIKit
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
+    
+    private let networkManager = NetworkManager(
+        tokenManager: TokenManager(),
+        userService: UserService()
+    )
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
         
         // Set up session expiration handler
-        AuthenticationManager.shared.onSessionExpired = { [weak self] in
+        networkManager.onSessionExpired = { [weak self] in
             self?.handleSessionExpired()
         }
         

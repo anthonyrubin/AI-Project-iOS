@@ -13,23 +13,60 @@ class SessionViewModel: ObservableObject {
     @Published var lastSession: VideoAnalysisObject?
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var uploadedVideo: Video?
+    @Published var shouldRefreshData = false
     
     // MARK: - Dependencies
     private let userService: UserService
     private let repository: VideoAnalysisRepository
     private var notificationToken: NotificationToken?
     private var cancellables = Set<AnyCancellable>()
+    private var networkManager: NetworkManager
     
     // MARK: - Initialization
-    init(userService: UserService = .shared, 
-         repository: VideoAnalysisRepository = .shared) {
+    init(
+        userService: UserService,
+        repository: VideoAnalysisRepository,
+        networkManager: NetworkManager
+    ) {
         self.userService = userService
         self.repository = repository
+        self.networkManager = networkManager
         setupRealmObservers()
     }
     
     deinit {
         notificationToken?.invalidate()
+    }
+    
+    func uploadVideo(fileURL: URL) {
+        isLoading = true
+        errorMessage = nil
+        uploadedVideo = nil
+        shouldRefreshData = false
+        
+        networkManager.uploadVideo(fileURL: fileURL) { [weak self] result in
+            Task { @MainActor in
+                self?.isLoading = false
+                
+                switch result {
+                case .success(let video):
+                    self?.uploadedVideo = video
+                    self?.shouldRefreshData = true
+                    // Trigger data refresh in LessonsViewController
+                    NotificationCenter.default.post(name: .videoAnalysisCompleted, object: nil)
+                case .failure(let error):
+                    self?.errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+    
+    // MARK: - Error Handling
+
+    func resetUploadState() {
+        uploadedVideo = nil
+        shouldRefreshData = false
     }
     
     // MARK: - Public Methods

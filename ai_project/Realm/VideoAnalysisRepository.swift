@@ -10,8 +10,11 @@ extension DateFormatter {
 }
 
 class VideoAnalysisRepository {
-    static let shared = VideoAnalysisRepository()
-    private init() {}
+    private var networkManager: NetworkManager
+    
+    init (networkManager: NetworkManager) {
+        self.networkManager = networkManager
+    }
     
     // MARK: - Fetch and Store Methods
     
@@ -20,7 +23,7 @@ class VideoAnalysisRepository {
 
         let lastSyncTimestamp = getLastSyncTimestamp()
         
-        NetworkManager.shared.getUserAnalyses(lastSyncTimestamp: lastSyncTimestamp) { [weak self] result in
+        networkManager.getUserAnalyses(lastSyncTimestamp: lastSyncTimestamp) { [weak self] result in
             switch result {
             case .success(let deltaResponse):
                 // Store the new sync timestamp
@@ -53,12 +56,20 @@ class VideoAnalysisRepository {
                         videoObject.signedThumbnailUrl = analysis.video.signedThumbnailUrl
                         
                         // Parse expiration dates
-                        let dateFormatter = ISO8601DateFormatter()
+                        let dateFormatter = DateFormatter()
+                        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"
+                        dateFormatter.timeZone = TimeZone.current
+                        
                         if let videoExpiresAt = dateFormatter.date(from: analysis.video.videoExpiresAt) {
                             videoObject.videoExpiresAt = videoExpiresAt
+                        } else {
+                            // TODO: Log here
                         }
+                        
                         if let thumbnailExpiresAt = dateFormatter.date(from: analysis.video.thumbnailExpiresAt) {
                             videoObject.thumbnailExpiresAt = thumbnailExpiresAt
+                        } else {
+                            // TODO: Log here
                         }
                         
                         videoObject.originalFilename = analysis.video.original_filename
@@ -119,22 +130,11 @@ class VideoAnalysisRepository {
                         }
                         
                         // Add events if available
-                        print("📊 Processing \(analysis.events?.count ?? 0) events for analysis \(analysis.id)")
                         if let events = analysis.events {
                             for (index, event) in events.enumerated() {
-                                print("🔍 Processing event \(index + 1): \(event.label) at \(event.t)s")
-                                do {
-                                    let eventObject = AnalysisEventObject(analysisServerId: analysis.id, event: event)
-                                    analysisObject.events.append(eventObject)
-                                    print("✅ Successfully added event: \(event.label)")
-                                } catch {
-                                    print("❌ Failed to create event object: \(error)")
-                                    // Continue with other events instead of failing completely
-                                }
+                                let eventObject = AnalysisEventObject(analysisServerId: analysis.id, event: event)
+                                analysisObject.events.append(eventObject)
                             }
-                            print("📊 Total events added to analysis object: \(analysisObject.events.count)")
-                        } else {
-                            print("⚠️ No events found in analysis")
                         }
                         
                         // Store analysis data as JSON string
@@ -144,15 +144,12 @@ class VideoAnalysisRepository {
                                 analysisObject.analysisData = jsonString
                             }
                         } catch {
+                            // TODO: Log this
                             print("⚠️ Failed to serialize analysis data: \(error)")
                         }
                         
                         realm.add(analysisObject, update: .modified)
-                        print("📊 Analysis object added to Realm with \(analysisObject.events.count) events")
                         storedObjects.append(analysisObject)
-                    } catch {
-                        // Continue with other analyses instead of failing completely
-                        print("❌ Failed to process analysis \(analysis.id): \(error)")
                     }
                 }
             }
@@ -171,7 +168,6 @@ class VideoAnalysisRepository {
             let realm = try RealmProvider.make()
             return realm.objects(VideoAnalysisObject.self).sorted(byKeyPath: "createdAt", ascending: false)
         } catch {
-            print("❌ Error accessing Realm in getAllAnalyses: \(error)")
             // Return empty results instead of crashing
             let realm = try! RealmProvider.make()
             return realm.objects(VideoAnalysisObject.self).filter("serverId == -1") // Empty results
@@ -219,6 +215,7 @@ class VideoAnalysisRepository {
             // Clear sync timestamp to force full refresh next time
             UserDefaults.standard.removeObject(forKey: "last_sync_timestamp")
         } catch {
+            // TODO: Log this
             print("Error clearing data: \(error)")
         }
     }
@@ -236,52 +233,96 @@ class VideoAnalysisRepository {
     
     // MARK: - URL Refresh Methods
     
+    /// Refreshes a single video URL - used for individual lesson views
+    func refreshVideoUrl(videoId: Int, completion: @escaping (Result<VideoObject?, Error>) -> Void) {
+        
+        // Call backend to refresh this specific video
+        networkManager.refreshSignedUrls(videoIds: [videoId]) { [weak self] result in
+            switch result {
+            case .success(let refreshResponse):
+                self?.updateVideoWithRefreshedUrl(videoId: videoId, refreshResponse: refreshResponse, completion: completion)
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    private func updateVideoWithRefreshedUrl(videoId: Int, refreshResponse: UrlRefreshResponse, completion: @escaping (Result<VideoObject?, Error>) -> Void) {
+        do {
+            let realm = try RealmProvider.make()
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"
+            dateFormatter.timeZone = TimeZone.current
+            
+            // Find the specific video in the response
+            guard let refreshedUrl = refreshResponse.refreshed_urls.first(where: { $0.video_id == videoId }) else {
+                completion(.success(nil))
+                return
+            }
+            
+            try realm.write {
+                if let videoObject = realm.object(ofType: VideoObject.self, forPrimaryKey: videoId) {
+                    print("🔄 Repository: Updating video \(videoId) with new URLs")
+                    videoObject.signedVideoUrl = refreshedUrl.signed_video_url
+                                            videoObject.signedThumbnailUrl = refreshedUrl.signed_thumbnail_url
+                        
+                        // Update expiration dates
+                        if let videoExpiresAt = dateFormatter.date(from: refreshedUrl.video_expires_at) {
+                            videoObject.videoExpiresAt = videoExpiresAt
+                        }
+                        
+                        if let thumbnailExpiresAt = dateFormatter.date(from: refreshedUrl.thumbnail_expires_at) {
+                            videoObject.thumbnailExpiresAt = thumbnailExpiresAt
+                        }
+                        
+                        print("🔄 Repository: Successfully updated video \(videoId)")
+                    completion(.success(videoObject))
+                } else {
+                    completion(.success(nil))
+                }
+            }
+            
+        } catch {
+            completion(.failure(error))
+        }
+    }
+    
+    /// Refreshes all expired video URLs - used for lessons list view
     func refreshExpiredUrls(completion: @escaping (Result<[VideoObject], Error>) -> Void) {
         do {
             let realm = try RealmProvider.make()
             
             // Get all videos and manually check for expired URLs
             let allVideos = realm.objects(VideoObject.self)
-            print("🔍 Total videos in Realm: \(allVideos.count)")
             
             let expiredVideos = allVideos.filter { video in
                 let videoExpired = video.isVideoUrlExpired
                 let thumbnailExpired = video.isThumbnailUrlExpired
                 let currentTime = Date()
-                print("🔍 Video \(video.serverId):")
-                print("   - Video expires at: \(video.videoExpiresAt)")
-                print("   - Thumbnail expires at: \(video.thumbnailExpiresAt)")
-                print("   - Current time: \(currentTime)")
-                print("   - Video expired: \(videoExpired)")
-                print("   - Thumbnail expired: \(thumbnailExpired)")
                 return videoExpired || thumbnailExpired
             }
             
-            print("🔍 Expired videos found: \(expiredVideos.count)")
-            
             if expiredVideos.isEmpty {
-                print("🔍 No expired videos found, returning empty array")
                 completion(.success([]))
                 return
             }
             
             let videoIds = Array(expiredVideos.map { $0.serverId })
-            print("🔍 Video IDs to refresh: \(videoIds)")
             
             // Call backend to refresh URLs
-            NetworkManager.shared.refreshSignedUrls(videoIds: videoIds) { [weak self] result in
+            networkManager.refreshSignedUrls(videoIds: videoIds) { [weak self] result in
                 switch result {
                 case .success(let refreshResponse):
-                    print("🔍 Received refresh response with \(refreshResponse.refreshed_urls.count) URLs")
-                    self?.updateVideosWithRefreshedUrls(refreshResponse.refreshed_urls, completion: completion)
+                    self?.updateVideosWithRefreshedUrls(
+                        refreshResponse.refreshed_urls,
+                        completion: completion
+                    )
                 case .failure(let error):
-                    print("❌ Failed to refresh URLs: \(error)")
                     completion(.failure(error))
                 }
             }
             
         } catch {
-            print("❌ Error in refreshExpiredUrls: \(error)")
             completion(.failure(error))
         }
     }
@@ -289,9 +330,11 @@ class VideoAnalysisRepository {
     private func updateVideosWithRefreshedUrls(_ refreshedUrls: [RefreshedUrl], completion: @escaping (Result<[VideoObject], Error>) -> Void) {
         do {
             let realm = try RealmProvider.make()
-            let dateFormatter = ISO8601DateFormatter()
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"
+            dateFormatter.timeZone = TimeZone.current
             var updatedVideos: [VideoObject] = []
-            
+
             try realm.write {
                 for refreshedUrl in refreshedUrls {
                     if let videoObject = realm.object(ofType: VideoObject.self, forPrimaryKey: refreshedUrl.video_id) {
@@ -302,21 +345,23 @@ class VideoAnalysisRepository {
                         if let videoExpiresAt = dateFormatter.date(from: refreshedUrl.video_expires_at) {
                             videoObject.videoExpiresAt = videoExpiresAt
                         }
+                        
                         if let thumbnailExpiresAt = dateFormatter.date(from: refreshedUrl.thumbnail_expires_at) {
                             videoObject.thumbnailExpiresAt = thumbnailExpiresAt
                         }
                         
                         updatedVideos.append(videoObject)
+                    } else {
+                        // TODO: Log this
+                        print("🔄 Repository: ❌ Could not find video object for ID \(refreshedUrl.video_id)")
                     }
                 }
             }
-            
             completion(.success(updatedVideos))
             
         } catch {
             completion(.failure(error))
         }
     }
+    
 }
-
-

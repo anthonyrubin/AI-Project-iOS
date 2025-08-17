@@ -4,8 +4,10 @@ import UIKit
 import Combine
 
 class CreateAccountViewController: UIViewController, UITextFieldDelegate {
-
+    
+    private lazy var errorModalManager = ErrorModalManager(viewController: self)
     var email: String? = nil
+
     // MARK: - UI Components
     let topLabel: UILabel = {
         let label = UILabel()
@@ -72,7 +74,12 @@ class CreateAccountViewController: UIViewController, UITextFieldDelegate {
         return b
     }()
 
-    private let viewModel = CreateAccountViewModel()
+    private let viewModel = CreateAccountViewModel(
+        networkManager: NetworkManager(
+            tokenManager: TokenManager(),
+            userService: UserService()
+        )
+    )
     private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Lifecycle
@@ -146,7 +153,6 @@ class CreateAccountViewController: UIViewController, UITextFieldDelegate {
         }
 
         guard password1 == password2 else {
-            print("Passwords do not match")
             return
         }
         
@@ -174,7 +180,7 @@ class CreateAccountViewController: UIViewController, UITextFieldDelegate {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] errorMessage in
                 if let errorMessage = errorMessage {
-                    ErrorModalManager.shared.showError(errorMessage, from: self!)
+                    self?.errorModalManager.showError(errorMessage)
                     self?.viewModel.clearError()
                 }
             }
@@ -185,10 +191,8 @@ class CreateAccountViewController: UIViewController, UITextFieldDelegate {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isCreated in
                 if isCreated {
-                    print("Create Account Success")
                     let vc = VerifyAccountViewController(email: self!.email!)
                     self?.navigationController?.pushViewController(vc, animated: true)
-                    print("Pushed view controller")
                     self?.viewModel.resetAccountCreated()
                 }
             }
