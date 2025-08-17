@@ -52,3 +52,9 @@ extension Notification.Name {
     static let didLogout = Notification.Name("didLogout")
     static let seekToTimestamp = Notification.Name("seekToTimestamp")
 }
+
+extension String {
+    func hasAnyWhitespace() -> Bool {
+        self.rangeOfCharacter(from: .whitespacesAndNewlines) != nil
+    }
+}

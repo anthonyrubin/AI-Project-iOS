@@ -229,8 +229,8 @@ final class VerifyAccountViewController: UIViewController, UITextFieldDelegate {
         codeFields.map { $0.text ?? "" }.joined()
     }
 
-    private func updateContinueState() {
-        continueButton.isEnabled = currentCode().count == 6
+    private func updateContinueState(forceDisable: Bool = false) {
+        continueButton.isEnabled = (currentCode().count == 6) && !forceDisable
     }
 
     // MARK: - UITextFieldDelegate
@@ -254,7 +254,12 @@ final class VerifyAccountViewController: UIViewController, UITextFieldDelegate {
         if string.isEmpty {
             // If this box has a char, let the system delete it.
             if let t = textField.text, !t.isEmpty {
-                DispatchQueue.main.async { self.updateContinueState() }
+                // Force disable is neccessary in the situation where all 6 digits are
+                // filled out, and the very last one is deleted. The system calls
+                // updateContinueState before the character deletion happens, and
+                // therefore you have a situation where a char is missing but the
+                // nextButton is enabled.
+                updateContinueState(forceDisable: true)
                 return true
             }
             // If already empty, OTPTextField.deleteBackward will move left.

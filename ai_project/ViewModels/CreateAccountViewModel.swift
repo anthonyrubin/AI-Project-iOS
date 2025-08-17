@@ -6,7 +6,8 @@ class CreateAccountViewModel: ObservableObject {
     
     // MARK: - Published Properties
     @Published var isLoading = false
-    @Published var errorMessage: String?
+    @Published var modalError: String?
+    @Published var fieldError: NetworkError?
     @Published var isAccountCreated = false
     
     // MARK: - Dependencies
@@ -22,7 +23,6 @@ class CreateAccountViewModel: ObservableObject {
     
     func createAccount(username: String, email: String, password1: String, password2: String) {
         isLoading = true
-        errorMessage = nil
         isAccountCreated = false
         
         networkManager.createAccount(
@@ -38,7 +38,12 @@ class CreateAccountViewModel: ObservableObject {
                 case .success():
                     self?.isAccountCreated = true
                 case .failure(let error):
-                    self?.errorMessage = error.localizedDescription
+                    if let fieldError = error as? NetworkError {
+                        self?.fieldError = fieldError
+                        self?.modalError = fieldError.localizedDescription
+                    } else {
+                        self?.modalError = error.localizedDescription
+                    }
                 }
             }
         }
@@ -46,8 +51,12 @@ class CreateAccountViewModel: ObservableObject {
     
     // MARK: - Error Handling
     
-    func clearError() {
-        errorMessage = nil
+    func clearModalError() {
+        modalError = nil
+    }
+    
+    func clearFieldError() {
+        fieldError = nil
     }
     
     func resetAccountCreated() {

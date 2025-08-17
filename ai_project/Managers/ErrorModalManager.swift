@@ -47,6 +47,16 @@ class ErrorModalManager {
         }
     }
     
+    /// Extract field-specific error from API response
+    func getFieldError(for error: Error) -> (field: String?, message: String)? {
+        if let networkError = error as? NetworkError,
+           case .apiError(let apiError) = networkError,
+           let field = apiError.field {
+            return (field: field, message: apiError.message)
+        }
+        return nil
+    }
+    
     private func getErrorMessage(for error: Error) -> String {
         if let networkError = error as? NetworkError {
             return networkError.localizedDescription
@@ -54,6 +64,7 @@ class ErrorModalManager {
         
         // Handle specific error types
         if let afError = error as? AFError {
+            // Fallback to existing Alamofire error handling
             switch afError {
             case .responseValidationFailed(let reason):
                 switch reason {

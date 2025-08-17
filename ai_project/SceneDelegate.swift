@@ -64,6 +64,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             nav(SessionViewController(), "SessionTabIcon"),
             nav(ProfileViewController(), "ProfileTabIcon")
         ]
+        tab.selectedIndex = 1
         return tab
     }
 

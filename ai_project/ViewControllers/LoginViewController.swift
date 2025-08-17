@@ -48,8 +48,7 @@ class LoginViewController: UIViewController {
         networkManager: NetworkManager(
             tokenManager: TokenManager(),
             userService: UserService()
-        ),
-        userService: UserService()
+        )
     )
     private var cancellables = Set<AnyCancellable>()
 
@@ -130,10 +129,10 @@ class LoginViewController: UIViewController {
             .store(in: &cancellables)
         
         // Bind navigation states
-        viewModel.$shouldNavigateToVerify
+        viewModel.$email
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] shouldNavigate in
-                if shouldNavigate {
+            .sink { [weak self] email in
+                if !email.isEmpty {
                     self?.navigateToVerify()
                     self?.viewModel.resetNavigationFlags()
                 }
@@ -190,8 +189,7 @@ class LoginViewController: UIViewController {
     // MARK: - Navigation Methods
     
     private func navigateToVerify() {
-        // The ViewModel already has the email from the response
-        let vc = VerifyAccountViewController(email: "user@example.com") // TODO: Get email from ViewModel
+        let vc = VerifyAccountViewController(email: viewModel.email)
         navigationController?.pushViewController(vc, animated: true)
     }
     

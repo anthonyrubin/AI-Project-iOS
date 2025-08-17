@@ -68,7 +68,13 @@ class NetworkManager {
                             }
                         }
                     } else {
-                        completion(.failure(NetworkError.requestFailed(error)))
+                        // Try to parse the new standardized error format
+                        if let data = response.data,
+                           let apiErrorResponse = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
+                            completion(.failure(NetworkError.apiError(apiErrorResponse.error)))
+                        } else {
+                            completion(.failure(NetworkError.requestFailed(error)))
+                        }
                     }
                 }
             }
@@ -151,6 +157,9 @@ class NetworkManager {
                     if let tokens = resp.value?.tokens {
                         self?.tokenManager.saveTokens(tokens)
                     }
+                    if let user = resp.value?.user {
+                        self?.userService.storeUser(user)
+                    }
                     completion(resp.result)
                 }
         }
@@ -200,7 +209,7 @@ class NetworkManager {
         email: String,
         password1: String,
         password2: String,
-        completion: @escaping (Result<Void, AFError>) -> Void
+        completion: @escaping (Result<Void, Error>) -> Void
     ) {
         let url = "\(baseURL)/create-account/"
         let params = ["username": username, "email": email, "password1": password1, "password2": password2]
@@ -212,7 +221,13 @@ class NetworkManager {
                 case .success:
                     completion(.success(()))
                 case .failure(let err):
-                    completion(.failure(err))
+                    // Try to parse the new standardized error format
+                    if let data = resp.data,
+                       let apiErrorResponse = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
+                        completion(.failure(NetworkError.apiError(apiErrorResponse.error)))
+                    } else {
+                        completion(.failure(NetworkError.requestFailed(err)))
+                    }
                 }
             }
     }
@@ -220,7 +235,7 @@ class NetworkManager {
     func verifyAccount(
         email: String,
         code: String,
-        completion: @escaping (Result<Void, AFError>) -> Void
+        completion: @escaping (Result<Void, Error>) -> Void
     ) {
         let url = "\(baseURL)/verify-account/"
         let params = ["email": email, "code": code]
@@ -236,7 +251,13 @@ class NetworkManager {
                     self?.userService.storeUser(payload.user)
                     completion(.success(()))
                 case .failure(let err):
-                    completion(.failure(err))
+                    // Try to parse the new standardized error format
+                    if let data = resp.data,
+                       let apiErrorResponse = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
+                        completion(.failure(NetworkError.apiError(apiErrorResponse.error)))
+                    } else {
+                        completion(.failure(NetworkError.requestFailed(err)))
+                    }
                 }
             }
     }
