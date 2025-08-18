@@ -29,11 +29,14 @@ class ProfileViewController: UIViewController {
 
     // MARK: - ViewModel
     private let viewModel = ProfileViewModel(
-        networkManager: NetworkManager(
+        authRepository: AuthRepositoryImpl(
+            networkManager: NetworkManager(
+                tokenManager: TokenManager(),
+                userService: UserService()
+            ),
             tokenManager: TokenManager(),
-            userService: UserService()),
-        userService: UserService()
-        
+            realmUserDataStore: RealmUserDataStore()
+        )
     )
     private var cancellables = Set<AnyCancellable>()
 

@@ -9,16 +9,11 @@ class ProfileViewModel: ObservableObject {
     @Published var errorMessage: String?
     
     // MARK: - Dependencies
-    private let networkManager: NetworkManager
-    private let userService: UserService
+    private let authRepository: AuthRepository
     
     // MARK: - Initialization
-    init(
-        networkManager: NetworkManager,
-        userService: UserService
-    ) {
-        self.networkManager = networkManager
-        self.userService = userService
+    init(authRepository: AuthRepository) {
+        self.authRepository = authRepository
     }
     
     // MARK: - Public Methods
@@ -27,26 +22,11 @@ class ProfileViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         
-        networkManager.logout { [weak self] in
+        authRepository.logout { [weak self] in
             Task { @MainActor in
-                self?.performLocalLogout()
                 self?.isLoading = false
             }
         }
-    }
-    
-    // MARK: - Private Methods
-    
-    private func performLocalLogout() {
-        // Clear user defaults
-        UserDefaults.standard.removeObject(forKey: "currentUserId")
-        UserDefaults.standard.set(false, forKey: "isLoggedIn")
-        
-        // Clear Realm cache
-        userService.clearAllData()
-        
-        // Post notification for app to handle
-        NotificationCenter.default.post(name: .didLogout, object: nil)
     }
     
     // MARK: - Error Handling

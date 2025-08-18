@@ -1,34 +1,26 @@
 import Foundation
 
+
+protocol UserRepository {
+    func storeUser()
+}
+
 class UserService {
-    private let userRepository = RealmUserRepository()
+    private let userRepository = RealmUserDataStore()
     
     // MARK: - User Management
     
-    func storeUser(_ user: User) {
-        do {
-            // Parse birthday string to Date if available
-            var birthdayDate: Date? = nil
-            if let birthdayString = user.birthday {
-                let dateFormatter = ISO8601DateFormatter()
-                birthdayDate = dateFormatter.date(from: birthdayString)
-            }
-            
-            let userDTO = UserDTO(
-                id: user.id,
-                username: user.username,
-                email: user.email,
-                firstName: user.first_name,
-                lastName: user.last_name,
-                birthday: birthdayDate
-            )
-            try userRepository.upsert(userDTO)
-        } catch {
-            // TODO: Log this
-            print("❌ Failed to store user in Realm: \(error)")
-        }
-    }
-    
+//    func storeUser(_ user: User) {
+//        do {
+//            // Parse birthday string to Date if available
+//
+//            try userRepository.upsert(userDTO)
+//        } catch {
+//            // TODO: Log this
+//            print("❌ Failed to store user in Realm: \(error)")
+//        }
+//    }
+//    
     func getCurrentUser() -> UserObject? {
         guard let currentUserId = UserDefaults.standard.object(forKey: "currentUserId") as? Int else {
             // TODO: Log this
@@ -63,14 +55,6 @@ class UserService {
         } catch {
             // TODO: Log this
             print("❌ Failed to update user birthday in Realm: \(error)")
-        }
-    }
-    
-    func clearAllData() {
-        do {
-            try userRepository.clearAllData()
-        } catch {
-            print("❌ Failed to clear user data from Realm: \(error)")
         }
     }
 }

@@ -13,20 +13,20 @@ class LoginViewModel: ObservableObject {
     @Published var shouldNavigateToHome: Bool = false
     
     // MARK: - Dependencies
-    private let networkManager: NetworkManager
+    private let authRepository: AuthRepository
     
     // MARK: - Initialization
     init(
-        networkManager: NetworkManager,
+        authRepository: AuthRepository,
     ) {
-        self.networkManager = networkManager
+        self.authRepository = authRepository
     }
 
     func login(username: String, password: String) {
         isLoading = true
         errorMessage = nil
         
-        networkManager.loginOrCheckpoint(username: username, password: password) { [weak self] result in
+        authRepository.loginOrCheckpoint(username: username, password: password) { [weak self] result in
             Task { @MainActor in
                 self?.isLoading = false
                 

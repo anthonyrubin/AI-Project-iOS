@@ -119,7 +119,7 @@ class NetworkManager {
                     self?.pendingRequests.forEach { $0(.success(())) }
                     self?.pendingRequests.removeAll()
                     
-                case .failure(let error):
+                case .failure( _):
                     
                     // Check if it's a 401 (refresh token expired)
                     if let statusCode = response.response?.statusCode, statusCode == 401 {
@@ -143,26 +143,43 @@ class NetworkManager {
                 }
             }
     }
+    
+    func handleSessionExpired() {
+        // Clear all stored data
+        tokenManager.clearTokens()
+        UserDefaults.standard.removeObject(forKey: "currentUser")
+        
+        // Notify app that session has expired
+        DispatchQueue.main.async {
+            self.onSessionExpired?()
+        }
+    }
 
     func loginOrCheckpoint(
         username: String,
         password: String,
-        completion: @escaping (Result<LoginOrCheckpointResponse, AFError>) -> Void
+        completion: @escaping (Result<LoginOrCheckpointResponse, NetworkError>) -> Void
     ) {
-            let url = "\(baseURL)/login/"
-            let params = ["username": username, "password": password]
-            AF.request(url, method: .post, parameters: params, encoder: JSONParameterEncoder.default)
-                .validate(statusCode: 200..<300)
-                .responseDecodable(of: LoginOrCheckpointResponse.self) { [weak self] resp in
-                    if let tokens = resp.value?.tokens {
-                        self?.tokenManager.saveTokens(tokens)
+        let url = "\(baseURL)/login/"
+        let params = ["username": username, "password": password]
+
+        AF.request(url, method: .post, parameters: params, encoder: JSONParameterEncoder.default)
+            .validate(statusCode: 200..<300)
+            .responseDecodable(of: LoginOrCheckpointResponse.self) { resp in
+                switch resp.result {
+                case .success(let value):
+                    completion(.success(value))
+
+                case .failure(let afErr):
+                    if let data = resp.data,
+                       let api = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
+                        completion(.failure(.apiError(api.error)))
+                    } else {
+                        completion(.failure(.requestFailed(afErr)))
                     }
-                    if let user = resp.value?.user {
-                        self?.userService.storeUser(user)
-                    }
-                    completion(resp.result)
                 }
-        }
+            }
+    }
     
     func logout(completion: @escaping () -> Void) {
         let url = "\(baseURL)/logout/"
@@ -186,22 +203,35 @@ class NetworkManager {
                    encoder: JSONParameterEncoder.default,
                    headers: headers)
         .validate(statusCode: 200..<300)   // server returns 204
-        .response { [weak self] _ in
-            self?.tokenManager.clearTokens()
-            // Best-effort: regardless of network errors, proceed to local logout.
+        .response { _ in
             completion()
         }
     }
+    
+    func verifyAccount(
+        email: String,
+        code: String,
+        completion: @escaping (Result<VerifyAccountResponse, NetworkError>) -> Void
+    ) {
+        let url = "\(baseURL)/verify-account/"
+        let params = ["email": email, "code": code]
 
-    func handleSessionExpired() {
-        // Clear all stored data
-        tokenManager.clearTokens()
-        UserDefaults.standard.removeObject(forKey: "currentUser")
-        
-        // Notify app that session has expired
-        DispatchQueue.main.async {
-            self.onSessionExpired?()
-        }
+        AF.request(url, method: .post, parameters: params, encoder: JSONParameterEncoder.default)
+            .validate(statusCode: 200..<300)
+            .responseDecodable(of: VerifyAccountResponse.self) { resp in
+                switch resp.result {
+                case .success(let payload):
+                    completion(.success(payload))
+                case .failure(let afErr):
+                    // centralize API error parsing here (not in repo)
+                    if let data = resp.data,
+                       let apiErr = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
+                        completion(.failure(NetworkError.apiError(apiErr.error)))
+                    } else {
+                        completion(.failure(NetworkError.requestFailed(afErr)))
+                    }
+                }
+            }
     }
     
     func createAccount(
@@ -219,36 +249,6 @@ class NetworkManager {
             .response { resp in                     // no decoding
                 switch resp.result {
                 case .success:
-                    completion(.success(()))
-                case .failure(let err):
-                    // Try to parse the new standardized error format
-                    if let data = resp.data,
-                       let apiErrorResponse = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
-                        completion(.failure(NetworkError.apiError(apiErrorResponse.error)))
-                    } else {
-                        completion(.failure(NetworkError.requestFailed(err)))
-                    }
-                }
-            }
-    }
-    
-    func verifyAccount(
-        email: String,
-        code: String,
-        completion: @escaping (Result<Void, Error>) -> Void
-    ) {
-        let url = "\(baseURL)/verify-account/"
-        let params = ["email": email, "code": code]
-
-        AF.request(url, method: .post, parameters: params, encoder: JSONParameterEncoder.default)
-            .validate(statusCode: 200..<300)
-            .responseDecodable(of: VerifyAccountResponse.self) { [weak self] resp in
-                switch resp.result {
-                case .success(let payload):
-                    self?.tokenManager.saveTokens(payload.tokens)
-                    // Store user ID and user data
-                    UserDefaults.standard.set(payload.user.id, forKey: "currentUserId")
-                    self?.userService.storeUser(payload.user)
                     completion(.success(()))
                 case .failure(let err):
                     // Try to parse the new standardized error format

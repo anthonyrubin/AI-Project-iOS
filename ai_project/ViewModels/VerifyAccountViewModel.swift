@@ -10,11 +10,11 @@ class VerifyAccountViewModel: ObservableObject {
     @Published var isAccountVerified = false
     
     // MARK: - Dependencies
-    private let networkManager: NetworkManager
+    private let authRepository: AuthRepository
     
     // MARK: - Initialization
-    init(networkManager: NetworkManager) {
-        self.networkManager = networkManager
+    init(authRepository: AuthRepository) {
+        self.authRepository = authRepository
     }
     
     // MARK: - Public Methods
@@ -24,7 +24,7 @@ class VerifyAccountViewModel: ObservableObject {
         errorMessage = nil
         isAccountVerified = false
         
-        networkManager.verifyAccount(
+        authRepository.verifyAccount(
             email: email,
             code: code
         ) { [weak self] result in

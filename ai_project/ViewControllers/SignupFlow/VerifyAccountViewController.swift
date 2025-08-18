@@ -25,9 +25,13 @@ final class VerifyAccountViewController: UIViewController, UITextFieldDelegate {
     required init?(coder: NSCoder) { fatalError() }
     
     private let viewModel = VerifyAccountViewModel(
-        networkManager: NetworkManager(
+        authRepository: AuthRepositoryImpl(
+            networkManager: NetworkManager(
+                tokenManager: TokenManager(),
+                userService: UserService()
+            ),
             tokenManager: TokenManager(),
-            userService: UserService()
+            realmUserDataStore: RealmUserDataStore()
         )
     )
     

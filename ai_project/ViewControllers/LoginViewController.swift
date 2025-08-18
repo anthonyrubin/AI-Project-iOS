@@ -45,9 +45,13 @@ class LoginViewController: UIViewController {
 
     // ViewModel instance
     private let viewModel = LoginViewModel(
-        networkManager: NetworkManager(
+        authRepository: AuthRepositoryImpl(
+            networkManager: NetworkManager(
+                tokenManager: TokenManager(),
+                userService: UserService()
+            ),
             tokenManager: TokenManager(),
-            userService: UserService()
+            realmUserDataStore: RealmUserDataStore()
         )
     )
     private var cancellables = Set<AnyCancellable>()

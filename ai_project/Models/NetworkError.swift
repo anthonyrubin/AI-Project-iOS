@@ -19,6 +19,7 @@ enum NetworkError: Error, LocalizedError {
     case noRefreshToken
     case requestFailed(Error)
     case apiError(APIError)
+    case cache(Error)
     
     var errorDescription: String? {
         switch self {
@@ -34,6 +35,8 @@ enum NetworkError: Error, LocalizedError {
             return "Refresh token expired. Please log in again."
         case .apiError(let apiError):
             return apiError.message
+        case .cache(let error):
+            return error.localizedDescription
         }
     }
     
