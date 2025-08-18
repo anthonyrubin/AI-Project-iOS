@@ -10,7 +10,7 @@ class ProfileViewModel: ObservableObject {
     
     // MARK: - Dependencies
     private let authRepository: AuthRepository
-    
+
     // MARK: - Initialization
     init(authRepository: AuthRepository) {
         self.authRepository = authRepository

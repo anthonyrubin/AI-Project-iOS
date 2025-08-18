@@ -26,7 +26,7 @@ final class VerifyAccountViewController: UIViewController, UITextFieldDelegate {
     
     private let viewModel = VerifyAccountViewModel(
         authRepository: AuthRepositoryImpl(
-            networkManager: NetworkManager(
+            authAPI: NetworkManager(
                 tokenManager: TokenManager(),
                 userService: UserService()
             ),

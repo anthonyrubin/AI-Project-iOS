@@ -46,7 +46,7 @@ class LoginViewController: UIViewController {
     // ViewModel instance
     private let viewModel = LoginViewModel(
         authRepository: AuthRepositoryImpl(
-            networkManager: NetworkManager(
+            authAPI: NetworkManager(
                 tokenManager: TokenManager(),
                 userService: UserService()
             ),

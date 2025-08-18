@@ -2,7 +2,21 @@ import Foundation
 import Alamofire
 import UIKit
 
-class NetworkManager {
+protocol AuthAPI {
+    func loginOrCheckpoint(
+        username: String,
+        password: String,
+        completion: @escaping (Result<LoginOrCheckpointResponse, NetworkError>) -> Void
+    )
+    func logout(completion: @escaping () -> Void)
+    func verifyAccount(
+        email: String,
+        code: String,
+        completion: @escaping (Result<VerifyAccountResponse, NetworkError>) -> Void
+    )
+}
+
+class NetworkManager: AuthAPI {
     
     init(
         tokenManager: TokenManager,
@@ -180,7 +194,7 @@ class NetworkManager {
                 }
             }
     }
-    
+
     func logout(completion: @escaping () -> Void) {
         let url = "\(baseURL)/logout/"
 

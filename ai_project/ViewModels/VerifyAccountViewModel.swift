@@ -23,7 +23,7 @@ class VerifyAccountViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         isAccountVerified = false
-        
+
         authRepository.verifyAccount(
             email: email,
             code: code

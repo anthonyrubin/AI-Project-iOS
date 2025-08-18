@@ -17,16 +17,16 @@ protocol AuthRepository {
 
 class AuthRepositoryImpl: AuthRepository {
     
-    private let networkManager: NetworkManager
+    private let authAPI: AuthAPI
     private let tokenManager: TokenManager
     private let realmUserDataStore: UserDataStore
     
     init (
-        networkManager: NetworkManager,
+        authAPI: AuthAPI,
         tokenManager: TokenManager,
         realmUserDataStore: UserDataStore
     ) {
-        self.networkManager = networkManager
+        self.authAPI = authAPI
         self.tokenManager = tokenManager
         self.realmUserDataStore = realmUserDataStore
     }
@@ -41,7 +41,7 @@ class AuthRepositoryImpl: AuthRepository {
             return
         }
         
-        networkManager.logout(completion: { [weak self] in
+        authAPI.logout(completion: { [weak self] in
             self?.tokenManager.clearTokens()
             completion()
             self?.performLocalLogout()
@@ -53,7 +53,7 @@ class AuthRepositoryImpl: AuthRepository {
         password: String,
         completion: @escaping (Result<LoginOrCheckpointResponse, NetworkError>) -> Void
     ) {
-        networkManager.loginOrCheckpoint(username: username, password: password) { [weak self] result in
+        authAPI.loginOrCheckpoint(username: username, password: password) { [weak self] result in
             guard let self else { return }
             switch result {
             case .success(let resp):
@@ -77,7 +77,7 @@ class AuthRepositoryImpl: AuthRepository {
         code: String,
         completion: @escaping (Result<Void, NetworkError>) -> Void
     ) {
-        networkManager.verifyAccount(email: email, code: code) { [weak self] result in
+        authAPI.verifyAccount(email: email, code: code) { [weak self] result in
             guard let self else { return }
             switch result {
             case .success(let payload):
