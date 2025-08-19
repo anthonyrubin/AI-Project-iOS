@@ -16,17 +16,9 @@ final class SessionViewController: UIViewController {
     // MARK: - ViewModels
     //private let uploadViewModel = VideoUploadViewModel()
     private let sessionViewModel = SessionViewModel(
-        userService: UserService(),
-        repository: VideoAnalysisRepository(
-            networkManager: NetworkManager(
-                tokenManager: TokenManager(),
-                userService: UserService()
-            )
-        ),
-        networkManager: NetworkManager(
-            tokenManager: TokenManager(),
-            userService: UserService()
-        )
+        userDataStore: RealmUserDataStore(),
+        repository: VideoAnalysisRepository(networkManager: NetworkManager(tokenManager: TokenManager())),
+        networkManager: NetworkManager(tokenManager: TokenManager())
     )
     
     private lazy var loadingOverlay = LoadingOverlay(viewController: self)

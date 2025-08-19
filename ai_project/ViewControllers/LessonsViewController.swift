@@ -18,13 +18,11 @@ class LessonsViewController: UIViewController {
     private let viewModel = LessonsViewModel(
         repository: VideoAnalysisRepository(
             networkManager: NetworkManager(
-                tokenManager: TokenManager(),
-                userService: UserService()
+                tokenManager: TokenManager()
             )
         ),
         networkManager: NetworkManager(
-            tokenManager: TokenManager(),
-            userService: UserService()
+            tokenManager: TokenManager()
         )
     )
 

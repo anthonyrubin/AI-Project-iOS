@@ -10,13 +10,11 @@ class SetNameViewModel: ObservableObject {
     @Published var isNameSet = false
     
     // MARK: - Dependencies
-    private let networkManager: NetworkManager
-    private var userService: UserService
+    private let signupRepository: SignupRepository
     
     // MARK: - Initialization
-    init(networkManager: NetworkManager, userService: UserService) {
-        self.networkManager = networkManager
-        self.userService = userService
+    init(signupRepository: SignupRepository) {
+        self.signupRepository = signupRepository
     }
     
     // MARK: - Public Methods
@@ -26,7 +24,7 @@ class SetNameViewModel: ObservableObject {
         errorMessage = nil
         isNameSet = false
         
-        networkManager.setName(
+        signupRepository.setName(
             firstName: firstName,
             lastName: lastName
         ) { [weak self] result in
@@ -34,11 +32,7 @@ class SetNameViewModel: ObservableObject {
                 self?.isLoading = false
                 
                 switch result {
-                case .success(let response):
-                    self?.userService.updateUserName(
-                        firstName: firstName,
-                        lastName: lastName
-                    )
+                case .success():
                     self?.isNameSet = true
                 case .failure(let error):
                     self?.errorMessage = error.localizedDescription

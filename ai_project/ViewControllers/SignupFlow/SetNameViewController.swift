@@ -4,11 +4,10 @@ import Combine
 class SetNameViewController: UIViewController {
 
     private let viewModel = SetNameViewModel(
-        networkManager: NetworkManager(
-            tokenManager: TokenManager(),
-            userService: UserService()
-        ),
-        userService: UserService()
+        signupRepository: SignupRepositoryImpl(
+            signupAPI: NetworkManager(tokenManager: TokenManager()),
+            userDataStore: RealmUserDataStore()
+        )
     )
     private var cancellables = Set<AnyCancellable>()
     
@@ -34,6 +33,25 @@ class SetNameViewController: UIViewController {
         tf.spellCheckingType = .no
         return tf
     }()
+    
+    private let firstNameErrorLabel: UILabel = {
+        let l = UILabel()
+        l.text = nil
+        l.font = .systemFont(ofSize: 12)
+        l.textColor = .systemRed
+        l.numberOfLines = 0
+        l.isHidden = true
+        l.translatesAutoresizingMaskIntoConstraints = false
+        return l
+    }()
+    
+    private lazy var firstNameStack: UIStackView = {
+        let s = UIStackView(arrangedSubviews: [firstNameTextField, firstNameErrorLabel])
+        s.axis = .vertical
+        s.spacing = 4
+        s.translatesAutoresizingMaskIntoConstraints = false
+        return s
+    }()
 
     let lastNameTextField: UITextField = {
         let tf = UITextField()
@@ -44,6 +62,33 @@ class SetNameViewController: UIViewController {
         tf.textContentType = .familyName
         tf.translatesAutoresizingMaskIntoConstraints = false
         return tf
+    }()
+    
+    private let lastNameErrorLabel: UILabel = {
+        let l = UILabel()
+        l.text = nil
+        l.font = .systemFont(ofSize: 12)
+        l.textColor = .systemRed
+        l.numberOfLines = 0
+        l.isHidden = true
+        l.translatesAutoresizingMaskIntoConstraints = false
+        return l
+    }()
+    
+    private lazy var lastNameStack: UIStackView = {
+        let s = UIStackView(arrangedSubviews: [lastNameTextField, lastNameErrorLabel])
+        s.axis = .vertical
+        s.spacing = 4
+        s.translatesAutoresizingMaskIntoConstraints = false
+        return s
+    }()
+    
+    private lazy var fieldsStack: UIStackView = {
+        let s = UIStackView(arrangedSubviews: [firstNameStack, lastNameStack])
+        s.axis = .vertical
+        s.spacing = 20
+        s.translatesAutoresizingMaskIntoConstraints = false
+        return s
     }()
 
     let nextButton: UIButton = {
@@ -85,8 +130,7 @@ class SetNameViewController: UIViewController {
 
     func setupUI() {
         view.addSubview(topLabel)
-        view.addSubview(firstNameTextField)
-        view.addSubview(lastNameTextField)
+        view.addSubview(fieldsStack)
         view.addSubview(nextButton)
 
         NSLayoutConstraint.activate([
@@ -95,17 +139,14 @@ class SetNameViewController: UIViewController {
             topLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
             topLabel.heightAnchor.constraint(equalToConstant: 44),
 
-            firstNameTextField.topAnchor.constraint(equalTo: topLabel.bottomAnchor, constant: 30),
-            firstNameTextField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-            firstNameTextField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            fieldsStack.topAnchor.constraint(equalTo: topLabel.bottomAnchor, constant: 30),
+            fieldsStack.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            fieldsStack.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            
             firstNameTextField.heightAnchor.constraint(equalToConstant: 44),
-
-            lastNameTextField.topAnchor.constraint(equalTo: firstNameTextField.bottomAnchor, constant: 20),
             lastNameTextField.heightAnchor.constraint(equalTo: firstNameTextField.heightAnchor),
-            lastNameTextField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
-            lastNameTextField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
 
-            nextButton.topAnchor.constraint(equalTo: lastNameTextField.bottomAnchor, constant: 30),
+            nextButton.topAnchor.constraint(equalTo: fieldsStack.bottomAnchor, constant: 30),
             nextButton.heightAnchor.constraint(equalToConstant: 50),
             nextButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
             nextButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),

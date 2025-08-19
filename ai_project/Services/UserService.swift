@@ -21,14 +21,8 @@ class UserService {
 //        }
 //    }
 //    
-    func getCurrentUser() -> UserObject? {
-        guard let currentUserId = UserDefaults.standard.object(forKey: "currentUserId") as? Int else {
-            // TODO: Log this
-            print("⚠️ No current user ID found in UserDefaults")
-            return nil
-        }
-        
-        let user = userRepository.load(serverId: currentUserId)
+    func getCurrentUser() -> UserObject? {        
+        let user = userRepository.load()
         return user
     }
     
@@ -38,7 +32,7 @@ class UserService {
         }
         
         do {
-            try userRepository.setName(serverId: currentUserId, first: firstName, last: lastName)
+            try userRepository.setName(userId: currentUserId, first: firstName, last: lastName)
         } catch {
             // TODO: Log this
             print("❌ Failed to update user name in Realm: \(error)")
@@ -51,7 +45,7 @@ class UserService {
         }
         
         do {
-            try userRepository.setBirthday(serverId: currentUserId, date: birthday)
+            try userRepository.setBirthday(userId: currentUserId, date: birthday)
         } catch {
             // TODO: Log this
             print("❌ Failed to update user birthday in Realm: \(error)")

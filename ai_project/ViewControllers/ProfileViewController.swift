@@ -31,8 +31,7 @@ class ProfileViewController: UIViewController {
     private let viewModel = ProfileViewModel(
         authRepository: AuthRepositoryImpl(
             authAPI: NetworkManager(
-                tokenManager: TokenManager(),
-                userService: UserService()
+                tokenManager: TokenManager()
             ),
             tokenManager: TokenManager(),
             realmUserDataStore: RealmUserDataStore()

@@ -16,20 +16,35 @@ protocol AuthAPI {
     )
 }
 
-class NetworkManager: AuthAPI {
+protocol SignupAPI {
+    func createAccount(
+        username: String,
+        email: String,
+        password1: String,
+        password2: String,
+        completion: @escaping (Result<Void, NetworkError>) -> Void
+    )
     
+    func setName(
+        firstName: String,
+        lastName: String,
+        completion: @escaping (Result<Void, NetworkError>) -> Void
+    )
+
+    func setBirthday(birthday: Date, completion: @escaping (Result<Void, NetworkError>) -> Void)
+}
+
+class NetworkManager: AuthAPI, SignupAPI {
+
     init(
-        tokenManager: TokenManager,
-        userService: UserService
+        tokenManager: TokenManager
     ) {
         self.tokenManager = tokenManager
-        self.userService = userService
     }
     
     var onSessionExpired: (() -> Void)?
     
     private var tokenManager: TokenManager
-    private var userService: UserService
     
     private let baseURL = "http://localhost:8000/api"
     
@@ -43,12 +58,10 @@ class NetworkManager: AuthAPI {
         method: HTTPMethod = .get,
         parameters: Parameters? = nil,
         responseType: T.Type,
-        completion: @escaping (Result<T, Error>) -> Void
+        completion: @escaping (Result<T, NetworkError>) -> Void
     ) {
         guard let token = tokenManager.getAccessToken() else {
-            let error = NetworkError.unauthorized
-            showErrorModal(error)
-            completion(.failure(error))
+            completion(.failure(.unauthorized))
             return
         }
 
@@ -77,8 +90,7 @@ class NetworkManager: AuthAPI {
                                     completion: completion
                                 )
                             case .failure(let refreshError):
-                                self?.showErrorModal(refreshError)
-                                completion(.failure(refreshError))
+                                completion(.failure(.tokenRefreshFailed))
                             }
                         }
                     } else {
@@ -253,7 +265,7 @@ class NetworkManager: AuthAPI {
         email: String,
         password1: String,
         password2: String,
-        completion: @escaping (Result<Void, Error>) -> Void
+        completion: @escaping (Result<Void, NetworkError>) -> Void
     ) {
         let url = "\(baseURL)/create-account/"
         let params = ["username": username, "email": email, "password1": password1, "password2": password2]
@@ -279,7 +291,7 @@ class NetworkManager: AuthAPI {
     func setName(
         firstName: String,
         lastName: String,
-        completion: @escaping (Result<String, Error>) -> Void
+        completion: @escaping (Result<Void, NetworkError>) -> Void
     ) {
         let url = "\(baseURL)/set-name/"
         let params = ["firstName": firstName, "lastName": lastName]
@@ -292,14 +304,14 @@ class NetworkManager: AuthAPI {
         ) { result in
             switch result {
             case .success:
-                completion(.success(""))
+                completion(.success(()))
             case .failure(let error):
                 completion(.failure(error))
             }
         }
     }
 
-    func setBirthday(birthday: Date, completion: @escaping (Result<Void, Error>) -> Void) {
+    func setBirthday(birthday: Date, completion: @escaping (Result<Void, NetworkError>) -> Void) {
         let url = "\(baseURL)/set-birthday/"
         let fmt = DateFormatter()
         fmt.calendar = Calendar(identifier: .gregorian)

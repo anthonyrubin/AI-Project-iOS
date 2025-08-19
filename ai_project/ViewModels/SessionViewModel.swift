@@ -17,7 +17,7 @@ class SessionViewModel: ObservableObject {
     @Published var shouldRefreshData = false
     
     // MARK: - Dependencies
-    private let userService: UserService
+    private let userDataStore: UserDataStore
     private let repository: VideoAnalysisRepository
     private var notificationToken: NotificationToken?
     private var cancellables = Set<AnyCancellable>()
@@ -25,11 +25,11 @@ class SessionViewModel: ObservableObject {
     
     // MARK: - Initialization
     init(
-        userService: UserService,
+        userDataStore: UserDataStore,
         repository: VideoAnalysisRepository,
         networkManager: NetworkManager
     ) {
-        self.userService = userService
+        self.userDataStore = userDataStore
         self.repository = repository
         self.networkManager = networkManager
         setupRealmObservers()
@@ -75,7 +75,7 @@ class SessionViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         
-        currentUser = userService.getCurrentUser()
+        currentUser = userDataStore.load()
         isLoading = false
     }
     

@@ -7,9 +7,11 @@ final class CreateAccountViewController: UIViewController, UITextFieldDelegate {
     // MARK: - Deps
     private lazy var errorModalManager = ErrorModalManager(viewController: self)
     private let viewModel = CreateAccountViewModel(
-        networkManager: NetworkManager(
-            tokenManager: TokenManager(),
-            userService: UserService()
+        signupRepository: SignupRepositoryImpl(
+            signupAPI: NetworkManager(
+                tokenManager: TokenManager()
+            ),
+            userDataStore: RealmUserDataStore(),
         )
     )
     private var cancellables = Set<AnyCancellable>()
@@ -306,7 +308,7 @@ final class CreateAccountViewController: UIViewController, UITextFieldDelegate {
             .store(in: &cancellables)
 
         // Field-specific API errors (expects .apiError with field name)
-        viewModel.$fieldError
+        viewModel.$networkError
             .receive(on: DispatchQueue.main)
             .sink { [weak self] netErr in
                 guard let self else { return }

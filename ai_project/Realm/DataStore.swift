@@ -12,15 +12,15 @@ struct UserDTO: Codable {
 
 protocol UserDataStore {
     func upsert(user: User) throws
-    func setName(serverId: Int, first: String, last: String) throws
-    func setBirthday(serverId: Int, date: Date) throws
-    func load(serverId: Int) -> UserObject?
+    func setName(userId: Int, first: String, last: String) throws
+    func setBirthday(userId: Int, date: Date) throws
+    func load() -> UserObject?
     func clearAllData() throws
 }
 
 protocol AnalysisDataStore {
     func save(userServerId: Int, sport: String, score: Double, fps: Int, json: Data, videoPath: String?) throws
-    func latest(for userServerId: Int) -> Results<AnalysisObject>
+//    func latest(for userServerId: Int) -> Results<AnalysisObject>
 }
 
 final class RealmUserDataStore: UserDataStore {
@@ -55,18 +55,24 @@ final class RealmUserDataStore: UserDataStore {
         }
     }
 
-    func setName(serverId: Int, first: String, last: String) throws {
+    func setName(userId: Int, first: String, last: String) throws {
         let realm = try RealmProvider.make()
-        guard let obj = realm.object(ofType: UserObject.self, forPrimaryKey: serverId) else { return }
+        guard let obj = realm.object(ofType: UserObject.self, forPrimaryKey: userId) else { return }
         try realm.write { obj.firstName = first; obj.lastName = last; obj.updatedAt = Date() }
     }
-    func setBirthday(serverId: Int, date: Date) throws {
+    func setBirthday(userId: Int, date: Date) throws {
         let realm = try RealmProvider.make()
-        guard let obj = realm.object(ofType: UserObject.self, forPrimaryKey: serverId) else { return }
+        guard let obj = realm.object(ofType: UserObject.self, forPrimaryKey: userId) else { return }
         try realm.write { obj.birthday = date; obj.updatedAt = Date() }
     }
-    func load(serverId: Int) -> UserObject? {
-        (try? RealmProvider.make())?.object(ofType: UserObject.self, forPrimaryKey: serverId)
+    func load() -> UserObject? {
+        guard let currentUserId = UserDefaults.standard.object(forKey: "currentUserId") as? Int else {
+            // TODO: Log this
+            print("⚠️ No current user ID found in UserDefaults")
+            return nil
+        }
+
+        return try? RealmProvider.make().object(ofType: UserObject.self, forPrimaryKey: currentUserId)
     }
     
     func clearAllData() throws {
@@ -74,30 +80,6 @@ final class RealmUserDataStore: UserDataStore {
         try realm.write {
             realm.deleteAll()
         }
-    }
-}
-
-final class RealmAnalysisDataStore: AnalysisDataStore {
-    func save(userServerId: Int, sport: String, score: Double, fps: Int, json: Data, videoPath: String?) throws {
-        let jsonURL = try FileStore.writeJSON(json)
-        let realm = try RealmProvider.make()
-        try realm.write {
-            let obj = AnalysisObject()
-            obj.userServerId = userServerId
-            obj.sport = sport
-            obj.score = score
-            obj.fps = fps
-            obj.jsonPath = jsonURL.path
-            obj.videoPath = videoPath
-            obj.createdAt = Date()
-            realm.add(obj)
-        }
-    }
-    func latest(for userServerId: Int) -> Results<AnalysisObject> {
-        let realm = try! RealmProvider.make()
-        return realm.objects(AnalysisObject.self)
-            .where { $0.userServerId == userServerId }
-            .sorted(byKeyPath: "createdAt", ascending: false)
     }
 }
 

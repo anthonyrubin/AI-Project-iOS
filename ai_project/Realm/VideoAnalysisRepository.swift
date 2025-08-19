@@ -84,7 +84,7 @@ class VideoAnalysisRepository {
                         let analysisObject = VideoAnalysisObject()
                         analysisObject.serverId = analysis.id
                         analysisObject.videoServerId = analysis.video.id
-                        analysisObject.userServerId = analysis.id // This should be the actual user ID
+                        analysisObject.userId = analysis.id // This should be the actual user ID
                         analysisObject.sport = analysis.sport
                         analysisObject.sportCategory = analysis.sport_category
                         analysisObject.professionalScore = analysis.professional_score

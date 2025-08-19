@@ -107,7 +107,7 @@ final class AnalysisMetricObject: EmbeddedObject {
 final class VideoAnalysisObject: Object {
     @Persisted(primaryKey: true) var serverId: Int
     @Persisted var videoServerId: Int
-    @Persisted var userServerId: Int
+    @Persisted var userId: Int
     @Persisted var sport: String = ""
     @Persisted var sportCategory: String = ""
     @Persisted var professionalScore: Double?
@@ -176,16 +176,4 @@ final class VideoAnalysisObject: Object {
     var metricsCatalogArray: [String] {
         return Array(metricsCatalog)
     }
-}
-
-// MARK: - Legacy Analysis (keeping for backward compatibility)
-final class AnalysisObject: Object {
-    @Persisted(primaryKey: true) var id: ObjectId
-    @Persisted var userServerId: Int
-    @Persisted var sport: String = ""
-    @Persisted var score: Double = 0
-    @Persisted var fps: Int = 8
-    @Persisted var jsonPath: String = ""                // file path in app container
-    @Persisted var videoPath: String?                   // optional
-    @Persisted var createdAt: Date = Date()
 }

@@ -26,19 +26,21 @@ class LoginViewController: UIViewController {
     }()
 
     let loginButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("Login", for: .normal)
-        button.backgroundColor = UIColor.systemBlue
-        button.tintColor = .white
-        button.layer.cornerRadius = 5
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
+        let b = UIButton(type: .system)
+        var c = UIButton.Configuration.filled()
+        c.title = "Login"
+        c.baseBackgroundColor = .black
+        c.baseForegroundColor = .white
+        c.cornerStyle = .medium
+        b.configuration = c
+        b.translatesAutoresizingMaskIntoConstraints = false
+        return b
     }()
     
     let createAccountButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Create New Account", for: .normal)
-        button.setTitleColor(.systemBlue, for: .normal)
+        button.setTitleColor(.black, for: .normal)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -47,8 +49,7 @@ class LoginViewController: UIViewController {
     private let viewModel = LoginViewModel(
         authRepository: AuthRepositoryImpl(
             authAPI: NetworkManager(
-                tokenManager: TokenManager(),
-                userService: UserService()
+                tokenManager: TokenManager()
             ),
             tokenManager: TokenManager(),
             realmUserDataStore: RealmUserDataStore()
@@ -63,6 +64,7 @@ class LoginViewController: UIViewController {
         view.backgroundColor = .systemBackground
         setupUI()
         setupViewModelBindings()
+        hideNavBarHairline()
     }
 
     // MARK: - Setup UI
@@ -72,15 +74,15 @@ class LoginViewController: UIViewController {
         view.addSubview(usernameTextField)
         view.addSubview(passwordTextField)
         view.addSubview(loginButton)
-        view.addSubview(createAccountButton)  // NEW
+        view.addSubview(createAccountButton)
 
 
         // Constraints
         NSLayoutConstraint.activate([
             // Username TextField
-            usernameTextField.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             usernameTextField.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -80),
-            usernameTextField.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8),
+            usernameTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            usernameTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             usernameTextField.heightAnchor.constraint(equalToConstant: 44),
 
             // Password TextField
@@ -112,12 +114,7 @@ class LoginViewController: UIViewController {
         viewModel.$isLoading
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isLoading in
-                self?.loginButton.isEnabled = !isLoading
-                if isLoading {
-                    self?.loginButton.configuration?.showsActivityIndicator = true
-                } else {
-                    self?.loginButton.configuration?.showsActivityIndicator = false
-                }
+                self?.setLoading(isLoading)
             }
             .store(in: &cancellables)
         
@@ -172,6 +169,14 @@ class LoginViewController: UIViewController {
                 }
             }
             .store(in: &cancellables)
+    }
+    
+    private func setLoading(_ loading: Bool) {
+        var c = loginButton.configuration ?? .filled()
+        c.showsActivityIndicator = loading
+        c.title = loading ? nil : "Login"
+        loginButton.configuration = c
+        loginButton.isEnabled = !loading
     }
 
     // MARK: - Actions

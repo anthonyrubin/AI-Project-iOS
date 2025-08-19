@@ -31,8 +31,7 @@ class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDa
             analysis: analysis,
             repository: VideoAnalysisRepository(
                 networkManager: NetworkManager(
-                    tokenManager: TokenManager(),
-                    userService: UserService()
+                    tokenManager: TokenManager()
                 )
             )
         )

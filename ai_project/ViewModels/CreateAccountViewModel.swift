@@ -7,16 +7,16 @@ class CreateAccountViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published var isLoading = false
     @Published var modalError: String?
-    @Published var fieldError: NetworkError?
+    @Published var networkError: NetworkError?
     @Published var isAccountCreated = false
     
     // MARK: - Dependencies
-    private let networkManager: NetworkManager
+    private let signupRepository: SignupRepository
     private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Initialization
-    init(networkManager: NetworkManager) {
-        self.networkManager = networkManager
+    init(signupRepository: SignupRepository) {
+        self.signupRepository = signupRepository
     }
     
     // MARK: - Public Methods
@@ -25,7 +25,7 @@ class CreateAccountViewModel: ObservableObject {
         isLoading = true
         isAccountCreated = false
         
-        networkManager.createAccount(
+        signupRepository.createAccount(
             username: username,
             email: email,
             password1: password1,
@@ -38,9 +38,8 @@ class CreateAccountViewModel: ObservableObject {
                 case .success():
                     self?.isAccountCreated = true
                 case .failure(let error):
-                    if let fieldError = error as? NetworkError {
-                        self?.fieldError = fieldError
-                        self?.modalError = fieldError.localizedDescription
+                    if case .apiError(_) = error {
+                        self?.networkError = error
                     } else {
                         self?.modalError = error.localizedDescription
                     }
@@ -56,7 +55,7 @@ class CreateAccountViewModel: ObservableObject {
     }
     
     func clearFieldError() {
-        fieldError = nil
+        networkError = nil
     }
     
     func resetAccountCreated() {

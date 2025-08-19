@@ -11,8 +11,7 @@ import UIKit
 class AppDelegate: UIResponder, UIApplicationDelegate {
     
     private let networkManager = NetworkManager(
-        tokenManager: TokenManager(),
-        userService: UserService()
+        tokenManager: TokenManager()
     )
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {

@@ -32,8 +32,7 @@ final class SetBirthdayViewController: UIViewController {
     
     private let viewModel = SetBirthdayViewModel(
         networkManager: NetworkManager(
-            tokenManager: TokenManager(),
-            userService: UserService()
+            tokenManager: TokenManager()
         )
     )
     
