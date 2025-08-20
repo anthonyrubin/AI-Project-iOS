@@ -18,7 +18,7 @@ final class SessionViewController: UIViewController {
     private let sessionViewModel = SessionViewModel(
         userDataStore: RealmUserDataStore(),
         repository: VideoAnalysisRepository(networkManager: NetworkManager(tokenManager: TokenManager())),
-        analysisAPI: <#T##any AnalysisAPI#>)
+        analysisAPI: NetworkManager(tokenManager: TokenManager()))
     
     private lazy var loadingOverlay = LoadingOverlay(viewController: self)
     private lazy var errorModalManager = ErrorModalManager(viewController: self)
@@ -65,7 +65,6 @@ final class SessionViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        customBackgroundColor()
         setupUI()
         setupBindings()
         sessionViewModel.loadUserData()
@@ -79,10 +78,16 @@ final class SessionViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         installFloatingBarIfNeeded()
+        makeNavBarTransparent(for: self)
         
         // Ensure tab bar has correct background
         tabBarController?.tabBar.backgroundColor = .white
         tabBarController?.tabBar.barTintColor = .white
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        setBackgroundGradient()
     }
     
     private func setupBindings() {
@@ -156,7 +161,7 @@ final class SessionViewController: UIViewController {
         view.addSubview(tableView)
         
         // Register cell classes
-        tableView.register(GreetingCell.self, forCellReuseIdentifier: "GreetingCell")
+        tableView.register(StandardTitleCell.self, forCellReuseIdentifier: "StandardTitleCell")
         tableView.register(SessionHistoryCell.self, forCellReuseIdentifier: "SessionHistoryCell")
         tableView.register(VideoAnalysisCell.self, forCellReuseIdentifier: "VideoAnalysisCell")
         tableView.register(EmptyStateAnalysisCell.self, forCellReuseIdentifier: "EmptyStateAnalysisCell")
@@ -178,7 +183,6 @@ final class SessionViewController: UIViewController {
     
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            // Table view - attach directly to top edge for flush greeting cell
             tableView.topAnchor.constraint(equalTo: view.topAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -281,8 +285,12 @@ extension SessionViewController: UITableViewDataSource {
         
         // Greeting cell (row 0)
         if row == currentRow {
-            let cell = tableView.dequeueReusableCell(withIdentifier: "GreetingCell", for: indexPath) as! GreetingCell
-            cell.configure(with: sessionViewModel.currentUser)
+            let cell = tableView.dequeueReusableCell(withIdentifier: "StandardTitleCell", for: indexPath) as! StandardTitleCell
+            if let firstName =  sessionViewModel.currentUser?.firstName, !firstName.isEmpty {
+                cell.configure(with: "Hello, \(firstName)")
+            } else {
+                cell.configure(with: "Hello, User")
+            }
             return cell
         }
         currentRow += 1

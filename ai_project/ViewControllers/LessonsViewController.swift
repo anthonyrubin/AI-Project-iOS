@@ -30,13 +30,22 @@ class LessonsViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        customBackgroundColor()
         viewModel.refreshAnalyses()
         setupUI()
         setupTableView()
         setupBindings()
         viewModel.loadAnalyses()
         setupNotifications()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        makeNavBarTransparent(for: self)
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        setBackgroundGradient()
     }
 
     private func setupUI() {
@@ -87,7 +96,7 @@ class LessonsViewController: UIViewController {
         tableView.register(VideoAnalysisCell.self, forCellReuseIdentifier: "VideoAnalysisCell")
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "TitleInboxCell")
         tableView.separatorStyle = .none // Remove separator lines for card design
-        tableView.backgroundColor = .systemGroupedBackground // Better background for cards
+        tableView.backgroundColor = .clear
         tableView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(tableView)
         
@@ -147,7 +156,7 @@ extension LessonsViewController: UITableViewDataSource {
             // Remove any existing subviews
             cell.contentView.subviews.forEach { $0.removeFromSuperview() }
             
-            // Configure title label (matching GreetingCell style exactly)
+            // Configure title label (matching StandardTitleCell style exactly)
             titleLabel.text = "History"
             titleLabel.font = .systemFont(ofSize: 28, weight: .bold)
             titleLabel.textColor = .label
@@ -161,7 +170,7 @@ extension LessonsViewController: UITableViewDataSource {
             inboxButton.addTarget(self, action: #selector(inboxButtonTapped), for: .touchUpInside)
             cell.contentView.addSubview(inboxButton)
             
-            // Setup constraints (matching GreetingCell exactly)
+            // Setup constraints (matching StandardTitleCell exactly)
             NSLayoutConstraint.activate([
                 titleLabel.topAnchor.constraint(equalTo: cell.contentView.topAnchor),
                 titleLabel.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor, constant: 20),

@@ -38,7 +38,7 @@ protocol AnalysisAPI {
     func uploadVideo(fileURL: URL, completion: @escaping (Result<Video, NetworkError>) -> Void)
 }
 
-class NetworkManager: AuthAPI, SignupAPI {
+class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI {
 
     init(
         tokenManager: TokenManager

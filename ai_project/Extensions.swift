@@ -44,6 +44,38 @@ extension UIViewController {
         navigationItem.scrollEdgeAppearance = appearance
         navigationController?.navigationBar.tintColor = .black
     }
+    
+    func setBackgroundGradient() {
+        let gradientLayer = CAGradientLayer()
+        gradientLayer.colors = [
+            UIColor(red: 0.85, green: 0.86, blue: 1.00, alpha: 1).cgColor, // top tint
+            UIColor.white.cgColor,
+            UIColor.white.cgColor
+        ]
+        gradientLayer.locations = [0.0, 0.55, 1.0] as [NSNumber]   // fade by ~55% of height
+        gradientLayer.startPoint = CGPoint(x: 0.5, y: 0.0)
+        gradientLayer.endPoint   = CGPoint(x: 0.5, y: 1.0)
+
+        view.layer.insertSublayer(gradientLayer, at: 0)
+        gradientLayer.frame = view.bounds
+    }
+    
+    
+    func makeNavBarTransparent(for vc: UIViewController) {
+        guard let nav = vc.navigationController?.navigationBar else { return }
+
+        let clear = UINavigationBarAppearance()
+        clear.configureWithTransparentBackground()
+        clear.shadowColor = .clear
+
+        nav.standardAppearance = clear
+        nav.compactAppearance = clear
+        nav.scrollEdgeAppearance = clear
+        nav.isTranslucent = true
+
+        vc.edgesForExtendedLayout = [.top]
+        vc.extendedLayoutIncludesOpaqueBars = true
+    }
 }
 
 extension Notification.Name {
