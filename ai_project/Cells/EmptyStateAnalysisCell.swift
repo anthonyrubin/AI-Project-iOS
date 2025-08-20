@@ -25,9 +25,10 @@ class EmptyStateAnalysisCell: UITableViewCell {
         cardView.backgroundColor = UIColor.white
         cardView.layer.cornerRadius = 12
         cardView.translatesAutoresizingMaskIntoConstraints = false
+        cardView.layer.borderWidth = 1
+        cardView.layer.borderColor = UIColor.lightGray.cgColor
         contentView.addSubview(cardView)
-        
-        // Thumbnail image view - small square-ish
+
         emptyStateImageView.contentMode = .scaleAspectFill
         emptyStateImageView.clipsToBounds = true
         emptyStateImageView.translatesAutoresizingMaskIntoConstraints = false
@@ -35,9 +36,8 @@ class EmptyStateAnalysisCell: UITableViewCell {
         emptyStateImageView.contentMode = .scaleAspectFit
         cardView.addSubview(emptyStateImageView)
 
-        // Sport label - white text
         textView.font = .systemFont(ofSize: 16, weight: .medium)
-        textView.textColor = .black
+        textView.textColor = UIColor.lightGray
         textView.translatesAutoresizingMaskIntoConstraints = false
         textView.text = "Start your first analysis by tapping Start Session"
         textView.numberOfLines = 2

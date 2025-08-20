@@ -21,18 +21,19 @@ class SessionViewModel: ObservableObject {
     private let repository: VideoAnalysisRepository
     private var notificationToken: NotificationToken?
     private var cancellables = Set<AnyCancellable>()
-    private var networkManager: NetworkManager
+    private var analysisAPI: AnalysisAPI
     
     // MARK: - Initialization
     init(
         userDataStore: UserDataStore,
         repository: VideoAnalysisRepository,
-        networkManager: NetworkManager
+        analysisAPI: AnalysisAPI
     ) {
         self.userDataStore = userDataStore
         self.repository = repository
-        self.networkManager = networkManager
+        self.analysisAPI = analysisAPI
         setupRealmObservers()
+        loadUserData()
     }
     
     deinit {
@@ -45,7 +46,7 @@ class SessionViewModel: ObservableObject {
         uploadedVideo = nil
         shouldRefreshData = false
         
-        networkManager.uploadVideo(fileURL: fileURL) { [weak self] result in
+        analysisAPI.uploadVideo(fileURL: fileURL) { [weak self] result in
             Task { @MainActor in
                 self?.isLoading = false
                 
@@ -90,16 +91,7 @@ class SessionViewModel: ObservableObject {
     }
     
     func refreshData() {
-        loadUserData()
         loadAnalyses()
-    }
-    
-    func getUserFirstName() -> String {
-        return currentUser?.firstName ?? "User"
-    }
-    
-    func hasUserData() -> Bool {
-        return currentUser != nil
     }
     
     func hasAnalyses() -> Bool {

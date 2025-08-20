@@ -34,6 +34,10 @@ protocol SignupAPI {
     func setBirthday(birthday: Date, completion: @escaping (Result<Void, NetworkError>) -> Void)
 }
 
+protocol AnalysisAPI {
+    func uploadVideo(fileURL: URL, completion: @escaping (Result<Video, NetworkError>) -> Void)
+}
+
 class NetworkManager: AuthAPI, SignupAPI {
 
     init(
@@ -68,7 +72,7 @@ class NetworkManager: AuthAPI, SignupAPI {
         let headers: HTTPHeaders = [
             "Authorization": "Bearer \(token)"
         ]
-        
+
         AF.request(url, method: method, parameters: parameters, headers: headers)
             .validate(statusCode: 200..<300)
             .responseDecodable(of: responseType) { [weak self] response in
@@ -335,7 +339,7 @@ class NetworkManager: AuthAPI, SignupAPI {
         }
     }
     
-    func uploadVideo(fileURL: URL, completion: @escaping (Result<Video, Error>) -> Void) {
+    func uploadVideo(fileURL: URL, completion: @escaping (Result<Video, NetworkError>) -> Void) {
         guard let token = tokenManager.getAccessToken() else {
             completion(.failure(NetworkError.unauthorized))
             return
@@ -371,8 +375,8 @@ class NetworkManager: AuthAPI, SignupAPI {
                         case .success:
                             // Retry the upload with new token
                             self?.uploadVideo(fileURL: fileURL, completion: completion)
-                        case .failure(let refreshError):
-                            completion(.failure(refreshError))
+                        case .failure(_):
+                            completion(.failure(.tokenRefreshFailed))
                         }
                     }
                 } else {
@@ -423,51 +427,6 @@ class NetworkManager: AuthAPI, SignupAPI {
                 completion(.failure(error))
             }
         }
-    }
-
-
-    private func createBody(boundary: String, data: Data, mimeType: String, fieldName: String, filename: String) -> Data {
-        var body = Data()
-
-        body.append("--\(boundary)\r\n")
-        body.append("Content-Disposition: form-data; name=\"\(fieldName)\"; filename=\"\(filename)\"\r\n")
-        body.append("Content-Type: \(mimeType)\r\n\r\n")
-        body.append(data)
-        body.append("\r\n")
-        body.append("--\(boundary)--\r\n")
-
-        return body
-    }
-    
-    // MARK: - Error Modal Display
-    private func showErrorModal(_ error: Error) {
-        // Get the top view controller to show the error modal
-        if let topViewController = getTopViewController() {
-            ErrorModalManager(viewController: topViewController).showError(error)
-        }
-    }
-    
-    private func getTopViewController() -> UIViewController? {
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let window = windowScene.windows.first(where: { $0.isKeyWindow }) else {
-            return nil
-        }
-        
-        var topViewController = window.rootViewController
-        
-        while let presentedViewController = topViewController?.presentedViewController {
-            topViewController = presentedViewController
-        }
-        
-        if let navigationController = topViewController as? UINavigationController {
-            topViewController = navigationController.visibleViewController
-        }
-        
-        if let tabBarController = topViewController as? UITabBarController {
-            topViewController = tabBarController.selectedViewController
-        }
-        
-        return topViewController
     }
 }
 

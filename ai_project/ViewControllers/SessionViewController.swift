@@ -18,8 +18,7 @@ final class SessionViewController: UIViewController {
     private let sessionViewModel = SessionViewModel(
         userDataStore: RealmUserDataStore(),
         repository: VideoAnalysisRepository(networkManager: NetworkManager(tokenManager: TokenManager())),
-        networkManager: NetworkManager(tokenManager: TokenManager())
-    )
+        analysisAPI: <#T##any AnalysisAPI#>)
     
     private lazy var loadingOverlay = LoadingOverlay(viewController: self)
     private lazy var errorModalManager = ErrorModalManager(viewController: self)
