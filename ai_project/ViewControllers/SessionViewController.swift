@@ -59,8 +59,8 @@ final class SessionViewController: UIViewController {
         case greeting
         case sessionHistoryHeader
         case sessionHistoryCell
-        case lastSessionHeader
-        case lastSessionCell
+        case recentlyAnalyzedHeader
+        case recentlyAnalyzedCell
         case none
     }
 
@@ -160,7 +160,10 @@ final class SessionViewController: UIViewController {
         tableView.register(GreetingCell.self, forCellReuseIdentifier: "GreetingCell")
         tableView.register(SessionHistoryCell.self, forCellReuseIdentifier: "SessionHistoryCell")
         tableView.register(VideoAnalysisCell.self, forCellReuseIdentifier: "VideoAnalysisCell")
+        tableView.register(EmptyStateAnalysisCell.self, forCellReuseIdentifier: "EmptyStateAnalysisCell")
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "HeaderCell")
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 160  
     }
     
     private func setupFloatingBar() {
@@ -231,13 +234,13 @@ final class SessionViewController: UIViewController {
         if sessionViewModel.hasAnalyses() {
             // Last Session header
             if row == currentRow {
-                return .lastSessionHeader
+                return .recentlyAnalyzedHeader
             }
             currentRow += 1
             
             // Last Session cell
             if row == currentRow {
-                return .lastSessionCell
+                return .recentlyAnalyzedCell
             }
         }
         
@@ -266,6 +269,8 @@ extension SessionViewController: UITableViewDataSource {
         // Last Session section header + cell (if has analyses)
         if sessionViewModel.hasAnalyses() {
             rowCount += 2 // Header + cell
+        } else {
+            rowCount += 2
         }
         
         return rowCount
@@ -300,14 +305,13 @@ extension SessionViewController: UITableViewDataSource {
             currentRow += 1
         }
         
+        if row == currentRow {
+            return setHeaderCell(title: "Recently Analyzed", indexPath: indexPath)
+        }
+        currentRow += 1
+        
         // Last Session section (if has analyses)
         if sessionViewModel.hasAnalyses() {
-            // Last Session header
-            if row == currentRow {
-                return setHeaderCell(title: "Last Session", indexPath: indexPath)
-            }
-            currentRow += 1
-            
             // Last Session cell
             if row == currentRow {
                 let cell = tableView.dequeueReusableCell(withIdentifier: "VideoAnalysisCell", for: indexPath) as! VideoAnalysisCell
@@ -316,6 +320,8 @@ extension SessionViewController: UITableViewDataSource {
                 }
                 return cell
             }
+        } else {
+            return tableView.dequeueReusableCell(withIdentifier: "EmptyStateAnalysisCell", for: indexPath) as! EmptyStateAnalysisCell
         }
         
         // Fallback
@@ -362,9 +368,9 @@ extension SessionViewController: UITableViewDelegate {
         let rowType = getRowType(for: indexPath.row)
         
         switch rowType {
-        case .greeting, .sessionHistoryHeader, .sessionHistoryCell, .lastSessionHeader:
+        case .greeting, .sessionHistoryHeader, .sessionHistoryCell, .recentlyAnalyzedHeader:
             return // No action for these rows
-        case .lastSessionCell:
+        case .recentlyAnalyzedCell:
             if let lastAnalysis = sessionViewModel.lastSession {
                 let lessonViewController = LessonViewController(analysis: lastAnalysis)
                 navigationController?.pushViewController(lessonViewController, animated: true)

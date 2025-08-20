@@ -31,8 +31,9 @@ final class SetBirthdayViewController: UIViewController {
     }()
     
     private let viewModel = SetBirthdayViewModel(
-        networkManager: NetworkManager(
-            tokenManager: TokenManager()
+        signupRepository: SignupRepositoryImpl(
+            signupAPI: NetworkManager(tokenManager: TokenManager()),
+            userDataStore: RealmUserDataStore()
         )
     )
     
@@ -110,10 +111,6 @@ final class SetBirthdayViewController: UIViewController {
 
     @objc private func nextButtonTapped() {
         setLoading(true)
-        
-        // Store birthday in Realm immediately for local access
-        UserService().updateUserBirthday(datePicker.date)
-        
         viewModel.setBirthday(birthday: datePicker.date)
     }
     

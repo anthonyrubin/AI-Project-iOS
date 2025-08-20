@@ -10,11 +10,11 @@ class SetBirthdayViewModel: ObservableObject {
     @Published var isBirthdaySet = false
     
     // MARK: - Dependencies
-    private let networkManager: NetworkManager
+    private let signupRepository: SignupRepository
     
     // MARK: - Initialization
-    init(networkManager: NetworkManager) {
-        self.networkManager = networkManager
+    init(signupRepository: SignupRepository) {
+        self.signupRepository = signupRepository
     }
     
     // MARK: - Public Methods
@@ -24,14 +24,14 @@ class SetBirthdayViewModel: ObservableObject {
         errorMessage = nil
         isBirthdaySet = false
         
-        networkManager.setBirthday(
+        signupRepository.setBirthday(
             birthday: birthday
         ) { [weak self] result in
             Task { @MainActor in
                 self?.isLoading = false
                 
                 switch result {
-                case .success(let response):
+                case .success():
                     // TODO: Do something with the response or get rid of this somehow
                     self?.isBirthdaySet = true
                 case .failure(let error):
