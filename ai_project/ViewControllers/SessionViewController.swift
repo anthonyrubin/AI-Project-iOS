@@ -17,8 +17,10 @@ final class SessionViewController: UIViewController {
     //private let uploadViewModel = VideoUploadViewModel()
     private let sessionViewModel = SessionViewModel(
         userDataStore: RealmUserDataStore(),
-        repository: VideoAnalysisRepository(networkManager: NetworkManager(tokenManager: TokenManager())),
-        analysisAPI: NetworkManager(tokenManager: TokenManager()))
+        repository: VideoAnalysisRepository(
+            analysisAPI: NetworkManager(tokenManager: TokenManager())
+        )
+    )
     
     private lazy var loadingOverlay = LoadingOverlay(viewController: self)
     private lazy var errorModalManager = ErrorModalManager(viewController: self)
@@ -120,25 +122,25 @@ final class SessionViewController: UIViewController {
         
         sessionViewModel.$uploadedVideo
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] video in
-                if video != nil {
+            .sink { [weak self] videoUploaded in
+                if videoUploaded == true {
                     // Trigger elegant transition from loading to completed cell
                     self?.handleUploadCompletion()
                 }
             }
             .store(in: &cancellables)
         
-        sessionViewModel.$isLoading
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] isLoading in
-                print("IS LOADING BE \(isLoading)")
-                if isLoading {
-                    self?.loadingOverlay.show()
-                } else {
-                    self?.loadingOverlay.hide()
-                }
-            }
-            .store(in: &cancellables)
+//        sessionViewModel.$isLoading
+//            .receive(on: DispatchQueue.main)
+//            .sink { [weak self] isLoading in
+//                print("IS LOADING BE \(isLoading)")
+//                if isLoading {
+//                    self?.loadingOverlay.show()
+//                } else {
+//                    self?.loadingOverlay.hide()
+//                }
+//            }
+//            .store(in: &cancellables)
         
         // Bind upload progress
 //        sessionViewModel.$uploadProgress

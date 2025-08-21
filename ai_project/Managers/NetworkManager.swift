@@ -35,7 +35,9 @@ protocol SignupAPI {
 }
 
 protocol AnalysisAPI {
-    func uploadVideo(fileURL: URL, completion: @escaping (Result<Video, NetworkError>) -> Void)
+    func uploadVideo(fileURL: URL, completion: @escaping (Result<VideoAnalysis, NetworkError>) -> Void)
+    func getUserAnalyses(lastSyncTimestamp: String?, completion: @escaping (Result<DeltaSyncResponse, NetworkError>) -> Void)
+    func refreshSignedUrls(videoIds: [Int], completion: @escaping (Result<UrlRefreshResponse, Error>) -> Void)
 }
 
 class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI {
@@ -339,7 +341,7 @@ class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI {
         }
     }
     
-    func uploadVideo(fileURL: URL, completion: @escaping (Result<Video, NetworkError>) -> Void) {
+    func uploadVideo(fileURL: URL, completion: @escaping (Result<VideoAnalysis, NetworkError>) -> Void) {
         guard let token = tokenManager.getAccessToken() else {
             completion(.failure(NetworkError.unauthorized))
             return
@@ -363,10 +365,10 @@ class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI {
             headers: headers
         )
         .validate()
-        .responseDecodable(of: Video.self) { [weak self] response in
+        .responseDecodable(of: VideoAnalysis.self) { [weak self] response in
             switch response.result {
-            case .success(let video):
-                completion(.success(video))
+            case .success(let analysis):
+                completion(.success(analysis))
             case .failure(let error):
                 // Check if it's an authentication error (401)
                 if let statusCode = response.response?.statusCode, statusCode == 401 {
@@ -388,7 +390,7 @@ class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI {
     
     // analyzeVideo method removed - analysis now happens in uploadVideo
     
-    func getUserAnalyses(lastSyncTimestamp: String? = nil, completion: @escaping (Result<DeltaSyncResponse, Error>) -> Void) {
+    func getUserAnalyses(lastSyncTimestamp: String? = nil, completion: @escaping (Result<DeltaSyncResponse, NetworkError>) -> Void) {
         var url = "\(baseURL)/user-analyses/"
         
         // Add last_sync parameter if provided

@@ -17,12 +17,9 @@ class LessonsViewController: UIViewController {
     // MARK: - ViewModel
     private let viewModel = LessonsViewModel(
         repository: VideoAnalysisRepository(
-            networkManager: NetworkManager(
+            analysisAPI: NetworkManager(
                 tokenManager: TokenManager()
             )
-        ),
-        networkManager: NetworkManager(
-            tokenManager: TokenManager()
         )
     )
 

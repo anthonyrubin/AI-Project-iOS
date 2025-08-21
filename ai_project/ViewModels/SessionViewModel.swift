@@ -15,8 +15,7 @@ class SessionViewModel: ObservableObject {
     @Published var lastSession: VideoAnalysisObject?
     @Published var isLoading = false
     @Published var errorMessage: String?
-    @Published var uploadedVideo: Video?
-    @Published var shouldRefreshData = false
+    @Published var uploadedVideo: Bool?
     
     // MARK: - Video Upload State
     @Published var isUploadingVideo = false
@@ -28,17 +27,14 @@ class SessionViewModel: ObservableObject {
     private let repository: VideoAnalysisRepository
     private var notificationToken: NotificationToken?
     private var cancellables = Set<AnyCancellable>()
-    private var analysisAPI: AnalysisAPI
     
     // MARK: - Initialization
     init(
         userDataStore: UserDataStore,
         repository: VideoAnalysisRepository,
-        analysisAPI: AnalysisAPI
     ) {
         self.userDataStore = userDataStore
         self.repository = repository
-        self.analysisAPI = analysisAPI
         setupRealmObservers()
         loadUserData()
     }
@@ -63,21 +59,19 @@ class SessionViewModel: ObservableObject {
         Task { @MainActor in
             isUploadingVideo = true
             errorMessage = nil
-            uploadedVideo = nil
-            shouldRefreshData = false
+            uploadedVideo = false
             
             print("📊 Upload state set to: isUploadingVideo=\(isUploadingVideo)")
         }
         
-        analysisAPI.uploadVideo(fileURL: fileURL) { [weak self] result in
+        repository.uploadVideo(fileURL: fileURL) { [weak self] result in
             Task { @MainActor in
                 print("✅ Upload completed, setting isUploadingVideo to false")
                 self?.isUploadingVideo = false
                 
                 switch result {
-                case .success(let video):
-                    self?.uploadedVideo = video
-                    self?.shouldRefreshData = true
+                case .success():
+                    self?.isUploadingVideo = false
                     // Trigger data refresh in LessonsViewController
                     NotificationCenter.default.post(name: .videoAnalysisCompleted, object: nil)
                 case .failure(let error):
@@ -154,8 +148,7 @@ class SessionViewModel: ObservableObject {
     // MARK: - Error Handling
 
     func resetUploadState() {
-        uploadedVideo = nil
-        shouldRefreshData = false
+        uploadedVideo = false
         isUploadingVideo = false
         uploadSnapshot = nil
     }

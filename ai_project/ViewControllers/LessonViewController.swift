@@ -31,9 +31,7 @@ class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDa
         self.viewModel = LessonViewModel(
             analysis: analysis,
             repository: VideoAnalysisRepository(
-                networkManager: NetworkManager(
-                    tokenManager: TokenManager()
-                )
+                analysisAPI: NetworkManager(tokenManager: TokenManager())
             )
         )
         super.init(nibName: nil, bundle: nil)

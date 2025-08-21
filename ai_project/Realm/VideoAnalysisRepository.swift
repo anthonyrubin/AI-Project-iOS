@@ -10,34 +10,52 @@ extension DateFormatter {
 }
 
 class VideoAnalysisRepository {
-    private var networkManager: NetworkManager
+    private var analysisAPI: AnalysisAPI
     
-    init (networkManager: NetworkManager) {
-        self.networkManager = networkManager
+    init (analysisAPI: AnalysisAPI) {
+        self.analysisAPI = analysisAPI
     }
     
     // MARK: - Fetch and Store Methods
     
-    func fetchAndStoreNewAnalyses(completion: @escaping (Result<[VideoAnalysisObject], Error>) -> Void) {
+    func fetchAndStoreNewAnalyses(completion: @escaping (Result<[VideoAnalysisObject], NetworkError>) -> Void) {
         // Get the last sync timestamp
 
         let lastSyncTimestamp = getLastSyncTimestamp()
         
-        networkManager.getUserAnalyses(lastSyncTimestamp: lastSyncTimestamp) { [weak self] result in
+        analysisAPI.getUserAnalyses(lastSyncTimestamp: lastSyncTimestamp) { [weak self] result in
             switch result {
             case .success(let deltaResponse):
                 // Store the new sync timestamp
                 self?.storeLastSyncTimestamp(deltaResponse.sync_timestamp)
                 
                 // Store the new analyses
-                self?.storeNewAnalyses(deltaResponse.analyses, since: nil, completion: completion)
+                self?.storeNewAnalyses(deltaResponse.analyses, completion: completion)
             case .failure(let error):
                 completion(.failure(error))
             }
         }
     }
     
-    private func storeNewAnalyses(_ analyses: [VideoAnalysis], since timestamp: Date?, completion: @escaping (Result<[VideoAnalysisObject], Error>) -> Void) {
+    func uploadVideo(fileURL: URL, completion: @escaping (Result<Void, NetworkError>) -> Void) {
+        analysisAPI.uploadVideo(fileURL: fileURL) { [weak self] result in
+            switch result {
+            case .success(let analysis):
+                self?.storeNewAnalyses([analysis]) { saveToRealmResult in
+                    switch saveToRealmResult {
+                    case .success(_):
+                        completion(.success(()))
+                    case .failure(let error):
+                        completion(.failure(error))
+                    }
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    private func storeNewAnalyses(_ analyses: [VideoAnalysis], completion: @escaping (Result<[VideoAnalysisObject], NetworkError>) -> Void) {
         do {
             let realm = try RealmProvider.make()
             
@@ -158,7 +176,7 @@ class VideoAnalysisRepository {
             completion(.success(storedObjects))
             
         } catch {
-            completion(.failure(error))
+            completion(.failure(.cache(error)))
         }
     }
     
@@ -213,7 +231,7 @@ class VideoAnalysisRepository {
     func refreshVideoUrl(videoId: Int, completion: @escaping (Result<VideoObject?, Error>) -> Void) {
         
         // Call backend to refresh this specific video
-        networkManager.refreshSignedUrls(videoIds: [videoId]) { [weak self] result in
+        analysisAPI.refreshSignedUrls(videoIds: [videoId]) { [weak self] result in
             switch result {
             case .success(let refreshResponse):
                 self?.updateVideoWithRefreshedUrl(videoId: videoId, refreshResponse: refreshResponse, completion: completion)

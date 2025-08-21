@@ -13,15 +13,12 @@ class LessonsViewModel: ObservableObject {
     
     // MARK: - Dependencies
     private let repository: VideoAnalysisRepository
-    private let networkManager: NetworkManager
     private var notificationToken: NotificationToken?
     private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Initialization
-    init(repository: VideoAnalysisRepository, 
-         networkManager: NetworkManager) {
+    init(repository: VideoAnalysisRepository) {
         self.repository = repository
-        self.networkManager = networkManager
         setupRealmObservers()
     }
     
