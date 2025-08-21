@@ -163,7 +163,7 @@ final class SessionViewController: UIViewController {
         // Register cell classes
         tableView.register(StandardTitleCell.self, forCellReuseIdentifier: "StandardTitleCell")
         tableView.register(SessionHistoryCell.self, forCellReuseIdentifier: "SessionHistoryCell")
-        tableView.register(VideoAnalysisCell.self, forCellReuseIdentifier: "VideoAnalysisCell")
+        tableView.register(VideoAnalysisLoadingCell.self, forCellReuseIdentifier: "VideoAnalysisLoadingCell")
         tableView.register(EmptyStateAnalysisCell.self, forCellReuseIdentifier: "EmptyStateAnalysisCell")
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "HeaderCell")
         tableView.rowHeight = UITableView.automaticDimension
@@ -321,9 +321,9 @@ extension SessionViewController: UITableViewDataSource {
         if sessionViewModel.hasAnalyses() {
             // Last Session cell
             if row == currentRow {
-                let cell = tableView.dequeueReusableCell(withIdentifier: "VideoAnalysisCell", for: indexPath) as! VideoAnalysisCell
+                let cell = tableView.dequeueReusableCell(withIdentifier: "VideoAnalysisLoadingCell", for: indexPath) as! VideoAnalysisLoadingCell
                 if let lastAnalysis = sessionViewModel.lastSession {
-                    cell.configure(with: lastAnalysis)
+                    cell.startLoading()
                 }
                 return cell
             }
