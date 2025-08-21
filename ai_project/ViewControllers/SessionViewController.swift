@@ -122,7 +122,8 @@ final class SessionViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] video in
                 if video != nil {
-                    self?.sessionViewModel.resetUploadState()
+                    // Trigger elegant transition from loading to completed cell
+                    self?.handleUploadCompletion()
                 }
             }
             .store(in: &cancellables)
@@ -138,6 +139,64 @@ final class SessionViewController: UIViewController {
                 }
             }
             .store(in: &cancellables)
+        
+        // Bind upload progress
+//        sessionViewModel.$uploadProgress
+//            .receive(on: DispatchQueue.main)
+//            .sink { [weak self] progress in
+//                self?.updateLoadingCellProgress(progress)
+//            }
+//            .store(in: &cancellables)
+        
+        // Bind upload state changes
+        sessionViewModel.$isUploadingVideo
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isUploading in
+                print("🔄 Upload state changed: \(isUploading)")
+                print("🔄 Current upload snapshot: \(self?.sessionViewModel.uploadSnapshot != nil)")
+                self?.tableView.reloadData()
+            }
+            .store(in: &cancellables)
+        
+        // Bind upload snapshot changes
+//        sessionViewModel.$uploadSnapshot
+//            .receive(on: DispatchQueue.main)
+//            .sink { [weak self] snapshot in
+//                print("📸 Snapshot updated: \(snapshot != nil)")
+//                self?.tableView.reloadData()
+//            }
+//            .store(in: &cancellables)
+    }
+    
+    private func handleUploadCompletion() {
+        // Get the index path for the recently analyzed cell
+        let recentlyAnalyzedIndexPath = getRecentlyAnalyzedIndexPath()
+        
+        // Perform elegant transition
+        UIView.transition(with: tableView, duration: 0.5, options: .transitionCrossDissolve) {
+            self.tableView.reloadRows(at: [recentlyAnalyzedIndexPath], with: .none)
+        } completion: { _ in
+            // Reset upload state after transition
+            self.sessionViewModel.resetUploadState()
+        }
+    }
+    
+    private func getRecentlyAnalyzedIndexPath() -> IndexPath {
+        var row = 0
+        
+        // Greeting cell
+        row += 1
+        
+        // Session History section (if has analyses)
+        if sessionViewModel.hasAnalyses() {
+            row += 2 // Header + cell
+        }
+        
+        // Recently Analyzed header
+        row += 1
+        
+        // Recently Analyzed cell
+        return IndexPath(row: row, section: 0)
     }
     
     private func setupUI() {
@@ -164,10 +223,11 @@ final class SessionViewController: UIViewController {
         tableView.register(StandardTitleCell.self, forCellReuseIdentifier: "StandardTitleCell")
         tableView.register(SessionHistoryCell.self, forCellReuseIdentifier: "SessionHistoryCell")
         tableView.register(VideoAnalysisLoadingCell.self, forCellReuseIdentifier: "VideoAnalysisLoadingCell")
+        tableView.register(VideoAnalysisCellNew1.self, forCellReuseIdentifier: "VideoAnalysisCellNew1")
         tableView.register(EmptyStateAnalysisCell.self, forCellReuseIdentifier: "EmptyStateAnalysisCell")
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "HeaderCell")
         tableView.rowHeight = UITableView.automaticDimension
-        tableView.estimatedRowHeight = 160  
+        tableView.estimatedRowHeight = 120  
     }
     
     private func setupFloatingBar() {
@@ -233,8 +293,8 @@ final class SessionViewController: UIViewController {
             currentRow += 1
         }
         
-        // Last Session section (if has analyses)
-        if sessionViewModel.hasAnalyses() {
+        // Last Session section (if has analyses or uploading)
+        if sessionViewModel.hasAnalyses() || sessionViewModel.isUploadingVideo {
             // Last Session header
             if row == currentRow {
                 return .recentlyAnalyzedHeader
@@ -269,8 +329,8 @@ extension SessionViewController: UITableViewDataSource {
             rowCount += 2 // Header + cell
         }
         
-        // Last Session section header + cell (if has analyses)
-        if sessionViewModel.hasAnalyses() {
+        // Last Session section header + cell (if has analyses or uploading)
+        if sessionViewModel.hasAnalyses() || sessionViewModel.isUploadingVideo {
             rowCount += 2 // Header + cell
         } else {
             rowCount += 2
@@ -317,18 +377,33 @@ extension SessionViewController: UITableViewDataSource {
         }
         currentRow += 1
         
-        // Last Session section (if has analyses)
-        if sessionViewModel.hasAnalyses() {
+        // Last Session section (if has analyses or uploading)
+        if sessionViewModel.hasAnalyses() || sessionViewModel.isUploadingVideo {
             // Last Session cell
             if row == currentRow {
-                let cell = tableView.dequeueReusableCell(withIdentifier: "VideoAnalysisLoadingCell", for: indexPath) as! VideoAnalysisLoadingCell
-                if let lastAnalysis = sessionViewModel.lastSession {
+                print("🎯 Creating cell for row \(row): isUploading=\(sessionViewModel.isUploadingVideo), hasAnalyses=\(sessionViewModel.hasAnalyses())")
+                
+                if sessionViewModel.isUploadingVideo {
+                    // Show loading cell with snapshot
+                    print("📱 Creating VideoAnalysisLoadingCell")
+                    let cell = tableView.dequeueReusableCell(withIdentifier: "VideoAnalysisLoadingCell", for: indexPath) as! VideoAnalysisLoadingCell
+                    cell.configure(with: sessionViewModel.uploadSnapshot)
                     cell.startLoading()
+                    return cell
+                } else if let lastAnalysis = sessionViewModel.lastSession {
+                    // Show completed analysis cell
+                    print("📱 Creating VideoAnalysisCellNew1")
+                    let cell = tableView.dequeueReusableCell(withIdentifier: "VideoAnalysisCellNew1", for: indexPath) as! VideoAnalysisCellNew1
+                    cell.configure(with: lastAnalysis)
+                    return cell
                 }
-                return cell
             }
         } else {
-            return tableView.dequeueReusableCell(withIdentifier: "EmptyStateAnalysisCell", for: indexPath) as! EmptyStateAnalysisCell
+            // No analyses and not uploading - show empty state
+            if row == currentRow {
+                print("📱 Creating EmptyStateAnalysisCell")
+                return tableView.dequeueReusableCell(withIdentifier: "EmptyStateAnalysisCell", for: indexPath) as! EmptyStateAnalysisCell
+            }
         }
         
         // Fallback

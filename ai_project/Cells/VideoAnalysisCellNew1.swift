@@ -1,4 +1,5 @@
 import UIKit
+import SkeletonView
 
 enum SFScoreIcon: String {
     case zero       = "gauge.with.dots.needle.0percent"
@@ -199,6 +200,13 @@ final class VideoAnalysisCellNew1: UITableViewCell {
         rightStack.translatesAutoresizingMaskIntoConstraints = false
         cardView.addSubview(rightStack)
         
+        rightStack.setContentHuggingPriority(.required, for: .vertical)
+        rightStack.setContentCompressionResistancePriority(.required, for: .vertical)
+        
+        
+        thumbView.setContentCompressionResistancePriority(.fittingSizeLevel, for: .vertical)
+        thumbView.setContentHuggingPriority(.fittingSizeLevel, for: .vertical)
+        
         cardView.addSubview(thumbView)
         
         NSLayoutConstraint.activate([
@@ -279,9 +287,17 @@ final class VideoAnalysisCellNew1: UITableViewCell {
     
     private func showPlaceholderImage() {
         // Hide skeleton and show placeholder
-        thumbView.hideSkeleton()
+        hideSkeleton()
         thumbView.image = UIImage(named: "EmptyStateThumbnail")
         thumbView.alpha = 1.0
+    }
+    
+    private func showSkeleton() {
+        thumbView.showAnimatedGradientSkeleton()
+    }
+    
+    private func hideSkeleton() {
+        thumbView.hideSkeleton()
     }
     
     func configure(with analysis: VideoAnalysisObject) {

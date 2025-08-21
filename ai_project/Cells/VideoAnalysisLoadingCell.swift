@@ -112,16 +112,18 @@ final class VideoAnalysisLoadingCell: UITableViewCell {
     // Left side (image + ring)
     private let leftImageView: UIImageView = {
         let iv = UIImageView()
-        iv.image = nil // you can set a blurred placeholder if you want
+        iv.image = nil
         iv.backgroundColor = UIColor(white: 0.1, alpha: 0.15)
         iv.contentMode = .scaleAspectFill
         iv.clipsToBounds = true
         iv.layer.cornerRadius = 16
         iv.layer.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner]
         iv.translatesAutoresizingMaskIntoConstraints = false
+        iv.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        iv.setContentHuggingPriority(.defaultLow, for: .vertical)
         return iv
     }()
-    private let blur = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterialDark))
+    private let blur = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterialLight))
     private let progress = CircularProgressView()
 
     // Right side
@@ -132,18 +134,13 @@ final class VideoAnalysisLoadingCell: UITableViewCell {
         l.numberOfLines = 2
         l.text = "Starting…"
         l.adjustsFontSizeToFitWidth = true
+        l.translatesAutoresizingMaskIntoConstraints = false
         return l
     }()
     private let bar1 = ShimmerBar()
     private let bar2 = ShimmerBar()
     private let bar3 = ShimmerBar()
-//    private let footerLabel: UILabel = {
-//        let l = UILabel()
-//        l.font = .systemFont(ofSize: 18, weight: .semibold)
-//        l.textColor = .secondaryLabel
-//        l.text = "We’ll notify you when done!"
-//        return l
-//    }()
+
     private let chevronView: UIImageView = {
         let iv = UIImageView(image: UIImage(systemName: "chevron.right"))
         iv.tintColor = .tertiaryLabel
@@ -157,7 +154,7 @@ final class VideoAnalysisLoadingCell: UITableViewCell {
     private var progressTimer: Timer?
     private var messageTimer: Timer?
     private var currentProgress: CGFloat = 0
-    private var messages = [
+    private let messages = [
         "Extracting keyframes...",
         "Calibrating motion...",
         "Detecting joints...",
@@ -182,62 +179,108 @@ final class VideoAnalysisLoadingCell: UITableViewCell {
         titleLabel.text = "Starting…"
         currentProgress = 0
         progress.setProgress(0)
+        leftImageView.image = nil
+        leftImageView.backgroundColor = UIColor(white: 0.1, alpha: 0.15)
     }
 
     // MARK: layout
     private func buildLayout() {
         contentView.addSubview(cardView)
+
         cardView.addSubview(leftImageView)
         leftImageView.addSubview(blur)
         leftImageView.addSubview(progress)
+        blur.translatesAutoresizingMaskIntoConstraints = false
+        progress.translatesAutoresizingMaskIntoConstraints = false
 
-        // Right stack (title + skeletons + footer)
-        let skeletonStack = UIStackView(arrangedSubviews: [bar1, bar2, bar3])
-        skeletonStack.axis = .vertical
-        skeletonStack.spacing = 12
-        bar1.heightAnchor.constraint(equalToConstant: 12).isActive = true
-        bar2.heightAnchor.constraint(equalToConstant: 12).isActive = true
-        bar3.heightAnchor.constraint(equalToConstant: 12).isActive = true
-
+        // Title + chevron
         let titleAndChevron = UIStackView(arrangedSubviews: [titleLabel, chevronView])
         titleAndChevron.axis = .horizontal
         titleAndChevron.alignment = .top
         titleAndChevron.spacing = 8
+        titleAndChevron.translatesAutoresizingMaskIntoConstraints = false
 
+        // Skeleton containers (avoid stack width fights)
+        let s1 = UIView(); s1.translatesAutoresizingMaskIntoConstraints = false
+        let s2 = UIView(); s2.translatesAutoresizingMaskIntoConstraints = false
+        let s3 = UIView(); s3.translatesAutoresizingMaskIntoConstraints = false
+
+        // Put bars inside containers
+        for (container, bar) in [(s1, bar1), (s2, bar2), (s3, bar3)] {
+            bar.translatesAutoresizingMaskIntoConstraints = false
+            container.addSubview(bar)
+        }
+
+        // Vertical stack of containers
+        let skeletonStack = UIStackView(arrangedSubviews: [s1, s2, s3])
+        skeletonStack.axis = .vertical
+        skeletonStack.spacing = 12
+        skeletonStack.alignment = .fill
+        skeletonStack.translatesAutoresizingMaskIntoConstraints = false
+
+        // Right column
         let rightStack = UIStackView(arrangedSubviews: [titleAndChevron, skeletonStack])
         rightStack.axis = .vertical
-        rightStack.alignment = .fill
         rightStack.spacing = 14
         rightStack.translatesAutoresizingMaskIntoConstraints = false
         cardView.addSubview(rightStack)
+        rightStack.setContentHuggingPriority(.required, for: .vertical)
+        rightStack.setContentCompressionResistancePriority(.required, for: .vertical)
         
-        progress.translatesAutoresizingMaskIntoConstraints = false
-        blur.translatesAutoresizingMaskIntoConstraints = false
+        
+        leftImageView.setContentCompressionResistancePriority(.fittingSizeLevel, for: .vertical)
+        leftImageView.setContentHuggingPriority(.fittingSizeLevel, for: .vertical)  
 
-        // Constraints (match the ratios/constants in VideoAnalysisCellNew1)
+        // Heights for skeleton rows
         NSLayoutConstraint.activate([
-            
-            bar3.widthAnchor.constraint(equalTo: skeletonStack.widthAnchor, multiplier: 0.3),
-            
+            s1.heightAnchor.constraint(equalToConstant: 12),
+            s2.heightAnchor.constraint(equalTo: s1.heightAnchor),
+            s3.heightAnchor.constraint(equalTo: s1.heightAnchor),
+
+            // Bars fill first two rows
+            bar1.topAnchor.constraint(equalTo: s1.topAnchor),
+            bar1.leadingAnchor.constraint(equalTo: s1.leadingAnchor),
+            bar1.trailingAnchor.constraint(equalTo: s1.trailingAnchor),
+            bar1.bottomAnchor.constraint(equalTo: s1.bottomAnchor),
+
+            bar2.topAnchor.constraint(equalTo: s2.topAnchor),
+            bar2.leadingAnchor.constraint(equalTo: s2.leadingAnchor),
+            bar2.trailingAnchor.constraint(equalTo: s2.trailingAnchor),
+            bar2.bottomAnchor.constraint(equalTo: s2.bottomAnchor),
+
+            // Third bar is short inside its container (no stack conflicts)
+            bar3.topAnchor.constraint(equalTo: s3.topAnchor),
+            bar3.leadingAnchor.constraint(equalTo: s3.leadingAnchor),
+            bar3.bottomAnchor.constraint(equalTo: s3.bottomAnchor),
+            bar3.widthAnchor.constraint(equalTo: s3.widthAnchor, multiplier: 0.3),
+        ])
+
+        // Core constraints (single vertical chain, no equal-heights)
+        NSLayoutConstraint.activate([
+            // Card
             cardView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
             cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             cardView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
 
+            // Left image column follows card height
             leftImageView.topAnchor.constraint(equalTo: cardView.topAnchor),
             leftImageView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
             leftImageView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor),
             leftImageView.widthAnchor.constraint(equalTo: cardView.widthAnchor, multiplier: 0.30),
 
+            // Blur & progress inside image
             blur.topAnchor.constraint(equalTo: leftImageView.topAnchor),
             blur.leadingAnchor.constraint(equalTo: leftImageView.leadingAnchor),
             blur.trailingAnchor.constraint(equalTo: leftImageView.trailingAnchor),
             blur.bottomAnchor.constraint(equalTo: leftImageView.bottomAnchor),
+
             progress.centerXAnchor.constraint(equalTo: leftImageView.centerXAnchor),
             progress.centerYAnchor.constraint(equalTo: leftImageView.centerYAnchor),
             progress.widthAnchor.constraint(equalTo: leftImageView.widthAnchor, multiplier: 0.55),
             progress.heightAnchor.constraint(equalTo: progress.widthAnchor),
 
+            // Right column drives the height (top/bottom insets)
             rightStack.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 10),
             rightStack.leadingAnchor.constraint(equalTo: leftImageView.trailingAnchor, constant: 10),
             rightStack.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -10),
@@ -245,38 +288,53 @@ final class VideoAnalysisLoadingCell: UITableViewCell {
 
             chevronView.widthAnchor.constraint(equalToConstant: 14)
         ])
+
+        // Safety cap so the ring never drives a giant row
+        let cap = progress.widthAnchor.constraint(lessThanOrEqualToConstant: 120)
+        cap.priority = .defaultHigh
+        cap.isActive = true
     }
 
     // MARK: - Public controls
 
+    func configure(with snapshot: UIImage?) {
+        if let snapshot = snapshot {
+            leftImageView.image = snapshot
+            leftImageView.backgroundColor = .clear
+        } else {
+            leftImageView.image = nil
+            leftImageView.backgroundColor = UIColor(white: 0.1, alpha: 0.15)
+        }
+    }
+
     func startLoading() {
-        // shimmer
         [bar1, bar2, bar3].forEach { $0.start() }
-        // fake progress: ramp to ~92%, then gently wander while we wait
+
         progressTimer?.invalidate()
-        progressTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] t in
+        progressTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
             guard let self else { return }
-            if currentProgress < 0.80 {
-                currentProgress += 0.01
-            } else if currentProgress < 0.96 {
-                currentProgress += 0.007
-            } else if currentProgress < 0.98 {
-                currentProgress += 0.001
-            } else if currentProgress < 1 {
-                currentProgress += 0.000001
-            }
+            if currentProgress < 0.80 { currentProgress += 0.01 }
+            else if currentProgress < 0.96 { currentProgress += 0.007 }
+            else if currentProgress < 0.98 { currentProgress += 0.001 }
+            else if currentProgress < 1.00 { currentProgress += 0.000001 }
             progress.setProgress(currentProgress)
         }
 
-        // headline rotation
         messageTimer?.invalidate()
         messageTimer = Timer.scheduledTimer(withTimeInterval: 3.5, repeats: true) { [weak self] _ in
             guard let self else { return }
-            if messageIndex != messages.count - 1 {
-                crossfade(to: messages[messageIndex])
+            if messageIndex < messages.count - 1 {
+                UIView.transition(with: titleLabel, duration: 0.25, options: .transitionCrossDissolve) {
+                    self.titleLabel.text = self.messages[self.messageIndex]
+                }
                 messageIndex += 1
             }
         }
+    }
+
+    func updateProgress(_ progress: Double) {
+        currentProgress = CGFloat(progress)
+        self.progress.setProgress(currentProgress)
     }
 
     func stopLoading() {
@@ -285,12 +343,5 @@ final class VideoAnalysisLoadingCell: UITableViewCell {
         progressTimer = nil
         messageTimer = nil
         [bar1, bar2, bar3].forEach { $0.stop() }
-    }
-
-    // Smoothly swap the headline
-    private func crossfade(to text: String) {
-        UIView.transition(with: titleLabel, duration: 0.25, options: .transitionCrossDissolve) {
-            self.titleLabel.text = text
-        }
     }
 }

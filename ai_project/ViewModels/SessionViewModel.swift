@@ -1,6 +1,8 @@
 import Foundation
 import RealmSwift
 import Combine
+import AVFoundation
+import UIKit
 
 @MainActor
 class SessionViewModel: ObservableObject {
@@ -15,6 +17,11 @@ class SessionViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var uploadedVideo: Video?
     @Published var shouldRefreshData = false
+    
+    // MARK: - Video Upload State
+    @Published var isUploadingVideo = false
+    var uploadSnapshot: UIImage?
+//    @Published var uploadProgress: Double = 0.0
     
     // MARK: - Dependencies
     private let userDataStore: UserDataStore
@@ -41,14 +48,31 @@ class SessionViewModel: ObservableObject {
     }
     
     func uploadVideo(fileURL: URL) {
-        isLoading = true
-        errorMessage = nil
-        uploadedVideo = nil
-        shouldRefreshData = false
+        // Capture snapshot first
+        captureVideoSnapshot(from: fileURL) { [weak self] snapshot in
+            Task { @MainActor in
+                self?.uploadSnapshot = snapshot
+                self?.startVideoUpload(fileURL: fileURL)
+            }
+        }
+    }
+    
+    private func startVideoUpload(fileURL: URL) {
+        print("🚀 Starting video upload...")
+        
+        Task { @MainActor in
+            isUploadingVideo = true
+            errorMessage = nil
+            uploadedVideo = nil
+            shouldRefreshData = false
+            
+            print("📊 Upload state set to: isUploadingVideo=\(isUploadingVideo)")
+        }
         
         analysisAPI.uploadVideo(fileURL: fileURL) { [weak self] result in
             Task { @MainActor in
-                self?.isLoading = false
+                print("✅ Upload completed, setting isUploadingVideo to false")
+                self?.isUploadingVideo = false
                 
                 switch result {
                 case .success(let video):
@@ -63,11 +87,77 @@ class SessionViewModel: ObservableObject {
         }
     }
     
+    private func captureVideoSnapshot(from url: URL, completion: @escaping (UIImage?) -> Void) {
+        let asset = AVAsset(url: url)
+        let imageGenerator = AVAssetImageGenerator(asset: asset)
+        imageGenerator.appliesPreferredTrackTransform = true
+        imageGenerator.maximumSize = CGSize(width: 300, height: 300) // Reasonable size for thumbnail
+        
+        // Try to get a frame at 1 second, fallback to 0.5 seconds if needed
+        let time = CMTime(seconds: 1.0, preferredTimescale: 1)
+        
+        imageGenerator.generateCGImagesAsynchronously(forTimes: [NSValue(time: time)]) { _, cgImage, _, result, error in
+            if let cgImage = cgImage {
+                let image = UIImage(cgImage: cgImage)
+                completion(image)
+            } else {
+                // Fallback: try at 0.5 seconds
+                let fallbackTime = CMTime(seconds: 0.5, preferredTimescale: 1)
+                imageGenerator.generateCGImagesAsynchronously(forTimes: [NSValue(time: fallbackTime)]) { _, cgImage, _, _, _ in
+                    if let cgImage = cgImage {
+                        let image = UIImage(cgImage: cgImage)
+                        completion(image)
+                    } else {
+                        // Final fallback: create a placeholder
+                        let placeholder = self.createPlaceholderImage()
+                        completion(placeholder)
+                    }
+                }
+            }
+        }
+    }
+    
+    private func createPlaceholderImage() -> UIImage {
+        let size = CGSize(width: 300, height: 300)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        
+        return renderer.image { context in
+            let rect = CGRect(origin: .zero, size: size)
+            
+            // Background gradient
+            let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                                    colors: [
+                                        UIColor.systemBlue.cgColor,
+                                        UIColor.systemPurple.cgColor
+                                    ] as CFArray,
+                                    locations: [0, 1])!
+            
+            context.cgContext.drawLinearGradient(gradient,
+                                               start: CGPoint(x: 0, y: 0),
+                                               end: CGPoint(x: size.width, y: size.height),
+                                               options: [])
+            
+            // Video icon
+            let iconSize: CGFloat = 80
+            let iconRect = CGRect(x: (size.width - iconSize) / 2,
+                                y: (size.height - iconSize) / 2,
+                                width: iconSize,
+                                height: iconSize)
+            
+            if let videoIcon = UIImage(systemName: "video.fill") {
+                videoIcon.withTintColor(.white, renderingMode: .alwaysOriginal)
+                    .draw(in: iconRect)
+            }
+        }
+    }
+    
     // MARK: - Error Handling
 
     func resetUploadState() {
         uploadedVideo = nil
         shouldRefreshData = false
+        isUploadingVideo = false
+        uploadSnapshot = nil
     }
     
     // MARK: - Public Methods
@@ -157,9 +247,5 @@ class SessionViewModel: ObservableObject {
     
     func clearError() {
         errorMessage = nil
-    }
-    
-    func hasError() -> Bool {
-        return errorMessage != nil
     }
 }
