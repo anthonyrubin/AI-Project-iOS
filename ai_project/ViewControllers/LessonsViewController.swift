@@ -93,7 +93,7 @@ class LessonsViewController: UIViewController {
     private func setupTableView() {
         tableView.delegate = self
         tableView.dataSource = self
-        tableView.register(VideoAnalysisCell.self, forCellReuseIdentifier: "VideoAnalysisCell")
+        tableView.register(VideoAnalysisCellNew1.self, forCellReuseIdentifier: "VideoAnalysisCellNew1")
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "TitleInboxCell")
         tableView.separatorStyle = .none // Remove separator lines for card design
         tableView.backgroundColor = .clear
@@ -114,7 +114,12 @@ class LessonsViewController: UIViewController {
     
     @objc private func inboxButtonTapped() {
         let inboxViewController = InboxViewController()
-        navigationController?.pushViewController(inboxViewController, animated: true)
+        
+        if let sheet = inboxViewController.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+        }
+        
+        navigationController?.present(inboxViewController, animated: true)
     }
     
     private func setupNotifications() {
@@ -163,14 +168,12 @@ extension LessonsViewController: UITableViewDataSource {
             titleLabel.translatesAutoresizingMaskIntoConstraints = false
             cell.contentView.addSubview(titleLabel)
             
-            // Configure inbox button
             inboxButton.setImage(UIImage(systemName: "tray"), for: .normal)
             inboxButton.tintColor = .label
             inboxButton.translatesAutoresizingMaskIntoConstraints = false
             inboxButton.addTarget(self, action: #selector(inboxButtonTapped), for: .touchUpInside)
             cell.contentView.addSubview(inboxButton)
             
-            // Setup constraints (matching StandardTitleCell exactly)
             NSLayoutConstraint.activate([
                 titleLabel.topAnchor.constraint(equalTo: cell.contentView.topAnchor),
                 titleLabel.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor, constant: 20),
@@ -186,7 +189,7 @@ extension LessonsViewController: UITableViewDataSource {
             return cell
         } else {
             // Analysis cells (offset by 1 for title cell)
-            let cell = tableView.dequeueReusableCell(withIdentifier: "VideoAnalysisCell", for: indexPath) as! VideoAnalysisCell
+            let cell = tableView.dequeueReusableCell(withIdentifier: "VideoAnalysisCellNew1", for: indexPath) as! VideoAnalysisCellNew1
             
             if let analysis = viewModel.getAnalysis(at: indexPath.row - 1) {
                 cell.configure(with: analysis)

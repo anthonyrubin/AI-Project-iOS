@@ -6,6 +6,7 @@ struct VideoAnalysis: Codable {
     let id: Int
     let video: Video
     let analysis_data: [String: AnyCodable]  // Raw JSON from AI analysis
+    let icon: String
     let sport: String
     let sport_category: String
     let professional_score: Double?
@@ -75,6 +76,7 @@ struct VideoAnalysis: Codable {
         overall_tips = try container.decode([String].self, forKey: .overall_tips)
         metrics_catalog = try container.decode([String].self, forKey: .metrics_catalog)
         created_at = try container.decode(String.self, forKey: .created_at)
+        icon = try container.decode(String.self, forKey: .icon)
     }
 }
 

@@ -118,6 +118,7 @@ final class VideoAnalysisObject: Object {
     @Persisted var createdAt: Date = Date()
     @Persisted var events: List<AnalysisEventObject> = List<AnalysisEventObject>()
     @Persisted var analysisData: String = "" // JSON string of analysis data
+    @Persisted var icon: String = ""
     
     // Computed property to get the video object
     var video: VideoObject? {

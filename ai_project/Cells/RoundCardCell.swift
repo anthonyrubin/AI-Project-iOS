@@ -36,7 +36,6 @@ final class RoundCardCell: UITableViewCell {
     private let container = UIView()
     private let iconView = UIImageView()
     private let titleLabel = UILabel()
-    private let chevron = UIImageView(image: UIImage(systemName: "chevron.right"))
     private let separator = UIView()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -66,11 +65,7 @@ final class RoundCardCell: UITableViewCell {
         titleLabel.font = .systemFont(ofSize: 17)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        chevron.tintColor = .tertiaryLabel
-        chevron.setContentHuggingPriority(.required, for: .horizontal)
-        chevron.translatesAutoresizingMaskIntoConstraints = false
-
-        let h = UIStackView(arrangedSubviews: [iconView, titleLabel, chevron])
+        let h = UIStackView(arrangedSubviews: [iconView, titleLabel])
         h.axis = .horizontal
         h.alignment = .center
         h.spacing = 14

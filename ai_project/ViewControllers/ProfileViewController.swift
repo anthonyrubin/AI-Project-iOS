@@ -6,6 +6,13 @@ import Combine
 final class ProfileViewController: UIViewController {
 
     private let tableView = UITableView(frame: .zero, style: .plain)
+    private let viewModel = ProfileViewModel(
+        authRepository: AuthRepositoryImpl(
+            authAPI: NetworkManager(tokenManager: TokenManager()),
+            tokenManager: TokenManager(),
+            realmUserDataStore: RealmUserDataStore()
+        )
+    )
 
     // Example data
     private struct Section {
@@ -41,11 +48,14 @@ final class ProfileViewController: UIViewController {
             ]),
             Section(header: nil, rows: [
                 Row(icon: "text.document", title: "Terms and Conditions", action: { }),
-                Row(icon: "shield.pattern.checkered", title: "Privacy Policy", action: { })
+                Row(icon: "shield.pattern.checkered", title: "Privacy Policy", action: { }),
+                Row(icon: "person.fill.badge.minus", title: "Privacy Policy", action: { }),
             ]),
             
             Section(header: nil, rows: [
-                Row(icon: "rectangle.portrait.and.arrow.right", title: "Logout", action: { }),
+                Row(icon: "rectangle.portrait.and.arrow.right", title: "Logout", action: { [weak self] in
+                    self?.logoutButtonTapped()
+                }),
             ])
         ]
     }
@@ -107,7 +117,7 @@ extension ProfileViewController: UITableViewDataSource, UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
-        return section == 0 ? 20 : 20
+        return section == 0 ? 16 : 20
     } // space between cards
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? { UIView() }
 
@@ -146,8 +156,12 @@ extension ProfileViewController: UITableViewDataSource, UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        sections[indexPath.section].rows[indexPath.row].action()
+        sections[indexPath.section - 1].rows[indexPath.row].action()
         tableView.deselectRow(at: indexPath, animated: true)
+    }
+    
+    @objc func logoutButtonTapped() {
+        viewModel.logout()
     }
 }
 

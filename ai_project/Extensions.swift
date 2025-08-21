@@ -90,3 +90,29 @@ extension String {
         self.rangeOfCharacter(from: .whitespacesAndNewlines) != nil
     }
 }
+
+
+extension Date {
+    /// e.g. "August 8th, 2025"
+    func longOrdinalString(locale: Locale = .current) -> String {
+        let cal = Calendar.current
+        let comps = cal.dateComponents([.year, .month, .day], from: self)
+        guard let y = comps.year, let m = comps.month, let d = comps.day else { return "" }
+
+        let monthFormatter = DateFormatter()
+        monthFormatter.locale = locale
+        let month = monthFormatter.monthSymbols[m - 1]   // "January"..."December"
+
+        let ordinal = NumberFormatter.ordinalString(d, locale: locale)
+        return "\(month) \(ordinal), \(y)"
+    }
+}
+
+private extension NumberFormatter {
+    static func ordinalString(_ value: Int, locale: Locale = .current) -> String {
+        let nf = NumberFormatter()
+        nf.locale = locale
+        nf.numberStyle = .ordinal
+        return nf.string(from: NSNumber(value: value)) ?? "\(value)"
+    }
+}

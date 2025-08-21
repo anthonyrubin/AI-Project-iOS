@@ -14,6 +14,7 @@ class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDa
     private var cancellables = Set<AnyCancellable>()
     
     // MARK: - UI Components
+    private let iconView = UIImageView()
     private let scrollView = UIScrollView()
     private let contentView = UIView()
     private let videoContainerView = UIView()
@@ -90,7 +91,7 @@ class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDa
         // Bind URL refresh state
         viewModel.$isRefreshingUrl
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] isRefreshing in
+            .sink { isRefreshing in
                 // Could show loading indicator for URL refresh
                 print("🔄 LessonViewController: URL refresh state changed to: \(isRefreshing)")
             }
@@ -373,6 +374,7 @@ class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDa
             }
             
             addSection(title: "Video Information", content: videoInfo)
+            addIcon(icon: viewModel.analysis.icon)
         }
         
         guard let analysisData = viewModel.analysis.analysisDataDict else {
@@ -420,6 +422,11 @@ class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDa
         if let safety = analysisData["safety_considerations"] as? [String] {
             addSection(title: "Safety Considerations", content: safety.joined(separator: "\n• "))
         }
+    }
+    
+    private func addIcon(icon: String) {
+        let iconView = UIImageView(image: UIImage(systemName: icon))
+        analysisStackView.addArrangedSubview(iconView)
     }
     
     private func addSection(title: String, content: String) {

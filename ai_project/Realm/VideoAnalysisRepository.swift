@@ -90,6 +90,7 @@ class VideoAnalysisRepository {
                         analysisObject.professionalScore = analysis.professional_score
                         analysisObject.confidence = analysis.confidence
                         analysisObject.clipSummary = analysis.clip_summary
+                        analysisObject.icon = analysis.icon
                         
                         // Parse timestamp
                         if let parsedDate = dateFormatter.date(from: analysis.created_at) {
