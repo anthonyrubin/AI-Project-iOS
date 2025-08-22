@@ -1,5 +1,6 @@
 import UIKit
 import Combine
+import AuthenticationServices // Added for Apple Sign-In
 
 class LoginViewController: UIViewController {
     
@@ -44,18 +45,69 @@ class LoginViewController: UIViewController {
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
+    
+    // Social Login Buttons
+    let googleSignInButton: UIButton = {
+        let button = UIButton(type: .system)
+        var config = UIButton.Configuration.filled()
+        config.title = "Continue with Google"
+        config.baseBackgroundColor = .white
+        config.baseForegroundColor = .black
+        config.cornerStyle = .medium
+        config.image = UIImage(systemName: "globe")
+        config.imagePadding = 8
+        button.configuration = config
+        button.layer.borderWidth = 1
+        button.layer.borderColor = UIColor.systemGray4.cgColor
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+    
+    let appleSignInButton: ASAuthorizationAppleIDButton = {
+        let button = ASAuthorizationAppleIDButton(type: .signIn, style: .black)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+    
+    let orLabel: UILabel = {
+        let label = UILabel()
+        label.text = "or"
+        label.textAlignment = .center
+        label.textColor = .secondaryLabel
+        label.font = .systemFont(ofSize: 14)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
 
     // ViewModel instance
-    private let viewModel = LoginViewModel(
-        authRepository: AuthRepositoryImpl(
-            authAPI: NetworkManager(
-                tokenManager: TokenManager()
-            ),
-            tokenManager: TokenManager(),
-            realmUserDataStore: RealmUserDataStore()
-        )
-    )
+    private let viewModel: LoginViewModel
     private var cancellables = Set<AnyCancellable>()
+    
+    // MARK: - Initialization
+    
+    init() {
+        let socialLoginManager = SocialLoginManager(
+            googleClientID: "YOUR_GOOGLE_CLIENT_ID", // Replace with actual client ID
+            appleClientID: "YOUR_APPLE_CLIENT_ID"    // Replace with actual client ID
+        )
+        
+        self.viewModel = LoginViewModel(
+            authRepository: AuthRepositoryImpl(
+                authAPI: NetworkManager(
+                    tokenManager: TokenManager()
+                ),
+                tokenManager: TokenManager(),
+                realmUserDataStore: RealmUserDataStore()
+            ),
+            socialLoginManager: socialLoginManager
+        )
+        
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
     // MARK: - Lifecycle
 
@@ -75,12 +127,15 @@ class LoginViewController: UIViewController {
         view.addSubview(passwordTextField)
         view.addSubview(loginButton)
         view.addSubview(createAccountButton)
+        view.addSubview(googleSignInButton)
+        view.addSubview(appleSignInButton)
+        view.addSubview(orLabel)
 
 
         // Constraints
         NSLayoutConstraint.activate([
             // Username TextField
-            usernameTextField.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -80),
+            usernameTextField.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -150),
             usernameTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             usernameTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             usernameTextField.heightAnchor.constraint(equalToConstant: 44),
@@ -98,13 +153,27 @@ class LoginViewController: UIViewController {
             loginButton.heightAnchor.constraint(equalToConstant: 50),
             
             createAccountButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            createAccountButton.topAnchor.constraint(equalTo: loginButton.bottomAnchor, constant: 15)
+            createAccountButton.topAnchor.constraint(equalTo: loginButton.bottomAnchor, constant: 15),
+            
+            googleSignInButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            googleSignInButton.topAnchor.constraint(equalTo: createAccountButton.bottomAnchor, constant: 20),
+            googleSignInButton.widthAnchor.constraint(equalTo: usernameTextField.widthAnchor),
+            googleSignInButton.heightAnchor.constraint(equalToConstant: 50),
+            
+            appleSignInButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            appleSignInButton.topAnchor.constraint(equalTo: googleSignInButton.bottomAnchor, constant: 20),
+            appleSignInButton.widthAnchor.constraint(equalTo: usernameTextField.widthAnchor),
+            appleSignInButton.heightAnchor.constraint(equalToConstant: 50),
+            
+            orLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            orLabel.topAnchor.constraint(equalTo: appleSignInButton.bottomAnchor, constant: 20)
         ])
 
         // Button Action
         loginButton.addTarget(self, action: #selector(loginButtonTapped), for: .touchUpInside)
-        createAccountButton.addTarget(self, action: #selector(createAccountTapped), for: .touchUpInside) // NEW
-
+        createAccountButton.addTarget(self, action: #selector(createAccountTapped), for: .touchUpInside)
+        googleSignInButton.addTarget(self, action: #selector(googleSignInTapped), for: .touchUpInside)
+        appleSignInButton.addTarget(self, action: #selector(appleSignInTapped), for: .touchUpInside)
     }
 
     // MARK: - ViewModel Bindings
@@ -193,6 +262,14 @@ class LoginViewController: UIViewController {
     @objc func createAccountTapped() {
         let createAccountVC = CreateAccountViewController()
         navigationController?.pushViewController(createAccountVC, animated: true)
+    }
+    
+    @objc func googleSignInTapped() {
+        viewModel.signInWithGoogle()
+    }
+    
+    @objc func appleSignInTapped() {
+        viewModel.signInWithApple()
     }
     
     // MARK: - Navigation Methods

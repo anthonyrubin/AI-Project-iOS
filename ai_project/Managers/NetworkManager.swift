@@ -14,6 +14,20 @@ protocol AuthAPI {
         code: String,
         completion: @escaping (Result<VerifyAccountResponse, NetworkError>) -> Void
     )
+    
+    // Social Login Methods
+    func googleSignIn(
+        idToken: String,
+        accessToken: String?,
+        completion: @escaping (Result<SocialSignInResponse, NetworkError>) -> Void
+    )
+    
+    func appleSignIn(
+        identityToken: String,
+        authorizationCode: String?,
+        user: String?,
+        completion: @escaping (Result<SocialSignInResponse, NetworkError>) -> Void
+    )
 }
 
 protocol SignupAPI {
@@ -52,7 +66,8 @@ class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI {
     
     private var tokenManager: TokenManager
     
-    private let baseURL = "http://localhost:8000/api"
+    private let baseURL = "https://75ac47a5a642.ngrok-free.app/api"
+    //private let baseURL = "http://localhost:8000/api"
     
     // MARK: - Token Refresh Management
     private var isRefreshingToken = false
@@ -141,7 +156,7 @@ class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI {
                 
                 switch response.result {
                 case .success(let tokenResponse):
-                    let tokenData = TokenResponse(refresh: tokenResponse.refresh, access: tokenResponse.access)
+                    let tokenData = TokenResponse(access: tokenResponse.access, refresh: tokenResponse.refresh)
                     
                     // Save new tokens
                     self?.tokenManager.saveTokens(tokenData)
@@ -429,6 +444,63 @@ class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI {
                 completion(.failure(error))
             }
         }
+    }
+    
+    // MARK: - Social Login Methods
+    
+    func googleSignIn(
+        idToken: String,
+        accessToken: String?,
+        completion: @escaping (Result<SocialSignInResponse, NetworkError>) -> Void
+    ) {
+        let url = "\(baseURL)/google-signin/"
+        let params = GoogleSignInRequest(idToken: idToken, accessToken: accessToken)
+
+        AF.request(url, method: .post, parameters: params, encoder: JSONParameterEncoder.default)
+            .validate(statusCode: 200..<300)
+            .responseDecodable(of: SocialSignInResponse.self) { resp in
+                switch resp.result {
+                case .success(let response):
+                    completion(.success(response))
+                case .failure(let afErr):
+                    if let data = resp.data,
+                       let apiErr = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
+                        completion(.failure(NetworkError.apiError(apiErr.error)))
+                    } else {
+                        completion(.failure(NetworkError.requestFailed(afErr)))
+                    }
+                }
+            }
+    }
+    
+    func appleSignIn(
+        identityToken: String,
+        authorizationCode: String?,
+        user: String?,
+        completion: @escaping (Result<SocialSignInResponse, NetworkError>) -> Void
+    ) {
+        let url = "\(baseURL)/apple-signin/"
+        let params = AppleSignInRequest(
+            identityToken: identityToken,
+            authorizationCode: authorizationCode,
+            user: user
+        )
+
+        AF.request(url, method: .post, parameters: params, encoder: JSONParameterEncoder.default)
+            .validate(statusCode: 200..<300)
+            .responseDecodable(of: SocialSignInResponse.self) { resp in
+                switch resp.result {
+                case .success(let response):
+                    completion(.success(response))
+                case .failure(let afErr):
+                    if let data = resp.data,
+                       let apiErr = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
+                        completion(.failure(NetworkError.apiError(apiErr.error)))
+                    } else {
+                        completion(.failure(NetworkError.requestFailed(afErr)))
+                    }
+                }
+            }
     }
 }
 

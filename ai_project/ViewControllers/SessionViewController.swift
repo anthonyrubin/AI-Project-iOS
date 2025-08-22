@@ -14,7 +14,6 @@ class NonStickyTableView: UITableView {
 
 final class SessionViewController: UIViewController {
     // MARK: - ViewModels
-    //private let uploadViewModel = VideoUploadViewModel()
     private let sessionViewModel = SessionViewModel(
         userDataStore: RealmUserDataStore(),
         repository: VideoAnalysisRepository(

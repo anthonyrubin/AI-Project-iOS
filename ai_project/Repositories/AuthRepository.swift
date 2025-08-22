@@ -13,6 +13,20 @@ protocol AuthRepository {
         code: String,
         completion: @escaping (Result<Void, NetworkError>) -> Void
     )
+    
+    // Social Login Methods
+    func googleSignIn(
+        idToken: String,
+        accessToken: String?,
+        completion: @escaping (Result<SocialSignInResponse, NetworkError>) -> Void
+    )
+    
+    func appleSignIn(
+        identityToken: String,
+        authorizationCode: String?,
+        user: String?,
+        completion: @escaping (Result<SocialSignInResponse, NetworkError>) -> Void
+    )
 }
 
 class AuthRepositoryImpl: AuthRepository {
@@ -92,6 +106,59 @@ class AuthRepositoryImpl: AuthRepository {
 
             case .failure(let err):
                 completion(.failure(err))
+            }
+        }
+    }
+    
+    func googleSignIn(
+        idToken: String,
+        accessToken: String?,
+        completion: @escaping (Result<SocialSignInResponse, NetworkError>) -> Void
+    ) {
+        authAPI.googleSignIn(idToken: idToken, accessToken: accessToken) { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .success(let response):
+                if let tokens = response.tokens {
+                    self.tokenManager.saveTokens(tokens)
+                }
+                do {
+                    try self.realmUserDataStore.upsert(user: response.user)
+                    UserDefaults.standard.set(response.user.id, forKey: "currentUserId")
+                } catch {
+                    return completion(.failure(.cache(error)))
+                }
+                completion(.success(response))
+                
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    func appleSignIn(
+        identityToken: String,
+        authorizationCode: String?,
+        user: String?,
+        completion: @escaping (Result<SocialSignInResponse, NetworkError>) -> Void
+    ) {
+        authAPI.appleSignIn(identityToken: identityToken, authorizationCode: authorizationCode, user: user) { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .success(let response):
+                if let tokens = response.tokens {
+                    self.tokenManager.saveTokens(tokens)
+                }
+                do {
+                    try self.realmUserDataStore.upsert(user: response.user)
+                    UserDefaults.standard.set(response.user.id, forKey: "currentUserId")
+                } catch {
+                    return completion(.failure(.cache(error)))
+                }
+                completion(.success(response))
+                
+            case .failure(let error):
+                completion(.failure(error))
             }
         }
     }

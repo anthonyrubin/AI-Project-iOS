@@ -11,6 +11,8 @@
 		DE2C62702E4C1AC800E1EA9B /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = DE2C626F2E4C1AC800E1EA9B /* RealmSwift */; };
 		DE2C62702E4D185B00BF5C7B /* SkeletonView in Frameworks */ = {isa = PBXBuildFile; productRef = DEA183B42E4D185B00BF5C7B /* SkeletonView */; };
 		DEA183B22E4D185B00BF5C7B /* SDWebImage in Frameworks */ = {isa = PBXBuildFile; productRef = DEA183B12E4D185B00BF5C7B /* SDWebImage */; };
+		DEEBCA492E58D9AC00857FDB /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = DEEBCA482E58D9AC00857FDB /* GoogleSignIn */; };
+		DEEBCA4A2E58E48900857FDB /* RealmSwift in Embed Frameworks */ = {isa = PBXBuildFile; productRef = DE2C626F2E4C1AC800E1EA9B /* RealmSwift */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -37,6 +39,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				DEEBCA4A2E58E48900857FDB /* RealmSwift in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -85,6 +88,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DEEBCA492E58D9AC00857FDB /* GoogleSignIn in Frameworks */,
 				DEA183B22E4D185B00BF5C7B /* SDWebImage in Frameworks */,
 				DE2C62702E4D185B00BF5C7B /* SkeletonView in Frameworks */,
 				DE2C62702E4C1AC800E1EA9B /* RealmSwift in Frameworks */,
@@ -161,6 +165,7 @@
 				DE276C152E42C66900392987 /* Alamofire */,
 				DE2C626F2E4C1AC800E1EA9B /* RealmSwift */,
 				DEA183B12E4D185B00BF5C7B /* SDWebImage */,
+				DEEBCA482E58D9AC00857FDB /* GoogleSignIn */,
 			);
 			productName = ai_project;
 			productReference = DE276BD32E4287CC00392987 /* ai_project.app */;
@@ -249,6 +254,7 @@
 				DE2C626E2E4C1AC800E1EA9B /* XCRemoteSwiftPackageReference "realm-swift" */,
 				DEA183B02E4D185B00BF5C7B /* XCRemoteSwiftPackageReference "SDWebImage" */,
 				DEA183B32E4D185B00BF5C7B /* XCRemoteSwiftPackageReference "SkeletonView" */,
+				DEEBCA472E58D9AC00857FDB /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DE276BD42E4287CC00392987 /* Products */;
@@ -329,8 +335,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ai_project/ai_project.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = HN3CBVDN9U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ai_project/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -355,8 +363,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ai_project/ai_project.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = HN3CBVDN9U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ai_project/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -637,6 +647,14 @@
 				minimumVersion = 1.30.0;
 			};
 		};
+		DEEBCA472E58D9AC00857FDB /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -659,6 +677,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = DEA183B32E4D185B00BF5C7B /* XCRemoteSwiftPackageReference "SkeletonView" */;
 			productName = SkeletonView;
+		};
+		DEEBCA482E58D9AC00857FDB /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DEEBCA472E58D9AC00857FDB /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
