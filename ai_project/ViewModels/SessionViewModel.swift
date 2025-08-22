@@ -72,6 +72,7 @@ class SessionViewModel: ObservableObject {
                 switch result {
                 case .success():
                     self?.isUploadingVideo = false
+                    self?.uploadedVideo = true
                     // Trigger data refresh in LessonsViewController
                     NotificationCenter.default.post(name: .videoAnalysisCompleted, object: nil)
                 case .failure(let error):
@@ -85,7 +86,7 @@ class SessionViewModel: ObservableObject {
         let asset = AVAsset(url: url)
         let imageGenerator = AVAssetImageGenerator(asset: asset)
         imageGenerator.appliesPreferredTrackTransform = true
-        imageGenerator.maximumSize = CGSize(width: 300, height: 300) // Reasonable size for thumbnail
+        imageGenerator.maximumSize = CGSize(width: 160, height: 120) // Reasonable size for thumbnail
         
         // Try to get a frame at 1 second, fallback to 0.5 seconds if needed
         let time = CMTime(seconds: 1.0, preferredTimescale: 1)
@@ -112,7 +113,7 @@ class SessionViewModel: ObservableObject {
     }
     
     private func createPlaceholderImage() -> UIImage {
-        let size = CGSize(width: 300, height: 300)
+        let size = CGSize(width: 100, height: 100)
         let renderer = UIGraphicsImageRenderer(size: size)
         
         return renderer.image { context in

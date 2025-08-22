@@ -25,6 +25,10 @@ final class SessionViewController: UIViewController {
     private lazy var loadingOverlay = LoadingOverlay(viewController: self)
     private lazy var errorModalManager = ErrorModalManager(viewController: self)
     
+    private weak var videoAnalysisLoadingCell: VideoAnalysisLoadingCell? = nil
+    
+    private var showLoadingCellPreThumbnail = false
+    
     // MARK: - UI Components
     private let floatingBar = UIView()
     private let startButton: UIButton = {
@@ -39,8 +43,8 @@ final class SessionViewController: UIViewController {
     }()
 
     private let floatingHeight: CGFloat = 92
-    private let shadowPad: CGFloat = 24       // room above for the top shadow
-    private weak var host: UIView?            // lives in tabBarController.view
+    private let shadowPad: CGFloat = 24
+    private weak var host: UIView?
     
     // MARK: - UI Components
     private let tableView = NonStickyTableView()
@@ -94,20 +98,20 @@ final class SessionViewController: UIViewController {
     
     private func setupBindings() {
         // Bind session data to table view updates
-        sessionViewModel.$userAnalyses
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.tableView.reloadData()
-            }
-            .store(in: &cancellables)
-        
+//        sessionViewModel.$userAnalyses
+//            .receive(on: DispatchQueue.main)
+//            .sink { [weak self] _ in
+//                self?.tableView.reloadData()
+//            }
+//            .store(in: &cancellables)
+//        
         // Bind user data updates
-        sessionViewModel.$currentUser
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.tableView.reloadData()
-            }
-            .store(in: &cancellables)
+//        sessionViewModel.$currentUser
+//            .receive(on: DispatchQueue.main)
+//            .sink { [weak self] _ in
+//                self?.tableView.reloadData()
+//            }
+//            .store(in: &cancellables)
         
         // Bind error messages
         sessionViewModel.$errorMessage
@@ -154,9 +158,11 @@ final class SessionViewController: UIViewController {
         sessionViewModel.$isUploadingVideo
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isUploading in
+                if isUploading == true {
+                    self?.tableView.reloadData()
+                }
                 print("🔄 Upload state changed: \(isUploading)")
                 print("🔄 Current upload snapshot: \(self?.sessionViewModel.uploadSnapshot != nil)")
-                self?.tableView.reloadData()
             }
             .store(in: &cancellables)
         
@@ -171,15 +177,24 @@ final class SessionViewController: UIViewController {
     }
     
     private func handleUploadCompletion() {
-        // Get the index path for the recently analyzed cell
         let recentlyAnalyzedIndexPath = getRecentlyAnalyzedIndexPath()
-        
-        // Perform elegant transition
-        UIView.transition(with: tableView, duration: 0.5, options: .transitionCrossDissolve) {
-            self.tableView.reloadRows(at: [recentlyAnalyzedIndexPath], with: .none)
-        } completion: { _ in
-            // Reset upload state after transition
-            self.sessionViewModel.resetUploadState()
+
+        if let loadingCell = videoAnalysisLoadingCell {
+            loadingCell.finishLoading() { [weak self] in
+                guard let self = self else { return }
+                // TODO: Log here and handle error if self is nil, that would be bad
+                UIView.transition(with: self.tableView, duration: 0.5, options: .transitionCrossDissolve) {
+                    self.tableView.reloadRows(at: [recentlyAnalyzedIndexPath], with: .none)
+                } completion: { _ in
+                    self.sessionViewModel.resetUploadState()
+                    loadingCell.resetCell()
+                }
+            }
+        } else {
+            UIView.transition(with: self.tableView, duration: 0.5, options: .transitionCrossDissolve) {
+                self.tableView.reloadRows(at: [recentlyAnalyzedIndexPath], with: .none)
+            } completion: { _ in
+                self.sessionViewModel.resetUploadState()            }
         }
     }
     
@@ -311,6 +326,11 @@ final class SessionViewController: UIViewController {
         
         return .none
     }
+    
+    private func reloadTablePreDismiss() {
+        showLoadingCellPreThumbnail = true
+        self.tableView.reloadData()
+    }
 
 }
 
@@ -385,13 +405,15 @@ extension SessionViewController: UITableViewDataSource {
             if row == currentRow {
                 print("🎯 Creating cell for row \(row): isUploading=\(sessionViewModel.isUploadingVideo), hasAnalyses=\(sessionViewModel.hasAnalyses())")
                 
-                if sessionViewModel.isUploadingVideo {
+                if sessionViewModel.isUploadingVideo || showLoadingCellPreThumbnail {
+                    showLoadingCellPreThumbnail = false
                     // Show loading cell with snapshot
                     print("📱 Creating VideoAnalysisLoadingCell")
-                    let cell = tableView.dequeueReusableCell(withIdentifier: "VideoAnalysisLoadingCell", for: indexPath) as! VideoAnalysisLoadingCell
+                    let cell = (tableView.dequeueReusableCell(withIdentifier: "VideoAnalysisLoadingCell", for: indexPath) as! VideoAnalysisLoadingCell)
                     cell.configure(with: sessionViewModel.uploadSnapshot)
                     cell.startLoading()
-                    return cell
+                    videoAnalysisLoadingCell = cell
+                    return videoAnalysisLoadingCell!
                 } else if let lastAnalysis = sessionViewModel.lastSession {
                     // Show completed analysis cell
                     print("📱 Creating VideoAnalysisCellNew1")
@@ -552,7 +574,8 @@ extension SessionViewController: UITableViewDelegate {
 // MARK: - PHPicker
 extension SessionViewController: PHPickerViewControllerDelegate {
     func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
-        dismiss(animated: true)
+        reloadTablePreDismiss()
+        self.dismiss(animated: true)
 
         guard let item = results.first?.itemProvider else { return }
         let type = UTType.movie.identifier
@@ -569,8 +592,8 @@ extension SessionViewController: PHPickerViewControllerDelegate {
                 // remove if exists
                 try? FileManager.default.removeItem(at: dest)
                 try FileManager.default.copyItem(at: url, to: dest)
-                DispatchQueue.main.async {
-                    self.handlePickedVideo(at: dest)
+                DispatchQueue.main.async { [weak self] in
+                    self?.handlePickedVideo(at: dest)
                 }
             } catch {
                 // handle copy error if needed

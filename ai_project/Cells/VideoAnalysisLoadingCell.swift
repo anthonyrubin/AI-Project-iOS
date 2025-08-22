@@ -125,6 +125,12 @@ final class VideoAnalysisLoadingCell: UITableViewCell {
     }()
     private let blur = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterialLight))
     private let progress = CircularProgressView()
+    
+    // Necessary because when we create a thumbnail preview image,
+    // there are 1-pixel “seams” because the left image view ends
+    // up at fractional point sizes. Image clip allows for image
+    // overflow
+    private let imageClip = UIView()
 
     // Right side
     private let titleLabel: UILabel = {
@@ -175,10 +181,7 @@ final class VideoAnalysisLoadingCell: UITableViewCell {
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        stopLoading()
-        titleLabel.text = "Starting…"
-        currentProgress = 0
-        progress.setProgress(0)
+        resetCell()
         leftImageView.image = nil
         leftImageView.backgroundColor = UIColor(white: 0.1, alpha: 0.15)
     }
@@ -187,8 +190,7 @@ final class VideoAnalysisLoadingCell: UITableViewCell {
     private func buildLayout() {
         contentView.addSubview(cardView)
 
-        cardView.addSubview(leftImageView)
-        leftImageView.addSubview(blur)
+//        leftImageView.addSubview(blur)
         leftImageView.addSubview(progress)
         blur.translatesAutoresizingMaskIntoConstraints = false
         progress.translatesAutoresizingMaskIntoConstraints = false
@@ -227,6 +229,31 @@ final class VideoAnalysisLoadingCell: UITableViewCell {
         rightStack.setContentHuggingPriority(.required, for: .vertical)
         rightStack.setContentCompressionResistancePriority(.required, for: .vertical)
         
+        imageClip.translatesAutoresizingMaskIntoConstraints = false
+        imageClip.clipsToBounds = true
+        imageClip.layer.cornerRadius = 16
+        imageClip.layer.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner]
+        cardView.addSubview(imageClip)
+
+        imageClip.addSubview(leftImageView)
+
+        // same outer constraints as before, but on imageClip:
+        NSLayoutConstraint.activate([
+          imageClip.topAnchor.constraint(equalTo: cardView.topAnchor),
+          imageClip.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
+          imageClip.bottomAnchor.constraint(equalTo: cardView.bottomAnchor),
+          imageClip.widthAnchor.constraint(equalTo: cardView.widthAnchor, multiplier: 0.30),
+        ])
+
+        // bleed the image by 1 pixel on all sides
+        let px = 1.0 / UIScreen.main.scale
+        NSLayoutConstraint.activate([
+          leftImageView.topAnchor.constraint(equalTo: imageClip.topAnchor, constant: -px),
+          leftImageView.leadingAnchor.constraint(equalTo: imageClip.leadingAnchor, constant: -px),
+          leftImageView.trailingAnchor.constraint(equalTo: imageClip.trailingAnchor, constant: px),
+          leftImageView.bottomAnchor.constraint(equalTo: imageClip.bottomAnchor, constant: px),
+        ])
+        
         
         leftImageView.setContentCompressionResistancePriority(.fittingSizeLevel, for: .vertical)
         leftImageView.setContentHuggingPriority(.fittingSizeLevel, for: .vertical)  
@@ -264,16 +291,16 @@ final class VideoAnalysisLoadingCell: UITableViewCell {
             cardView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
 
             // Left image column follows card height
-            leftImageView.topAnchor.constraint(equalTo: cardView.topAnchor),
-            leftImageView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
-            leftImageView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor),
-            leftImageView.widthAnchor.constraint(equalTo: cardView.widthAnchor, multiplier: 0.30),
+//            leftImageView.topAnchor.constraint(equalTo: cardView.topAnchor),
+//            leftImageView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
+//            leftImageView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor),
+//            leftImageView.widthAnchor.constraint(equalTo: cardView.widthAnchor, multiplier: 0.30),
 
             // Blur & progress inside image
-            blur.topAnchor.constraint(equalTo: leftImageView.topAnchor),
-            blur.leadingAnchor.constraint(equalTo: leftImageView.leadingAnchor),
-            blur.trailingAnchor.constraint(equalTo: leftImageView.trailingAnchor),
-            blur.bottomAnchor.constraint(equalTo: leftImageView.bottomAnchor),
+//            blur.topAnchor.constraint(equalTo: leftImageView.topAnchor),
+//            blur.leadingAnchor.constraint(equalTo: leftImageView.leadingAnchor),
+//            blur.trailingAnchor.constraint(equalTo: leftImageView.trailingAnchor),
+//            blur.bottomAnchor.constraint(equalTo: leftImageView.bottomAnchor),
 
             progress.centerXAnchor.constraint(equalTo: leftImageView.centerXAnchor),
             progress.centerYAnchor.constraint(equalTo: leftImageView.centerYAnchor),
@@ -298,12 +325,20 @@ final class VideoAnalysisLoadingCell: UITableViewCell {
     // MARK: - Public controls
 
     func configure(with snapshot: UIImage?) {
-        if let snapshot = snapshot {
+        if let snapshot {
+            // fade only the image contents, not subviews
+            let fade = CATransition()
+            fade.type = .fade
+            fade.duration = 1
+            fade.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            leftImageView.layer.add(fade, forKey: "fadeInImage")
+
             leftImageView.image = snapshot
             leftImageView.backgroundColor = .clear
         } else {
+            leftImageView.layer.removeAnimation(forKey: "fadeInImage")
             leftImageView.image = nil
-            leftImageView.backgroundColor = UIColor(white: 0.1, alpha: 0.15)
+            leftImageView.backgroundColor = .gray
         }
     }
 
@@ -314,9 +349,9 @@ final class VideoAnalysisLoadingCell: UITableViewCell {
         progressTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
             guard let self else { return }
             if currentProgress < 0.80 { currentProgress += 0.01 }
-            else if currentProgress < 0.96 { currentProgress += 0.007 }
-            else if currentProgress < 0.98 { currentProgress += 0.001 }
-            else if currentProgress < 1.00 { currentProgress += 0.000001 }
+            else if currentProgress < 0.94 { currentProgress += 0.007 }
+            else if currentProgress < 0.96 { currentProgress += 0.001 }
+            else if currentProgress < 0.98 { currentProgress += 0.000001 }
             progress.setProgress(currentProgress)
         }
 
@@ -332,16 +367,49 @@ final class VideoAnalysisLoadingCell: UITableViewCell {
         }
     }
 
-    func updateProgress(_ progress: Double) {
-        currentProgress = CGFloat(progress)
-        self.progress.setProgress(currentProgress)
+    private var didFireFinish = false
+
+    func finishLoading(completion: @escaping (() -> Void)) {
+        titleLabel.text = "Finishing..."
+        messageTimer?.invalidate()
+        progressTimer?.invalidate()
+        didFireFinish = false
+
+        var interval: TimeInterval = 0.2
+        if currentProgress > 0.80 { interval = 0.5 } // was 80, fix to 0.80
+
+        progressTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] t in
+            guard let self else { t.invalidate(); return }
+
+            if self.currentProgress < 1.0 {
+                self.currentProgress = min(1.0, self.currentProgress + 0.01)
+                self.progress.setProgress(self.currentProgress)
+                return
+            }
+
+            // We’re at 1.0 — stop the timer and fire completion once.
+            t.invalidate()
+            self.progressTimer = nil
+
+            guard !self.didFireFinish else { return }
+            self.didFireFinish = true
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                completion()
+            }
+        }
     }
 
-    func stopLoading() {
+    func resetCell() {
+        didFireFinish = false
+        messageIndex = 0
         progressTimer?.invalidate()
         messageTimer?.invalidate()
         progressTimer = nil
         messageTimer = nil
         [bar1, bar2, bar3].forEach { $0.stop() }
+        titleLabel.text = "Starting…"
+        currentProgress = 0
+        progress.setProgress(0)
     }
 }
