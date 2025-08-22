@@ -4,7 +4,7 @@ import AVFoundation
 import RealmSwift
 import Combine
 
-class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+class LessonViewController: UIViewController {
     
     // MARK: - Properties
     private let viewModel: LessonViewModel
@@ -21,8 +21,9 @@ class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDa
     private let playButton = UIButton(type: .system)
     private let progressSlider = UISlider()
     private let timeLabel = UILabel()
-    private let analysisStackView = UIStackView()
-    private let eventsTableView = UITableView()
+    private let eventsView = UIView()
+
+    //private let eventsTableView = UITableView()
     private var videoHeightConstraint: NSLayoutConstraint?
     private lazy var errorModalManager = ErrorModalManager(viewController: self)
     
@@ -47,18 +48,23 @@ class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDa
         setupUI()
         setupViewModelBindings()
         setupVideoPlayer()
-        setupAnalysisData()
-        setupEventsTable()
+        setupEventsView()
         setupNotifications()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        hideNavBarHairline()
+        setBackgroundGradient()
+        makeNavBarTransparent(for: self)
+        
+        // Ensure tab bar has correct background
+        tabBarController?.tabBar.backgroundColor = .white
+        tabBarController?.tabBar.barTintColor = .white
     }
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        setBackgroundGradient()
         playerLayer?.frame = videoContainerView.bounds
     }
     
@@ -130,31 +136,31 @@ class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDa
         }
     }
     
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {        
-        return viewModel.getEventsCount()
-    }
-    
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "EventCell", for: indexPath) as! EventTableViewCell
-        
-        if let event = viewModel.getEvent(at: indexPath.row) {
-            cell.configure(with: event)
-        }
-        
-        return cell
-    }
-    
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 80
-    }
-    
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        
-        if let event = viewModel.getEvent(at: indexPath.row) {
-            viewModel.seekToTimestamp(event.timestamp)
-        }
-    }
+//    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {        
+//        return viewModel.getEventsCount()
+//    }
+//    
+//    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+//        let cell = tableView.dequeueReusableCell(withIdentifier: "EventCell", for: indexPath) as! EventTableViewCell
+//        
+//        if let event = viewModel.getEvent(at: indexPath.row) {
+//            cell.configure(with: event)
+//        }
+//        
+//        return cell
+//    }
+//    
+//    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+//        return 80
+//    }
+//    
+//    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+//        tableView.deselectRow(at: indexPath, animated: true)
+//        
+//        if let event = viewModel.getEvent(at: indexPath.row) {
+//            viewModel.seekToTimestamp(event.timestamp)
+//        }
+//    }
     
     // MARK: - UI Setup
     private func setupUI() {
@@ -164,8 +170,6 @@ class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDa
         setupScrollView()
         setupVideoContainer()
         setupPlaybackControls()
-        setupAnalysisStackView()
-        setupEventsTable()
     }
     
     private func setupScrollView() {
@@ -255,41 +259,6 @@ class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDa
         ])
     }
     
-    private func setupAnalysisStackView() {
-        analysisStackView.translatesAutoresizingMaskIntoConstraints = false
-        analysisStackView.axis = .vertical
-        analysisStackView.spacing = 16
-        analysisStackView.alignment = .fill
-        
-        contentView.addSubview(analysisStackView)
-        
-        NSLayoutConstraint.activate([
-            analysisStackView.topAnchor.constraint(equalTo: videoContainerView.bottomAnchor, constant: 24),
-            analysisStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            analysisStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16)
-        ])
-    }
-    
-    private func setupEventsTable() {
-        eventsTableView.translatesAutoresizingMaskIntoConstraints = false
-        eventsTableView.delegate = self
-        eventsTableView.dataSource = self
-        eventsTableView.register(EventTableViewCell.self, forCellReuseIdentifier: "EventCell")
-        eventsTableView.backgroundColor = .clear
-        eventsTableView.separatorStyle = .none
-        eventsTableView.isScrollEnabled = false // Let scroll view handle scrolling
-        
-        contentView.addSubview(eventsTableView)
-        
-        NSLayoutConstraint.activate([
-            eventsTableView.topAnchor.constraint(equalTo: analysisStackView.bottomAnchor, constant: 24),
-            eventsTableView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            eventsTableView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            eventsTableView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16),
-            eventsTableView.heightAnchor.constraint(equalToConstant: viewModel.getTableViewHeight()) // Approximate height
-        ])
-    }
-    
     // MARK: - Video Player Setup
     private func setupVideoPlayer() {
         // Trigger video URL fetch - the binding will handle the response
@@ -357,91 +326,7 @@ class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDa
             updateVideoAspectRatio()
         }
     }
-    
-    // MARK: - Analysis Data Setup
-    private func setupAnalysisData() {
-        // Add video info section
-        if let video = viewModel.analysis.video {
-            var videoInfo = "Filename: \(video.originalFilename)\n"
-            videoInfo += "File size: \(formatFileSize(video.fileSize))\n"
-            
-            if video.hasDuration {
-                videoInfo += "Duration: \(video.formattedDuration)"
-            } else {
-                videoInfo += "Duration: Unknown"
-            }
-            
-            addSection(title: "Video Information", content: videoInfo)
-            addIcon(icon: viewModel.analysis.icon)
-        }
-        
-        guard let analysisData = viewModel.analysis.analysisDataDict else {
-            addSection(title: "Analysis", content: "Analysis data not available")
-            return
-        }
-        
-        // Overall Assessment
-        if let overallAssessment = analysisData["overall_assessment"] as? String {
-            addSection(title: "Overall Assessment", content: overallAssessment)
-        }
-        
-        // Key Observations
-        if let keyObservations = analysisData["key_observations"] as? [String] {
-            addSection(title: "Key Observations", content: keyObservations.joined(separator: "\n• "))
-        }
-        
-        // Technique Analysis
-        if let techniqueAnalysis = analysisData["technique_analysis"] as? [String: Any] {
-            var techniqueContent = ""
-            
-            if let strengths = techniqueAnalysis["strengths"] as? [String] {
-                techniqueContent += "Strengths:\n• " + strengths.joined(separator: "\n• ") + "\n\n"
-            }
-            
-            if let improvements = techniqueAnalysis["areas_for_improvement"] as? [String] {
-                techniqueContent += "Areas for Improvement:\n• " + improvements.joined(separator: "\n• ") + "\n\n"
-            }
-            
-            if let feedback = techniqueAnalysis["specific_feedback"] as? [String] {
-                techniqueContent += "Specific Feedback:\n• " + feedback.joined(separator: "\n• ")
-            }
-            
-            if !techniqueContent.isEmpty {
-                addSection(title: "Technique Analysis", content: techniqueContent)
-            }
-        }
-        
-        // Recommendations
-        if let recommendations = analysisData["recommendations"] as? [String] {
-            addSection(title: "Recommendations", content: recommendations.joined(separator: "\n• "))
-        }
-        
-        // Safety Considerations
-        if let safety = analysisData["safety_considerations"] as? [String] {
-            addSection(title: "Safety Considerations", content: safety.joined(separator: "\n• "))
-        }
-    }
-    
-    private func addIcon(icon: String) {
-        let iconView = UIImageView(image: UIImage(systemName: icon))
-        analysisStackView.addArrangedSubview(iconView)
-    }
-    
-    private func addSection(title: String, content: String) {
-        let titleLabel = UILabel()
-        titleLabel.text = title
-        titleLabel.font = UIFont.systemFont(ofSize: 18, weight: .semibold)
-        titleLabel.textColor = .label
-        
-        let contentLabel = UILabel()
-        contentLabel.text = content
-        contentLabel.font = UIFont.systemFont(ofSize: 16)
-        contentLabel.textColor = .secondaryLabel
-        contentLabel.numberOfLines = 0
-        
-        analysisStackView.addArrangedSubview(titleLabel)
-        analysisStackView.addArrangedSubview(contentLabel)
-    }
+
     
     // MARK: - Playback Controls
     @objc private func playButtonTapped() {
@@ -544,16 +429,72 @@ class LessonViewController: UIViewController, UITableViewDelegate, UITableViewDa
             playButton.setImage(UIImage(systemName: "pause.fill"), for: .normal)
         }
     }
+    
+    func setupEventsView() {
+        
+        eventsView.layer.borderWidth = 1
+        eventsView.layer.cornerRadius = 12
+        eventsView.layer.borderColor = UIColor.systemGray.cgColor
+        
+        contentView.addSubview(eventsView)
+        eventsView.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            eventsView.topAnchor.constraint(equalTo: videoContainerView.bottomAnchor, constant: 20),
+            eventsView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            eventsView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            eventsView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20)
+        ])
+        
+        var analysisEventElements: [EventElement] = []
+        
+        
+        for (index, analysisEvent) in viewModel.analysisEvents.enumerated() {
+            let eventElement = EventElement()
+            eventElement.onTap = { [weak self] in
+                self?.viewModel.seekToTimestamp(analysisEvent.timestamp)
+            }
+            eventElement.configure(with: analysisEvent)
+            analysisEventElements.append(eventElement)
+            
+            eventsView.addSubview(eventElement)
+            eventElement.translatesAutoresizingMaskIntoConstraints = false
+                    
+            NSLayoutConstraint.activate([
+                eventElement.leadingAnchor.constraint(equalTo: eventsView.leadingAnchor),
+                eventElement.trailingAnchor.constraint(equalTo: eventsView.trailingAnchor),
+            ])
+            
+            if index == 0 {
+                NSLayoutConstraint.activate([
+                    eventElement.topAnchor.constraint(equalTo: eventsView.topAnchor, constant: 20),
+                ])
+            } else {
+                NSLayoutConstraint.activate([
+                    eventElement.topAnchor.constraint(equalTo: analysisEventElements[index-1].bottomAnchor, constant: 20),
+                ])
+            }
+            
+            
+            if (index == viewModel.analysisEvents.count - 1) {
+                NSLayoutConstraint.activate([
+                    eventElement.bottomAnchor.constraint(equalTo: eventsView.bottomAnchor, constant: -20),
+                ])
+            }
+        }
+    }
 }
 
 // MARK: - Event Table View Cell
-class EventTableViewCell: UITableViewCell {
+class EventElement: UIView {
     private let timestampLabel = UILabel()
     private let eventLabel = UILabel()
     private let feedbackLabel = UILabel()
+    private var event: AnalysisEventObject?
+    var onTap: (() -> Void)? = nil
     
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
+    override init(frame: CGRect) {
+        super.init(frame: frame)
         setupUI()
     }
     
@@ -563,7 +504,6 @@ class EventTableViewCell: UITableViewCell {
     
     private func setupUI() {
         backgroundColor = .clear
-        selectionStyle = .none
         
         // Timestamp label
         timestampLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -578,39 +518,49 @@ class EventTableViewCell: UITableViewCell {
         eventLabel.translatesAutoresizingMaskIntoConstraints = false
         eventLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
         eventLabel.textColor = .label
-        eventLabel.numberOfLines = 2
+        eventLabel.numberOfLines = 0
         
         // Feedback label
         feedbackLabel.translatesAutoresizingMaskIntoConstraints = false
         feedbackLabel.font = UIFont.systemFont(ofSize: 14)
         feedbackLabel.textColor = .secondaryLabel
-        feedbackLabel.numberOfLines = 2
+        feedbackLabel.numberOfLines = 0
         
-        contentView.addSubview(timestampLabel)
-        contentView.addSubview(eventLabel)
-        contentView.addSubview(feedbackLabel)
+        addSubview(timestampLabel)
+        addSubview(eventLabel)
+        addSubview(feedbackLabel)
         
         NSLayoutConstraint.activate([
-            timestampLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            timestampLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            timestampLabel.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: 16),
+            timestampLabel.centerYAnchor.constraint(equalTo: self.centerYAnchor),
             timestampLabel.widthAnchor.constraint(equalToConstant: 60),
             timestampLabel.heightAnchor.constraint(equalToConstant: 30),
             
             eventLabel.leadingAnchor.constraint(equalTo: timestampLabel.trailingAnchor, constant: 12),
-            eventLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
-            eventLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            eventLabel.topAnchor.constraint(equalTo: self.topAnchor),
+            eventLabel.trailingAnchor.constraint(equalTo: self.trailingAnchor, constant: -16),
             
             feedbackLabel.leadingAnchor.constraint(equalTo: eventLabel.leadingAnchor),
             feedbackLabel.topAnchor.constraint(equalTo: eventLabel.bottomAnchor, constant: 4),
-            feedbackLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            feedbackLabel.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -8)
+            feedbackLabel.trailingAnchor.constraint(equalTo: self.trailingAnchor, constant: -16),
+            feedbackLabel.bottomAnchor.constraint(lessThanOrEqualTo: self.bottomAnchor)
         ])
     }
     
     func configure(with event: AnalysisEventObject) {
         timestampLabel.text = formatTimestamp(event.timestamp)
-        eventLabel.text = event.label
+        eventLabel.text = event.label.capitalized
         feedbackLabel.text = event.feedback
+        
+        timestampLabel.isUserInteractionEnabled = true
+        let tap = UITapGestureRecognizer(
+            target: self,
+            action: #selector(handleTimestampTap))
+        timestampLabel.addGestureRecognizer(tap)
+    }
+    
+    @objc func handleTimestampTap() {
+        onTap?()
     }
     
     private func formatTimestamp(_ timestamp: Double) -> String {
