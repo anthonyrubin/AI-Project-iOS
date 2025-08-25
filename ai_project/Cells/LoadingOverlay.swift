@@ -1,107 +1,87 @@
 import UIKit
 
-class LoadingOverlay: UIView {
-    
-    private let activityIndicator = UIActivityIndicatorView(style: .large)
-    private let messageLabel = UILabel()
+final class LoadingOverlay: UIView {
+
+    // MARK: - UI
+
     private let containerView = UIView()
-    private var viewController: UIViewController?
-    
-    convenience init(viewController: UIViewController) {
-        self.init(frame: .zero)
-        self.viewController = viewController
-    }
-    
+    private let activityIndicatorSubContainer = UIView()
+    private let activityIndicator = UIActivityIndicatorView(style: .large)
+
+    // MARK: - Init
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
     }
-    
+
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         setupUI()
     }
-    
+
+    // MARK: - Setup
+
     private func setupUI() {
-        backgroundColor = UIColor.black.withAlphaComponent(0.7)
+        backgroundColor = UIColor.black.withAlphaComponent(0.3)
+        isUserInteractionEnabled = true // block touches
         
-        // Container view
-        containerView.backgroundColor = UIColor.systemBackground
-        containerView.layer.cornerRadius = 16
+        activityIndicatorSubContainer.translatesAutoresizingMaskIntoConstraints = false
+        activityIndicatorSubContainer.backgroundColor = UIColor.white.withAlphaComponent(0.8)
+        containerView.addSubview(activityIndicatorSubContainer)
+        activityIndicatorSubContainer.addSubview(activityIndicator)
+        
+        activityIndicatorSubContainer.layer.cornerRadius = 12
+
+        // Container
+        containerView.backgroundColor = .systemBackground
         containerView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(containerView)
-        
-        // Activity indicator
-        activityIndicator.color = .systemBlue
+
+        // Spinner
         activityIndicator.translatesAutoresizingMaskIntoConstraints = false
         containerView.addSubview(activityIndicator)
-        
-        // Message label
-        messageLabel.text = "Analyzing your video..."
-        messageLabel.textAlignment = .center
-        messageLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
-        messageLabel.textColor = .label
-        messageLabel.numberOfLines = 0
-        messageLabel.translatesAutoresizingMaskIntoConstraints = false
-        containerView.addSubview(messageLabel)
-        
-        setupConstraints()
-    }
-    
-    private func setupConstraints() {
+
+        // Constraints
         NSLayoutConstraint.activate([
-            // Container view
             containerView.centerXAnchor.constraint(equalTo: centerXAnchor),
             containerView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            containerView.widthAnchor.constraint(equalToConstant: 200),
-            containerView.heightAnchor.constraint(equalToConstant: 120),
-            
-            // Activity indicator
-            activityIndicator.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
-            activityIndicator.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 20),
-            
-            // Message label
-            messageLabel.topAnchor.constraint(equalTo: activityIndicator.bottomAnchor, constant: 16),
-            messageLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            messageLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-            messageLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -20)
+            activityIndicatorSubContainer.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+            activityIndicatorSubContainer.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            activityIndicator.centerXAnchor.constraint(equalTo: activityIndicatorSubContainer.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: activityIndicatorSubContainer.centerYAnchor),
+            activityIndicatorSubContainer.widthAnchor.constraint(equalToConstant: 100),
+            activityIndicatorSubContainer.heightAnchor.constraint(equalToConstant: 100),
         ])
     }
-    
-    func show(message: String = "Analyzing your video...") {
-        messageLabel.text = message
+
+    // MARK: - Public API
+
+    func show(in hostView: UIView) {
         activityIndicator.startAnimating()
-        
-        // Get the window to ensure we cover the entire screen including status bar and tab bar
-        let window: UIWindow?
-        
-        window = viewController?.view.window?.windowScene?.windows.first(where: { $0.isKeyWindow })
-        
-        if let window = window {
-            // Cover the entire window including status bar and tab bar
-            frame = window.bounds
-            window.addSubview(self)
-        } else {
-            // Fallback to view controller's view if window is not available
-            frame = viewController!.view.bounds
-            viewController?.view.addSubview(self)
-        }
-        
+
+        translatesAutoresizingMaskIntoConstraints = false
+        hostView.addSubview(self)
+
+        NSLayoutConstraint.activate([
+            leadingAnchor.constraint(equalTo: hostView.leadingAnchor),
+            trailingAnchor.constraint(equalTo: hostView.trailingAnchor),
+            topAnchor.constraint(equalTo: hostView.topAnchor),
+            bottomAnchor.constraint(equalTo: hostView.bottomAnchor)
+        ])
+
         alpha = 0
-        UIView.animate(withDuration: 0.3) {
+        UIView.animate(withDuration: 0.25) {
             self.alpha = 1
         }
     }
-    
+
     func hide() {
-        UIView.animate(withDuration: 0.3, animations: {
+        UIView.animate(withDuration: 0.25, animations: {
             self.alpha = 0
         }) { _ in
+            self.activityIndicator.stopAnimating()
             self.removeFromSuperview()
         }
-    }
-    
-    func updateMessage(_ message: String) {
-        messageLabel.text = message
     }
 }

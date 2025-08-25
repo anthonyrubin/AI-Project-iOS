@@ -55,16 +55,11 @@ class SocialLoginManager: NSObject {
     
     // MARK: - Properties
     
-    private let googleClientID: String
-    private let appleClientID: String
-    
     private var appleSignInCompletion: ((Result<SocialLoginResult, SocialLoginError>) -> Void)?
     
     // MARK: - Initialization
     
-    init(googleClientID: String, appleClientID: String) {
-        self.googleClientID = googleClientID
-        self.appleClientID = appleClientID
+    override init() {
         super.init()
         setupGoogleSignIn()
     }
@@ -92,7 +87,7 @@ class SocialLoginManager: NSObject {
             return
         }
         
-        GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController) { [weak self] result, error in
+        GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController) { result, error in
             if let error = error {
                 if (error as NSError).code == GIDSignInError.canceled.rawValue {
                     completion(.failure(.cancelled))

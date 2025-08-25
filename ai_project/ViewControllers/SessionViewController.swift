@@ -21,7 +21,7 @@ final class SessionViewController: UIViewController {
         )
     )
     
-    private lazy var loadingOverlay = LoadingOverlay(viewController: self)
+    private lazy var loadingOverlay = LoadingOverlay()
     private lazy var errorModalManager = ErrorModalManager(viewController: self)
     
     private weak var videoAnalysisLoadingCell: VideoAnalysisLoadingCell? = nil
