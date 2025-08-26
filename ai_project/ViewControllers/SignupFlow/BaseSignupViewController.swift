@@ -7,6 +7,20 @@ class BaseSignupViewController: UIViewController {
     var hidesProgressBar: Bool = false { didSet { progressView?.isHidden = hidesProgressBar } }
     
     let continueButton = UIButton(type: .system)
+    private var hasSecondaryButton = false
+    
+    private let secondaryButton: UIButton = {
+        let b = UIButton(type: .custom)
+        b.translatesAutoresizingMaskIntoConstraints = false
+        b.backgroundColor = .clear
+        b.contentHorizontalAlignment = .center
+
+        let baseFont = UIFont.systemFont(ofSize: 14, weight: .regular)
+
+        b.titleLabel?.font = baseFont
+        b.applyTactileTap()
+        return b
+    }()
     
     // MARK: - Private (nav-bar mounted progress)
     private static let progressTag = 426_888
@@ -124,6 +138,14 @@ class BaseSignupViewController: UIViewController {
 
         title = nil
     }
+
+    func addSecondaryButton(text: String, selector: Selector) {
+        view.addSubview(secondaryButton)
+        secondaryButton.titleLabel?.text = text
+        secondaryButton.addTarget(self, action: selector, for: .touchUpInside)
+        secondaryButton.applyTactileTap()
+        hasSecondaryButton = true
+    }
     
     // MARK: - Continue button
     func setupContinueButton() {
@@ -146,6 +168,14 @@ class BaseSignupViewController: UIViewController {
             continueButton.bottomAnchor.constraint(equalTo: g.bottomAnchor, constant: -12),
             continueButton.heightAnchor.constraint(equalToConstant: 56)
         ])
+        
+        if hasSecondaryButton {
+            NSLayoutConstraint.activate([
+                secondaryButton.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 20),
+                secondaryButton.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -20),
+                secondaryButton.bottomAnchor.constraint(equalTo: continueButton.topAnchor, constant: -12),
+            ])
+        }
     }
     
     @objc func didTapContinue() {

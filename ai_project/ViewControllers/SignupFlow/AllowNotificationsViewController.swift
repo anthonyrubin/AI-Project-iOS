@@ -3,6 +3,15 @@ import UserNotifications
 
 final class AllowNotificationsViewController: BaseSignupViewController {
 
+    private let titleLabel: UILabel = {
+        let l = UILabel()
+        l.text = "Enable notifications to get the most out of CoachAI"
+        l.font = .systemFont(ofSize: 35, weight: .bold)
+        l.numberOfLines = 0
+        l.translatesAutoresizingMaskIntoConstraints = false
+        return l
+    }()
+
     // MARK: - UI
     private let card = UIView()
 
@@ -112,6 +121,7 @@ final class AllowNotificationsViewController: BaseSignupViewController {
         finger.text = "👆"
         finger.font = .systemFont(ofSize: 48)
         view.addSubview(finger)
+        view.addSubview(titleLabel)
     }
 
     override func layout() {
@@ -121,7 +131,12 @@ final class AllowNotificationsViewController: BaseSignupViewController {
 
         let g = view.safeAreaLayoutGuide
         NSLayoutConstraint.activate([
-            card.topAnchor.constraint(equalTo: g.topAnchor, constant: 160),
+            
+            titleLabel.topAnchor.constraint(equalTo: g.topAnchor, constant: 8),
+            titleLabel.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 20),
+            titleLabel.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -20),
+            
+            card.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 80),
             card.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 20),
             card.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -20),
 
@@ -209,6 +224,8 @@ final class AllowNotificationsViewController: BaseSignupViewController {
     // MARK: - Continue
     override func didTapContinue() {
         super.didTapContinue()
-        // Push next screen here
+        
+        let vc = ThanksForTrustingUsViewController()
+        navigationController?.pushViewController(vc, animated: true)
     }
 }
