@@ -116,3 +116,84 @@ private extension NumberFormatter {
         return nf.string(from: NSNumber(value: value)) ?? "\(value)"
     }
 }
+
+final class FadeAnimator: NSObject, UIViewControllerAnimatedTransitioning {
+    var duration: TimeInterval
+    init(duration: TimeInterval = 0.25) { self.duration = duration }
+
+    func transitionDuration(using ctx: UIViewControllerContextTransitioning?) -> TimeInterval {
+        duration
+    }
+
+    func animateTransition(using ctx: UIViewControllerContextTransitioning) {
+        let container = ctx.containerView
+        guard let toVC = ctx.viewController(forKey: .to) else { return }
+
+        let toView = toVC.view!
+        toView.alpha = 0
+        container.addSubview(toView)
+
+        UIView.animate(withDuration: duration, animations: {
+            toView.alpha = 1
+        }, completion: { finished in
+            ctx.completeTransition(!ctx.transitionWasCancelled)
+        })
+    }
+}
+
+
+
+final class FadeNavDelegate: NSObject, UINavigationControllerDelegate {
+    let animator = FadeAnimator()
+    var duration: TimeInterval {
+        get { animator.duration }
+        set { animator.duration = newValue }
+    }
+
+    // Content fade
+    func navigationController(_ nav: UINavigationController,
+                              animationControllerFor operation: UINavigationController.Operation,
+                              from fromVC: UIViewController,
+                              to toVC: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        animator
+    }
+
+    // Nav bar fade
+    func navigationController(_ nav: UINavigationController,
+                              willShow viewController: UIViewController,
+                              animated: Bool) {
+        guard animated else { return }
+        let t = CATransition()
+        t.type = .fade
+        t.duration = animator.duration
+        t.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        nav.navigationBar.layer.add(t, forKey: "fadeBar")
+    }
+}
+
+
+extension UIViewController {
+    func pushWithFade(_ vc: UIViewController, duration: TimeInterval = 0.25) {
+        guard let nav = navigationController else { return }
+        let tempDelegate = FadeNavDelegate()
+        tempDelegate.animator.duration = duration
+        nav.delegate = tempDelegate
+        nav.pushViewController(vc, animated: true)
+
+        // Clear delegate after transition completes so it doesn't stick
+        nav.transitionCoordinator?.animate(alongsideTransition: nil) { _ in
+            nav.delegate = nil
+        }
+    }
+
+    func popWithFade(duration: TimeInterval = 0.25) {
+        guard let nav = navigationController else { return }
+        let tempDelegate = FadeNavDelegate()
+        tempDelegate.animator.duration = duration
+        nav.delegate = tempDelegate
+        nav.popViewController(animated: true)
+        nav.transitionCoordinator?.animate(alongsideTransition: nil) { _ in
+            nav.delegate = nil
+        }
+    }
+}

@@ -19,6 +19,7 @@ class StandardTitleCell: UITableViewCell {
         
         titleLabel.font = .systemFont(ofSize: 28, weight: .bold)
         titleLabel.textColor = .label
+        titleLabel.numberOfLines = 0
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(titleLabel)
         
@@ -30,8 +31,9 @@ class StandardTitleCell: UITableViewCell {
         ])
     }
     
-    func configure(with title: String) {
+    func configure(with title: String, fontSize: CGFloat = 28) {
         titleLabel.text = title
+        titleLabel.font = .systemFont(ofSize: fontSize, weight: .bold)
     }
 }
 

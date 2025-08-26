@@ -210,36 +210,6 @@
             endingLineNumber = "315"
             landmarkName = "setupViewModelBindings()"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "B44D3758-E211-4E2C-916A-683392911240 - ae7e5edb54ee974f"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #3 (Swift.Optional&lt;ai_project.NetworkError&gt;) -&gt; () in ai_project.CreateAccountViewController.setupViewModelBindings() -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewControllers/SignupFlow/CreateAccountViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "315"
-                  endingLineNumber = "315">
-               </Location>
-               <Location
-                  uuid = "B44D3758-E211-4E2C-916A-683392911240 - ae7e5edb54ee974f"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #3 (Swift.Optional&lt;ai_project.NetworkError&gt;) -&gt; () in ai_project.CreateAccountViewController.setupViewModelBindings() -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewControllers/SignupFlow/CreateAccountViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "315"
-                  endingLineNumber = "315">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -272,36 +242,6 @@
             endingLineNumber = "193"
             landmarkName = "handleUploadCompletion()"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "3C362C8D-52E7-45E3-8C26-D0063A526BA0 - dea572cae3687143"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "ai_project.SessionViewController.handleUploadCompletion() -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewControllers/SessionViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "193"
-                  endingLineNumber = "193">
-               </Location>
-               <Location
-                  uuid = "3C362C8D-52E7-45E3-8C26-D0063A526BA0 - a3d18b1b42012376"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #2 () -&gt; () in ai_project.SessionViewController.handleUploadCompletion() -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewControllers/SessionViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "193"
-                  endingLineNumber = "193">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -318,36 +258,6 @@
             endingLineNumber = "181"
             landmarkName = "handleUploadCompletion()"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "5DB1ABA0-9DC5-4A84-AA72-9DFCA484FE3A - dea572cae36873d7"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "ai_project.SessionViewController.handleUploadCompletion() -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewControllers/SessionViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "181"
-                  endingLineNumber = "181">
-               </Location>
-               <Location
-                  uuid = "5DB1ABA0-9DC5-4A84-AA72-9DFCA484FE3A - dea572cae36873d7"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "ai_project.SessionViewController.handleUploadCompletion() -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewControllers/SessionViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "181"
-                  endingLineNumber = "181">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -364,36 +274,6 @@
             endingLineNumber = "182"
             landmarkName = "handleUploadCompletion()"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "A724C549-A746-45C9-8956-10CF6CD6F5C6 - dea572cae3687036"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "ai_project.SessionViewController.handleUploadCompletion() -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewControllers/SessionViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "182"
-                  endingLineNumber = "182">
-               </Location>
-               <Location
-                  uuid = "A724C549-A746-45C9-8956-10CF6CD6F5C6 - 11bd6e2deae4ee02"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 () -&gt; () in ai_project.SessionViewController.handleUploadCompletion() -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewControllers/SessionViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "182"
-                  endingLineNumber = "182">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -442,36 +322,6 @@
             endingLineNumber = "185"
             landmarkName = "handleUploadCompletion()"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "4807E1BB-C9D4-4795-91D8-3400BF617E93 - 11bd6e2deae4ee7f"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 () -&gt; () in ai_project.SessionViewController.handleUploadCompletion() -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewControllers/SessionViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "185"
-                  endingLineNumber = "185">
-               </Location>
-               <Location
-                  uuid = "4807E1BB-C9D4-4795-91D8-3400BF617E93 - 83af514c51c06162"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 () -&gt; () in closure #1 () -&gt; () in ai_project.SessionViewController.handleUploadCompletion() -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewControllers/SessionViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "185"
-                  endingLineNumber = "185">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy

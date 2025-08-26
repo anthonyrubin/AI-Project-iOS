@@ -1,6 +1,6 @@
 import UIKit
 
-class LoginViewController: UIViewController {
+class LoginViewController: BaseViewController {
     
     private let videoArea: UIView = {
         let v = UIView()
@@ -114,6 +114,7 @@ class LoginViewController: UIViewController {
         ])
         
         alreadyHaveAccountButton.addTarget(self, action: #selector(presentSocialSignInSheet), for: .touchUpInside)
+        getStartedButton.addTarget(self, action: #selector(navigateNext), for: .touchUpInside)
     }
 
     // MARK: - Actions
@@ -132,5 +133,13 @@ class LoginViewController: UIViewController {
         nav.presentationController?.delegate = signup
 
         present(nav, animated: true)
+    }
+    
+    @objc private func navigateNext() {
+        let selectSportsVC = SelectSportsViewController()
+         
+        pushWithFade(selectSportsVC)
+
+        //navigationController?.pushViewController(selectSportsVC, animated: true)
     }
 }
