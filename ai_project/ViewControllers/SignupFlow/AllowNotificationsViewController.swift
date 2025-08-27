@@ -225,7 +225,7 @@ final class AllowNotificationsViewController: BaseSignupViewController {
     override func didTapContinue() {
         super.didTapContinue()
         
-        let vc = ThanksForTrustingUsViewController()
+        let vc = StartAnalysisViewController()
         navigationController?.pushViewController(vc, animated: true)
     }
 }

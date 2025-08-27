@@ -55,6 +55,15 @@ private final class TipRowView: UIView {
 // MARK: - Image card (light container with rounded image inside)
 private final class MediaCardView: UIView {
     let imageView = UIImageView()
+    
+    private let titleLabel: UILabel = {
+        let l = UILabel()
+        l.text = "Upload a clip to start your coaching journey"
+        l.font = .systemFont(ofSize: 20, weight: .regular)
+        l.numberOfLines = 0
+        l.translatesAutoresizingMaskIntoConstraints = false
+        return l
+    }()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -69,12 +78,17 @@ private final class MediaCardView: UIView {
         imageView.layer.cornerRadius = 20
         imageView.layer.cornerCurve = .continuous
         addSubview(imageView)
+        addSubview(titleLabel)
 
         NSLayoutConstraint.activate([
-            imageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 24),
-            imageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -24),
-            imageView.topAnchor.constraint(equalTo: topAnchor, constant: 24),
-            imageView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -24),
+            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
+            titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
+            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 20),
+            
+            imageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
+            imageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
+            imageView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 20),
+            imageView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -20),
             imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier: 4.0/3.0) // pleasant aspect
         ])
     }
@@ -89,7 +103,7 @@ final class StartAnalysisViewController: BaseSignupViewController {
     private let titleLabel: UILabel = {
         let l = UILabel()
         l.text = "Let’s analyze your performance"
-        l.font = .systemFont(ofSize: 36, weight: .bold)
+        l.font = .systemFont(ofSize: 35, weight: .bold)
         l.numberOfLines = 0
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
@@ -97,29 +111,18 @@ final class StartAnalysisViewController: BaseSignupViewController {
 
     // Scroll content
     private let scrollView = UIScrollView()
-    private let content    = UIStackView()
+    private let content = UIStackView()
 
-    private let mediaCard  = MediaCardView()
-    private let tipsStack  = UIStackView()
-    private let skipButton = UIButton(type: .system)
+    private let mediaCard = MediaCardView()
+    private let tipsStack = UIStackView()
 
     override func viewDidLoad() {
+        buildUI()
+        killDefaultLayout = true
+        setupSecondaryButton(text: "Skip for now", selector: #selector(didTapSkip))
         super.viewDidLoad()
         setProgress(0.90, animated: false)
-
-        buildUI()
-        layoutUI()
         configureData()
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        // Keep content clear of the fixed Continue button
-        let pad = continueButton.bounds.height + 32
-        if scrollView.contentInset.bottom != pad {
-            scrollView.contentInset.bottom = pad
-            scrollView.verticalScrollIndicatorInsets.bottom = pad
-        }
     }
 
     // MARK: UI
@@ -148,35 +151,29 @@ final class StartAnalysisViewController: BaseSignupViewController {
         tipsStack.translatesAutoresizingMaskIntoConstraints = false
         content.addArrangedSubview(tipsStack)
 
-        // Skip for now
-        skipButton.setTitle("Skip for now", for: .normal)
-        skipButton.titleLabel?.font = .systemFont(ofSize: 18, weight: .regular)
-        skipButton.tintColor = .label
-        skipButton.addTarget(self, action: #selector(didTapSkip), for: .touchUpInside)
-        content.addArrangedSubview(skipButton)
+        content.addArrangedSubview(secondaryButton)
+        content.addArrangedSubview(continueButton)
     }
 
-    private func layoutUI() {
+    override func layout() {
         let g = view.safeAreaLayoutGuide
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: g.topAnchor, constant: 8),
             scrollView.leadingAnchor.constraint(equalTo: g.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: g.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: continueButton.topAnchor, constant: -12),
+            scrollView.bottomAnchor.constraint(equalTo: g.bottomAnchor, constant: -12),
 
-            content.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: 24),
-            content.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -24),
+            content.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: 20),
+            content.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -20),
             content.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
             content.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
 
             // Make content match scroll width so it only scrolls when needed
             content.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -48),
 
-            mediaCard.heightAnchor.constraint(greaterThanOrEqualToConstant: 260)
+            mediaCard.heightAnchor.constraint(greaterThanOrEqualToConstant: 260),
+            continueButton.heightAnchor.constraint(equalToConstant: 56)
         ])
-
-        // Center the "Skip" text
-        skipButton.contentHorizontalAlignment = .center
     }
 
     private func configureData() {
@@ -198,7 +195,7 @@ final class StartAnalysisViewController: BaseSignupViewController {
     // MARK: Actions
     @objc private func didTapSkip() {
         // Handle skip – navigate to the capture/upload screen or next step
-        didTapContinue()
+
     }
 
     override func didTapContinue() {

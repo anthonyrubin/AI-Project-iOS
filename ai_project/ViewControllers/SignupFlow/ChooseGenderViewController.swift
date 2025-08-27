@@ -49,7 +49,10 @@ extension ChooseGenderViewController: UITableViewDataSource, UITableViewDelegate
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if indexPath.section == 0 {
             let cell = tableView.dequeueReusableCell(withIdentifier: "StandardTitleCell", for: indexPath) as! StandardTitleCell
-            cell.configure(with: "Choose your gender", fontSize: 35)
+            cell.configure(
+                with: "Choose your gender",
+                subtitle: "CoachAI uses this information to improve AI accuracy.",
+                fontSize: 35)
             return cell
         }
         let item = items[indexPath.row]

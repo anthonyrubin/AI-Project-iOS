@@ -42,7 +42,7 @@ final class HeightAndWeightViewController: BaseSignupViewController, UIPickerVie
 
     private let subtitleLabel: UILabel = {
         let l = UILabel()
-        l.text = "This will be used to calibrate your AI coach"
+        l.text = "CoachAI uses this to give precise AI analysis and scoring.\n\nWe will never share this."
         l.font = .systemFont(ofSize: 18, weight: .regular)
         l.textColor = .secondaryLabel
         l.numberOfLines = 0

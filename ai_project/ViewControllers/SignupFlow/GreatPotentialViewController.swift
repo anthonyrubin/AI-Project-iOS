@@ -2,9 +2,17 @@ import UIKit
 
 final class GreatPotentialViewController: BaseSignupViewController {
 
+    init(sportDisplay: String) {
+        titleLabel.text = "CoachAI makes you a better \(sportDisplay)."
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    @MainActor required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.text = "You have great potential to crush your goals"
         l.font = .systemFont(ofSize: 35, weight: .bold)
         l.numberOfLines = 0
         l.translatesAutoresizingMaskIntoConstraints = false

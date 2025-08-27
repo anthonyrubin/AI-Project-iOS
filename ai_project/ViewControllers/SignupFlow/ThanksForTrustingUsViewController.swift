@@ -215,7 +215,8 @@ final class ThanksForTrustingUsViewController: BaseSignupViewController {
 
     override func didTapContinue() {
         super.didTapContinue()
-        let vc = StartAnalysisViewController()
+        
+        let vc = AllowNotificationsViewController()
         navigationController?.pushViewController(vc, animated: true)
     }
 }

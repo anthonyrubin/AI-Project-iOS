@@ -136,7 +136,7 @@ class LoginViewController: BaseViewController {
     }
     
     @objc private func navigateNext() {
-        let selectSportsVC = SelectSportsViewController()
+        let selectSportsVC = SelectSportViewController()
          
         pushWithFade(selectSportsVC)
 

@@ -9,7 +9,9 @@ class BaseSignupViewController: UIViewController {
     let continueButton = UIButton(type: .system)
     private var hasSecondaryButton = false
     
-    private let secondaryButton: UIButton = {
+    var killDefaultLayout = false
+    
+    let secondaryButton: UIButton = {
         let b = UIButton(type: .custom)
         b.translatesAutoresizingMaskIntoConstraints = false
         b.backgroundColor = .clear
@@ -139,11 +141,15 @@ class BaseSignupViewController: UIViewController {
         title = nil
     }
 
-    func addSecondaryButton(text: String, selector: Selector) {
-        view.addSubview(secondaryButton)
-        secondaryButton.titleLabel?.text = text
+    func setupSecondaryButton(text: String, selector: Selector) {
+        secondaryButton.setTitle(text, for: .normal)
+        secondaryButton.setTitleColor(.black, for: .normal) // or default .system tint if you prefer
+        secondaryButton.contentHorizontalAlignment = .center
+        secondaryButton.backgroundColor = .clear
+        secondaryButton.titleLabel?.font = .systemFont(ofSize: 16, weight: .regular)
         secondaryButton.addTarget(self, action: selector, for: .touchUpInside)
         secondaryButton.applyTactileTap()
+        
         hasSecondaryButton = true
     }
     
@@ -157,24 +163,27 @@ class BaseSignupViewController: UIViewController {
         continueButton.layer.cornerRadius = 28
         continueButton.addTarget(self, action: #selector(didTapContinue), for: .touchUpInside)
         continueButton.applyTactileTap()
-        view.addSubview(continueButton)
     }
     
     func layout() {
-        let g = view.safeAreaLayoutGuide
-        NSLayoutConstraint.activate([
-            continueButton.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 20),
-            continueButton.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -20),
-            continueButton.bottomAnchor.constraint(equalTo: g.bottomAnchor, constant: -12),
-            continueButton.heightAnchor.constraint(equalToConstant: 56)
-        ])
-        
-        if hasSecondaryButton {
+        if !killDefaultLayout {
+            view.addSubview(secondaryButton)
+            view.addSubview(continueButton)
+            let g = view.safeAreaLayoutGuide
             NSLayoutConstraint.activate([
-                secondaryButton.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 20),
-                secondaryButton.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -20),
-                secondaryButton.bottomAnchor.constraint(equalTo: continueButton.topAnchor, constant: -12),
+                continueButton.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 20),
+                continueButton.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -20),
+                continueButton.bottomAnchor.constraint(equalTo: g.bottomAnchor, constant: -12),
+                continueButton.heightAnchor.constraint(equalToConstant: 56)
             ])
+            
+            if hasSecondaryButton {
+                NSLayoutConstraint.activate([
+                    secondaryButton.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 20),
+                    secondaryButton.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -20),
+                    secondaryButton.bottomAnchor.constraint(equalTo: continueButton.topAnchor, constant: -12),
+                ])
+            }
         }
     }
     
