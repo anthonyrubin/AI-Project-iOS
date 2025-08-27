@@ -59,15 +59,6 @@ private final class TipRowView: UIView {
 private final class MediaCardView: UIView {
     let imageView = UIImageView()
 
-    private let titleLabel: UILabel = {
-        let l = UILabel()
-        l.text = "Upload a clip to start your coaching journey"
-        l.font = .systemFont(ofSize: 20, weight: .regular)
-        l.numberOfLines = 0
-        l.translatesAutoresizingMaskIntoConstraints = false
-        return l
-    }()
-
     override init(frame: CGRect) {
         super.init(frame: frame)
         translatesAutoresizingMaskIntoConstraints = false
@@ -81,16 +72,10 @@ private final class MediaCardView: UIView {
         imageView.layer.cornerRadius = 20
         imageView.layer.cornerCurve = .continuous
         addSubview(imageView)
-        addSubview(titleLabel)
-
         NSLayoutConstraint.activate([
-            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
-            titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
-            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 20),
-
             imageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
             imageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
-            imageView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 20),
+            imageView.topAnchor.constraint(equalTo: topAnchor, constant: 20),
             imageView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -20),
             imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier: 4.0/3.0)
         ])
@@ -108,6 +93,16 @@ final class StartAnalysisViewController: BaseSignupViewController, PHPickerViewC
         l.text = "Let’s analyze your performance"
         l.font = .systemFont(ofSize: 35, weight: .bold)
         l.numberOfLines = 0
+        l.translatesAutoresizingMaskIntoConstraints = false
+        return l
+    }()
+    
+    private let subtitleLabel: UILabel = {
+        let l = UILabel()
+        l.font = .systemFont(ofSize: 18, weight: .regular)
+        l.textColor = .secondaryLabel
+        l.numberOfLines = 0
+        l.text = "Upload a clip to start your coaching journey."
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
     }()
@@ -142,7 +137,9 @@ final class StartAnalysisViewController: BaseSignupViewController, PHPickerViewC
         scrollView.addSubview(content)
 
         content.addArrangedSubview(titleLabel)
-        content.setCustomSpacing(16, after: titleLabel)
+        content.setCustomSpacing(8, after: titleLabel)
+        content.addArrangedSubview(subtitleLabel)
+        content.setCustomSpacing(16, after: subtitleLabel)
 
         // Image card
         content.addArrangedSubview(mediaCard)
@@ -196,7 +193,7 @@ final class StartAnalysisViewController: BaseSignupViewController, PHPickerViewC
     // MARK: Actions
     @objc private func didTapSkip() {
         // Skip straight to questions (no video)
-        let vc = StartAnalysisQuestionsViewController(thumbnail: nil, videoURL: nil)
+        let vc = CreateAccountViewController(didUploadVideoForAnalysis: false)
         navigationController?.pushViewController(vc, animated: true)
     }
 

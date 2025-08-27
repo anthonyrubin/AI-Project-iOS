@@ -4,62 +4,124 @@ import Combine
 @MainActor
 class CreateAccountViewModel: ObservableObject {
     
-    // MARK: - Published Properties
+    private let authRepository: AuthRepository
+    private let socialLoginManager: SocialLoginManager
+    @Published var checkpoint: Checkpoint?
     @Published var isLoading = false
-    @Published var modalError: String?
-    @Published var networkError: NetworkError?
-    @Published var isAccountCreated = false
-    
-    // MARK: - Dependencies
-    private let signupRepository: SignupRepository
-    private var cancellables = Set<AnyCancellable>()
+    @Published var errorMessage: String?
     
     // MARK: - Initialization
-    init(signupRepository: SignupRepository) {
-        self.signupRepository = signupRepository
+    init(
+        authRepository: AuthRepository,
+        socialLoginManager: SocialLoginManager
+    ) {
+        self.authRepository = authRepository
+        self.socialLoginManager = socialLoginManager
     }
     
-    // MARK: - Public Methods
-    
-    func createAccount(username: String, email: String, password1: String, password2: String) {
+    func signInWithGoogle() {
         isLoading = true
-        isAccountCreated = false
+        errorMessage = nil
         
-        signupRepository.createAccount(
-            username: username,
-            email: email,
-            password1: password1,
-            password2: password2
-        ) { [weak self] result in
+        socialLoginManager.signInWithGoogle { [weak self] result in
             Task { @MainActor in
-                self?.isLoading = false
-                
                 switch result {
-                case .success():
-                    self?.isAccountCreated = true
+                case .success(let socialResult):
+                    self?.handleSocialLogin(socialResult)
                 case .failure(let error):
-                    if case .apiError(_) = error {
-                        self?.networkError = error
-                    } else {
-                        self?.modalError = error.localizedDescription
+                    self?.isLoading = false
+                    if case .cancelled = error {
+                        // User cancelled, don't show error
+                        return
                     }
+                    self?.errorMessage = error.localizedDescription
                 }
             }
         }
     }
     
-    // MARK: - Error Handling
-    
-    func clearModalError() {
-        modalError = nil
+    func signInWithApple() {
+        isLoading = true
+        errorMessage = nil
+        
+        socialLoginManager.signInWithApple { [weak self] result in
+            Task { @MainActor in
+                switch result {
+                case .success(let socialResult):
+                    self?.handleSocialLogin(socialResult)
+                case .failure(let error):
+                    self?.isLoading = false
+                    if case .cancelled = error {
+                        // User cancelled, don't show error
+                        return
+                    }
+                    self?.errorMessage = error.localizedDescription
+                }
+            }
+        }
     }
     
-    func clearFieldError() {
-        networkError = nil
+    // MARK: - Private Methods
+    
+    private func handleSocialLogin(_ socialResult: SocialLoginResult) {
+        switch socialResult.provider {
+        case .google:
+            authRepository.googleSignIn(
+                idToken: socialResult.idToken,
+                accessToken: socialResult.accessToken
+            ) { [weak self] result in
+                Task { @MainActor in
+                    self?.isLoading = false
+                    self?.handleSocialLoginResponse(result, socialResult: socialResult)
+                }
+            }
+        case .apple:
+            authRepository.appleSignIn(
+                identityToken: socialResult.idToken,
+                authorizationCode: nil,
+                user: socialResult.user
+            ) { [weak self] result in
+                Task { @MainActor in
+                    self?.isLoading = false
+                    self?.handleSocialLoginResponse(result, socialResult: socialResult)
+                }
+            }
+        }
     }
     
-    func resetAccountCreated() {
-        isAccountCreated = false
+    private func handleSocialLoginResponse(_ result: Result<SocialSignInResponse, NetworkError>, socialResult: SocialLoginResult) {
+        switch result {
+        case .success(let response):
+            if response.isNewUser {
+                // New user - navigate to name setup
+                checkpoint = .name
+            } else if let _ = response.tokens {
+                checkpoint = .home
+            } else if let checkpoint = response.checkpoint {
+                // Handle checkpoint-based navigation
+                handleCheckpoint(checkpoint)
+            }
+        case .failure(let error):
+            errorMessage = error.localizedDescription
+        }
+    }
+    
+    private func handleCheckpoint(_ checkpoint: String) {
+        let _checkpoint = Checkpoint(rawValue: checkpoint)
+        switch _checkpoint {
+        case .name, .birthday, .home:
+            self.checkpoint = _checkpoint
+        default:
+            errorMessage = "Unknown checkpoint: \(checkpoint)"
+        }
+    }
+    
+    func resetNavigationFlags() {
+        checkpoint = nil
+    }
+    
+    func clearError() {
+        errorMessage = nil
     }
 }
 

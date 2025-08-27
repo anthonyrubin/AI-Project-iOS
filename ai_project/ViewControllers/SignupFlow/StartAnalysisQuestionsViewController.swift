@@ -7,9 +7,6 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
     private let thumbnail: UIImage?
     private let videoURL: URL?
 
-    // Callers can capture this to receive the values and push the next VC.
-    var onContinue: ((String, URL?) -> Void)?
-
     // MARK: – UI
     private let scroll = UIScrollView()
     private let content = UIView()
@@ -278,13 +275,18 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
 
     // MARK: – Actions
     @objc private func skipTapped() {
-        onContinue?("", videoURL)
+        let vc = CreateAccountViewController(didUploadVideoForAnalysis: false)
+        navigationController?.pushViewController(vc, animated: true)
+        
+        
     }
 
     override func didTapContinue() {
         super.didTapContinue()
         let text = detailsText.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        onContinue?(text, videoURL)
+        
+        let vc = CreateAccountViewController(didUploadVideoForAnalysis: true)
+        navigationController?.pushViewController(vc, animated: true)
     }
 
     // MARK: – TextView
