@@ -1,4 +1,7 @@
 import UIKit
+import PhotosUI
+import AVFoundation
+import UniformTypeIdentifiers
 
 // MARK: - Row with left circular SF icon + multiline text
 private final class TipRowView: UIView {
@@ -55,7 +58,7 @@ private final class TipRowView: UIView {
 // MARK: - Image card (light container with rounded image inside)
 private final class MediaCardView: UIView {
     let imageView = UIImageView()
-    
+
     private let titleLabel: UILabel = {
         let l = UILabel()
         l.text = "Upload a clip to start your coaching journey"
@@ -84,12 +87,12 @@ private final class MediaCardView: UIView {
             titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
             titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
             titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 20),
-            
+
             imageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
             imageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
             imageView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 20),
             imageView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -20),
-            imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier: 4.0/3.0) // pleasant aspect
+            imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier: 4.0/3.0)
         ])
     }
 
@@ -97,7 +100,7 @@ private final class MediaCardView: UIView {
 }
 
 // MARK: - Screen
-final class StartAnalysisViewController: BaseSignupViewController {
+final class StartAnalysisViewController: BaseSignupViewController, PHPickerViewControllerDelegate {
 
     // Title (scrolls with content)
     private let titleLabel: UILabel = {
@@ -118,7 +121,7 @@ final class StartAnalysisViewController: BaseSignupViewController {
 
     override func viewDidLoad() {
         buildUI()
-        killDefaultLayout = true
+        killDefaultLayout = true            // (your base uses this to skip fixed button layout)
         setupSecondaryButton(text: "Skip for now", selector: #selector(didTapSkip))
         super.viewDidLoad()
         setProgress(0.90, animated: false)
@@ -177,30 +180,103 @@ final class StartAnalysisViewController: BaseSignupViewController {
     }
 
     private func configureData() {
-        // Use your real image asset here
-        mediaCard.imageView.image = UIImage(named: "golfPreview") // fallback
+        mediaCard.imageView.image = UIImage(named: "golfPreview")
         if mediaCard.imageView.image == nil {
             mediaCard.imageView.backgroundColor = .tertiarySystemFill
         }
 
-        // Tips (icons chosen to be available and clear)
         let tips: [(String, String)] = [
-            ("Ensure that you are well lit and completely in frame.", "viewfinder"),
-            ("Don’t stand too far away from the camera.", "magnifyingglass.circle"),
-            ("Use a high frame rate for the best analysis. Most smartphones can film at 60 fps.", "speedometer")
+            ("Be well lit and fully in frame.", "viewfinder"),
+            ("Don’t stand too far from the camera.", "magnifyingglass.circle"),
+            ("Use 60 fps if possible.", "speedometer")
         ]
         tips.forEach { tipsStack.addArrangedSubview(TipRowView(text: $0.0, symbol: $0.1)) }
     }
 
     // MARK: Actions
     @objc private func didTapSkip() {
-        // Handle skip – navigate to the capture/upload screen or next step
-
+        // Skip straight to questions (no video)
+        let vc = StartAnalysisQuestionsViewController(thumbnail: nil, videoURL: nil)
+        navigationController?.pushViewController(vc, animated: true)
     }
 
     override func didTapContinue() {
         super.didTapContinue()
-        // Push your capture/upload VC here
-        // navigationController?.pushViewController(NextVC(), animated: true)
+        presentVideoPicker()
+    }
+
+    // MARK: Picker
+    private func presentVideoPicker() {
+        var config = PHPickerConfiguration(photoLibrary: .shared())
+        config.selectionLimit = 1
+        config.filter = .any(of: [.videos])     // video only
+
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        dismiss(animated: true)
+
+        guard let result = results.first else { return }
+        let provider = result.itemProvider
+        let movieUTI = UTType.movie.identifier
+
+        guard provider.hasItemConformingToTypeIdentifier(movieUTI) else { return }
+
+        provider.loadFileRepresentation(forTypeIdentifier: movieUTI) { [weak self] tempURL, error in
+            guard let self = self else { return }
+            if let error = error {
+                print("Picker error:", error)
+                return
+            }
+            guard let src = tempURL else { return }
+
+            // Copy to a stable temporary location (the provided URL may be ephemeral)
+            let ext = src.pathExtension.isEmpty ? "mov" : src.pathExtension
+            let dst = URL(fileURLWithPath: NSTemporaryDirectory())
+                .appendingPathComponent(UUID().uuidString)
+                .appendingPathExtension(ext)
+
+            do {
+                // If a file exists at dst for some reason, remove then copy
+                if FileManager.default.fileExists(atPath: dst.path) {
+                    try FileManager.default.removeItem(at: dst)
+                }
+                try FileManager.default.copyItem(at: src, to: dst)
+            } catch {
+                print("Copy movie failed:", error)
+                return
+            }
+
+            // Generate thumbnail
+            let image = self.generateThumbnail(for: dst)
+
+            DispatchQueue.main.async {
+                let vc = StartAnalysisQuestionsViewController(thumbnail: image, videoURL: dst)
+                self.navigationController?.pushViewController(vc, animated: true)
+            }
+        }
+    }
+
+    // MARK: Thumbnail
+    private func generateThumbnail(for url: URL) -> UIImage? {
+        let asset = AVAsset(url: url)
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.appliesPreferredTrackTransform = true
+
+        let duration = asset.duration.seconds
+        let captureSecond = duration.isFinite && duration > 0 ? min(1.0, duration / 2.0) : 0.5
+        let time = CMTime(seconds: captureSecond, preferredTimescale: 600)
+
+        do {
+            let cg = try generator.copyCGImage(at: time, actualTime: nil)
+            return UIImage(cgImage: cg)
+        } catch {
+            print("Thumbnail generation failed:", error)
+            return nil
+        }
     }
 }
+
