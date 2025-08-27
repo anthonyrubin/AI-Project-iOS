@@ -116,7 +116,7 @@ final class StartAnalysisViewController: BaseSignupViewController, PHPickerViewC
 
     override func viewDidLoad() {
         buildUI()
-        killDefaultLayout = true            // (your base uses this to skip fixed button layout)
+        killDefaultLayout = true
         setupSecondaryButton(text: "Skip for now", selector: #selector(didTapSkip))
         super.viewDidLoad()
         setProgress(0.90, animated: false)
