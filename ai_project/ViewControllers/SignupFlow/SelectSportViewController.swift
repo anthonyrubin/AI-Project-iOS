@@ -69,7 +69,7 @@ extension SelectSportViewController: UITableViewDataSource, UITableViewDelegate 
             let cell = tableView.dequeueReusableCell(withIdentifier: "StandardTitleCell", for: indexPath) as! StandardTitleCell
             cell.configure(
                 with: "What sport are you here for?",
-                subtitle: "Pick one to start. You can change it anytime.",
+                subtitle: "Pick one to start. You can change add more any time.",
                 fontSize: 35
             )
             return cell

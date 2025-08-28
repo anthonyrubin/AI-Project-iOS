@@ -177,15 +177,15 @@ final class StartAnalysisViewController: BaseSignupViewController, PHPickerViewC
     }
 
     private func configureData() {
-        mediaCard.imageView.image = UIImage(named: "golfPreview")
+        mediaCard.imageView.image = UIImage(named: "golf_preview")
         if mediaCard.imageView.image == nil {
             mediaCard.imageView.backgroundColor = .tertiarySystemFill
         }
 
         let tips: [(String, String)] = [
-            ("Be well lit and fully in frame.", "viewfinder"),
-            ("Don’t stand too far from the camera.", "magnifyingglass.circle"),
-            ("Use 60 fps if possible.", "speedometer")
+            ("Be well lit and fully in frame.", "camera.viewfinder"),
+            ("Don’t stand too far from the camera.", "exclamationmark.magnifyingglass"),
+            ("Use 60 fps if possible.", "slowmo")
         ]
         tips.forEach { tipsStack.addArrangedSubview(TipRowView(text: $0.0, symbol: $0.1)) }
     }
