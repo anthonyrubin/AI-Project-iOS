@@ -98,7 +98,21 @@ final class CreateAccountViewController: BaseSignupViewController {
         super.viewDidLoad()
         buildUI()
         setProgress(0.55, animated: false)
+        
+        // Start signup session if not already started
+        if !UserDefaultsManager.shared.isSignupInProgress {
+            UserDefaultsManager.shared.startSignupSession()
+        }
+        
+        // Update progress and save video upload status
+        UserDefaultsManager.shared.updateProgress(progress: 0.55, step: "create_account")
+        UserDefaultsManager.shared.updateVideoAnalysis(didUpload: didUploadVideoForAnalysis)
+        
+        // Debug: Print current signup data
+        UserDefaultsManager.shared.debugPrintSignupData()
         wireActions()
+        
+        setupViewModelBindings()
     }
     
     func buildUI() {
@@ -189,8 +203,8 @@ final class CreateAccountViewController: BaseSignupViewController {
     }
     
     private func navigateToName() {
-        let vc = SetNameViewController()
-        navigationController?.pushViewController(vc, animated: true)
+//        let vc = SetNameViewController()
+//        navigationController?.pushViewController(vc, animated: true)
     }
     
     private func navigateToBirthday() {

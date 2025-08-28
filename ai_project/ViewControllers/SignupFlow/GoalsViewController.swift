@@ -52,6 +52,15 @@ final class GoalsViewController: BaseSignupTableViewController {
     
     override func didTapContinue() {
         super.didTapContinue()
+        
+        // Save goals to UserDefaults
+        let selectedGoalTitles = Array(selected).map { $0.title }
+        UserDefaultsManager.shared.updateGoals(
+            selectedGoals: selectedGoalTitles,
+            sportDisplay: sportDisplay
+        )
+        UserDefaultsManager.shared.updateProgress(progress: 0.55, step: "goals_set")
+        
         let vc = GreatPotentialViewController(sportDisplay: sportDisplay)
         navigationController?.pushViewController(vc, animated: true)
     }

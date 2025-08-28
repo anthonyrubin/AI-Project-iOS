@@ -301,8 +301,18 @@ final class HeightAndWeightViewController: BaseSignupViewController, UIPickerVie
     // MARK: - Continue
     override func didTapContinue() {
         super.didTapContinue()
-        let cm = Int(round(height.converted(to: .centimeters).value))
-        let kg = Int(round(weight.converted(to: .kilograms).value))
+        
+        // Save height and weight to UserDefaults
+        let heightCm = height.converted(to: .centimeters).value
+        let weightKg = weight.converted(to: .kilograms).value
+        
+        UserDefaultsManager.shared.updatePhysicalInfo(
+            height: heightCm,
+            weight: weightKg,
+            isMetric: isMetric
+        )
+        UserDefaultsManager.shared.updateProgress(progress: 0.45, step: "height_weight_set")
+        
         let vc = BirthdayViewController()
         navigationController?.pushViewController(vc, animated: true)
     }

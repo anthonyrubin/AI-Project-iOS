@@ -33,6 +33,13 @@ final class ChooseGenderViewController: BaseSignupTableViewController {
 
     override func didTapContinue() {
         super.didTapContinue()
+        
+        // Save gender to UserDefaults
+        if let selectedItem = selectedItem {
+            UserDefaultsManager.shared.updateBasicInfo(gender: selectedItem.title)
+            UserDefaultsManager.shared.updateProgress(progress: 0.35, step: "gender_set")
+        }
+        
         let vc = HeightAndWeightViewController()
         navigationController?.pushViewController(vc, animated: true)
     }

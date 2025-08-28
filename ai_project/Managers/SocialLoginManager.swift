@@ -21,9 +21,9 @@ struct SocialLoginResult {
     let name: String?
 }
 
-enum SocialLoginProviderType {
-    case google
-    case apple
+enum SocialLoginProviderType: String {
+     case google = "google"
+     case apple = "apple"
 }
 
 enum SocialLoginError: Error, LocalizedError {

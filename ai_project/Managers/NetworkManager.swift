@@ -15,17 +15,9 @@ protocol AuthAPI {
         completion: @escaping (Result<VerifyAccountResponse, NetworkError>) -> Void
     )
     
-    // Social Login Methods
-    func googleSignIn(
-        idToken: String,
-        accessToken: String?,
-        completion: @escaping (Result<SocialSignInResponse, NetworkError>) -> Void
-    )
-    
-    func appleSignIn(
-        identityToken: String,
-        authorizationCode: String?,
-        user: String?,
+    func socialSignInWithData(
+        provider: SocialLoginProviderType,
+        data: [String: Any],
         completion: @escaping (Result<SocialSignInResponse, NetworkError>) -> Void
     )
 }
@@ -445,48 +437,17 @@ class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI {
             }
         }
     }
+
+    // MARK: - Unified Social Login
     
-    // MARK: - Social Login Methods
-    
-    func googleSignIn(
-        idToken: String,
-        accessToken: String?,
+    func socialSignInWithData(
+        provider: SocialLoginProviderType,
+        data: [String: Any],
         completion: @escaping (Result<SocialSignInResponse, NetworkError>) -> Void
     ) {
-        let url = "\(baseURL)/google-signin/"
-        let params = GoogleSignInRequest(idToken: idToken, accessToken: accessToken)
-
-        AF.request(url, method: .post, parameters: params, encoder: JSONParameterEncoder.default)
-            .validate(statusCode: 200..<300)
-            .responseDecodable(of: SocialSignInResponse.self) { resp in
-                switch resp.result {
-                case .success(let response):
-                    completion(.success(response))
-                case .failure(let afErr):
-                    if let data = resp.data,
-                       let apiErr = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
-                        completion(.failure(NetworkError.apiError(apiErr.error)))
-                    } else {
-                        completion(.failure(NetworkError.requestFailed(afErr)))
-                    }
-                }
-            }
-    }
-    
-    func appleSignIn(
-        identityToken: String,
-        authorizationCode: String?,
-        user: String?,
-        completion: @escaping (Result<SocialSignInResponse, NetworkError>) -> Void
-    ) {
-        let url = "\(baseURL)/apple-signin/"
-        let params = AppleSignInRequest(
-            identityToken: identityToken,
-            authorizationCode: authorizationCode,
-            user: user
-        )
-
-        AF.request(url, method: .post, parameters: params, encoder: JSONParameterEncoder.default)
+        let url = "\(baseURL)/social-signin/"
+        
+        AF.request(url, method: .post, parameters: data, encoding: JSONEncoding.default)
             .validate(statusCode: 200..<300)
             .responseDecodable(of: SocialSignInResponse.self) { resp in
                 switch resp.result {

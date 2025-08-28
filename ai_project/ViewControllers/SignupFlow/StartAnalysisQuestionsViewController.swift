@@ -360,6 +360,11 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
 
     override func didTapContinue() {
         super.didTapContinue()
+        
+        // Save sport selection to UserDefaults
+        UserDefaultsManager.shared.updateGoals(sportDisplay: selectedSport)
+        UserDefaultsManager.shared.updateProgress(progress: 0.50, step: "sport_selected")
+        
         // Use `selectedSport`, `detailsText.text`, `thumbnail`, `videoURL`
         let vc = CreateAccountViewController(didUploadVideoForAnalysis: true)
         navigationController?.pushViewController(vc, animated: true)

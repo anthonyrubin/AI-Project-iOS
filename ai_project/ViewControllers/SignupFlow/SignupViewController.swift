@@ -179,8 +179,8 @@ final class SignupViewController: UIViewController, UIAdaptivePresentationContro
     }
     
     private func navigateToName() {
-        let vc = SetNameViewController()
-        navigationController?.pushViewController(vc, animated: true)
+//        let vc = SetNameViewController()
+//        navigationController?.pushViewController(vc, animated: true)
     }
     
     private func navigateToBirthday() {

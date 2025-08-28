@@ -64,27 +64,32 @@ class SignupViewModel: ObservableObject {
     // MARK: - Private Methods
     
     private func handleSocialLogin(_ socialResult: SocialLoginResult) {
-        switch socialResult.provider {
-        case .google:
-            authRepository.googleSignIn(
-                idToken: socialResult.idToken,
-                accessToken: socialResult.accessToken
-            ) { [weak self] result in
-                Task { @MainActor in
-                    self?.isLoading = false
-                    self?.handleSocialLoginResponse(result, socialResult: socialResult)
-                }
-            }
-        case .apple:
-            authRepository.appleSignIn(
-                identityToken: socialResult.idToken,
-                authorizationCode: nil,
-                user: socialResult.user
-            ) { [weak self] result in
-                Task { @MainActor in
-                    self?.isLoading = false
-                    self?.handleSocialLoginResponse(result, socialResult: socialResult)
-                }
+        // For SignupViewController, this is always for existing users
+        // (new users go through the signup flow and end up in CreateAccountViewController)
+        sendSimpleSocialLogin(socialResult: socialResult)
+    }
+    
+    private func sendSimpleSocialLogin(socialResult: SocialLoginResult) {
+        // Simple request without signup data for existing users
+        var requestData: [String: Any] = [
+            "provider": socialResult.provider.rawValue,
+            "id_token": socialResult.idToken
+        ]
+        
+        // Add access token if available
+        if let accessToken = socialResult.accessToken {
+            requestData["access_token"] = accessToken
+        }
+        
+        print("📝 SignupViewModel: Sending simple social login request for existing user")
+        
+        authRepository.socialSignInWithData(
+            provider: socialResult.provider,
+            data: requestData
+        ) { [weak self] result in
+            Task { @MainActor in
+                self?.isLoading = false
+                self?.handleSocialLoginResponse(result, socialResult: socialResult)
             }
         }
     }

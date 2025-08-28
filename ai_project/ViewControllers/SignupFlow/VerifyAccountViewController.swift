@@ -196,8 +196,8 @@ final class VerifyAccountViewController: UIViewController, UITextFieldDelegate {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isBirthdaySet in
                 if isBirthdaySet {
-                    let vc = SetNameViewController()
-                    self?.navigationController?.pushViewController(vc, animated: true)
+//                    let vc = SetNameViewController()
+//                    self?.navigationController?.pushViewController(vc, animated: true)
                 }
             }
             .store(in: &cancellables)

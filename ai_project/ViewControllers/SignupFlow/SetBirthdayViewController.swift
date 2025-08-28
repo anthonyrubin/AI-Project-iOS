@@ -110,8 +110,14 @@ final class SetBirthdayViewController: UIViewController {
     }
 
     @objc private func nextButtonTapped() {
+        let birthday = datePicker.date
+        
+        // Save to UserDefaults before making API call
+        UserDefaultsManager.shared.updateBasicInfo(birthday: birthday)
+        UserDefaultsManager.shared.updateProgress(progress: 0.25, step: "birthday_set")
+        
         setLoading(true)
-        viewModel.setBirthday(birthday: datePicker.date)
+        viewModel.setBirthday(birthday: birthday)
     }
     
     private func finishOnboarding() {
