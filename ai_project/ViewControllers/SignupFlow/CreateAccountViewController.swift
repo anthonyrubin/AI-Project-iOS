@@ -187,6 +187,13 @@ final class CreateAccountViewController: BaseSignupViewController {
                 }
             }
             .store(in: &cancellables)
+        
+        viewModel.$isLoading
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading in
+                self?.setLoading(isLoading)
+            }
+            .store(in: &cancellables)
     }
     
     private func handleCheckpoint(checkpoint: Checkpoint) {
@@ -221,13 +228,6 @@ final class CreateAccountViewController: BaseSignupViewController {
         (navigationController ?? self).isModalInPresentation = loading
         navigationItem.rightBarButtonItem?.isEnabled = !loading
         loading ? loadingOverlay.show(in: navigationController!.view) : loadingOverlay.hide()
-        
-        // disable the close button
-        navigationItem.rightBarButtonItem?.isEnabled = !loading
-
-        // hard block swipe-to-dismiss too, even though the
-        // presentationControllerShouldDismiss function should do this
-        (navigationController ?? self).isModalInPresentation = loading
     }
 
     @objc func googleSignInTapped() {
