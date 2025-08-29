@@ -145,8 +145,19 @@ class CreateAccountViewModel: ObservableObject {
                 switch result {
                 case .success(let response):
                     // Successfully completed signup
-                    UserDefaultsManager.shared.completeSignupSession()
-                    self?.checkpoint = .home
+                    
+                    self?.checkpoint = Checkpoint(rawValue: response.checkpoint!)
+                    print("Checkpoint be")
+                    print(self?.checkpoint)
+                    print(response.checkpoint)
+//
+//                    // Check if user uploaded video for analysis
+//                    let signupData = UserDefaultsManager.shared.getSignupData()
+//                    if signupData.didUploadVideoForAnalysis {
+//                        self?.checkpoint = .videoAnalysis
+//                    } else {
+//                        self?.checkpoint = .home
+//                    }
                 case .failure(let error):
                     self?.errorMessage = error.localizedDescription
                 }

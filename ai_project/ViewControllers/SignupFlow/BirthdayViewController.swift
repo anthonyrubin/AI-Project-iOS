@@ -125,6 +125,8 @@ final class BirthdayViewController: BaseSignupViewController {
             return
         }
         
+        UserDefaultsManager.shared.updateBasicInfo(birthday: birthdate)
+        
         super.didTapContinue()
         
         let vc = ThanksForTrustingUsViewController()

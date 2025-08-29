@@ -175,6 +175,9 @@ final class SignupViewController: UIViewController, UIAdaptivePresentationContro
             navigateToHome()
         case .verify_code:
             break
+        case .videoAnalysis:
+            fatalError("Video analysis should never be an option from here")
+
         }
     }
     

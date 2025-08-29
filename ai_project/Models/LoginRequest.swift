@@ -1,6 +1,6 @@
 import Foundation
 
-enum Checkpoint: String, Decodable { case verify_code, name, birthday, home }
+enum Checkpoint: String, Decodable { case verify_code, name, birthday, home, videoAnalysis }
 
 struct LoginOrCheckpointResponse: Decodable {
     let checkpoint: Checkpoint

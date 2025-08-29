@@ -10,6 +10,7 @@ class BaseSignupViewController: UIViewController {
     private var hasSecondaryButton = false
     
     var killDefaultLayout = false
+    var hideBackButton = false
     
     let secondaryButton: UIButton = {
         let b = UIButton(type: .custom)
@@ -33,7 +34,7 @@ class BaseSignupViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
-        setupNav()
+        setupNav(hideBackButton: hideBackButton)
         attachProgressInTitleView()   // now mounts on the nav bar
         setupContinueButton()
         layout()
@@ -119,21 +120,27 @@ class BaseSignupViewController: UIViewController {
         navigationController?.popViewController(animated: true)
     }
     
-    private func setupNav() {
+    private func setupNav(hideBackButton: Bool) {
         // Circular back
-        let backBtn = UIButton(type: .system)
-        backBtn.translatesAutoresizingMaskIntoConstraints = false
-        backBtn.setImage(UIImage(systemName: "chevron.left"), for: .normal)
-        backBtn.tintColor = .label
-        backBtn.backgroundColor = UIColor.systemGray5
-        backBtn.layer.cornerRadius = 16
-        backBtn.addTarget(self, action: #selector(didTapBack), for: .touchUpInside)
-        NSLayoutConstraint.activate([
-            backBtn.widthAnchor.constraint(equalToConstant: 32),
-            backBtn.heightAnchor.constraint(equalToConstant: 32)
-        ])
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backBtn)
-        backButton = backBtn
+        if !hideBackButton {
+            let backBtn = UIButton(type: .system)
+            backBtn.translatesAutoresizingMaskIntoConstraints = false
+            backBtn.setImage(UIImage(systemName: "chevron.left"), for: .normal)
+            backBtn.tintColor = .label
+            backBtn.backgroundColor = UIColor.systemGray5
+            backBtn.layer.cornerRadius = 16
+            backBtn.addTarget(self, action: #selector(didTapBack), for: .touchUpInside)
+            NSLayoutConstraint.activate([
+                backBtn.widthAnchor.constraint(equalToConstant: 32),
+                backBtn.heightAnchor.constraint(equalToConstant: 32)
+            ])
+            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backBtn)
+            backButton = backBtn
+        } else {
+            navigationItem.setLeftBarButton(nil, animated: false)
+            navigationItem.hidesBackButton = hideBackButton
+            navigationItem.leftItemsSupplementBackButton = false
+        }
         
         // Keep call to preserve your flow (now mounts to nav bar)
         attachProgressInTitleView()

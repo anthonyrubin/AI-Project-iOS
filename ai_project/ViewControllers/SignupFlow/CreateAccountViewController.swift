@@ -63,6 +63,7 @@ final class CreateAccountViewController: BaseSignupViewController {
         button.layer.borderWidth = 1
         button.layer.borderColor = UIColor.systemGray4.cgColor
         button.translatesAutoresizingMaskIntoConstraints = false
+        button.applyTactileTap()
         return button
     }()
 
@@ -100,9 +101,9 @@ final class CreateAccountViewController: BaseSignupViewController {
         setProgress(0.55, animated: false)
         
         // Start signup session if not already started
-        if !UserDefaultsManager.shared.isSignupInProgress {
-            UserDefaultsManager.shared.startSignupSession()
-        }
+//        if !UserDefaultsManager.shared.isSignupInProgress {
+//            UserDefaultsManager.shared.startSignupSession()
+//        }
         
         // Update progress and save video upload status
         UserDefaultsManager.shared.updateProgress(progress: 0.55, step: "create_account")
@@ -204,6 +205,8 @@ final class CreateAccountViewController: BaseSignupViewController {
             navigateToBirthday()
         case .home:
             navigateToHome()
+        case .videoAnalysis:
+            navigateToVideoAnalysis()
         case .verify_code:
             break
         }
@@ -222,6 +225,27 @@ final class CreateAccountViewController: BaseSignupViewController {
     private func navigateToHome() {
         UserDefaults.standard.set(true, forKey: "isLoggedIn")
         NotificationCenter.default.post(name: .authDidSucceed, object: nil)
+    }
+    
+    private func navigateToVideoAnalysis() {
+        // Get video data from UserDefaults
+        let (videoURL, videoSnapshot) = UserDefaultsManager.shared.getVideoData()
+        
+        guard let videoURL = videoURL else {
+            print("❌ No video URL found for analysis")
+            navigateToHome()
+            return
+        }
+        
+        UserDefaultsManager.shared.completeSignupSession()
+
+        
+        // Navigate to video analysis loading screen
+        let videoAnalysisVC = VideoAnalysisLoadingViewController(
+            videoURL: videoURL,
+            videoSnapshot: videoSnapshot
+        )
+        navigationController?.pushViewController(videoAnalysisVC, animated: true)
     }
     
     private func setLoading(_ loading: Bool) {

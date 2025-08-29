@@ -354,20 +354,29 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
 
     // MARK: – Actions
     @objc private func skipTapped() {
+        setUserDefaults()
         let vc = CreateAccountViewController(didUploadVideoForAnalysis: false)
         navigationController?.pushViewController(vc, animated: true)
     }
 
     override func didTapContinue() {
         super.didTapContinue()
-        
-        // Save sport selection to UserDefaults
-        UserDefaultsManager.shared.updateGoals(sportDisplay: selectedSport)
-        UserDefaultsManager.shared.updateProgress(progress: 0.50, step: "sport_selected")
-        
+        setUserDefaults()
         // Use `selectedSport`, `detailsText.text`, `thumbnail`, `videoURL`
         let vc = CreateAccountViewController(didUploadVideoForAnalysis: true)
         navigationController?.pushViewController(vc, animated: true)
+    }
+    
+    private func setUserDefaults() {
+        UserDefaultsManager.shared.updateGoals(sportDisplay: selectedSport)
+        UserDefaultsManager.shared.updateProgress(progress: 0.50, step: "sport_selected")
+        
+        // Save video data for analysis
+        UserDefaultsManager.shared.updateVideoAnalysis(
+            didUpload: true,
+            videoURL: videoURL,
+            videoSnapshot: thumbnail
+        )
     }
 
     // MARK: – TextView

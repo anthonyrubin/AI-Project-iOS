@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 // MARK: - Signup Data Models
 struct SignupUserData: Codable {
@@ -19,6 +20,8 @@ struct SignupUserData: Codable {
     // Video Analysis
     var didUploadVideoForAnalysis: Bool = false
     var videoAnalysisData: VideoAnalysisData?
+    var videoURL: String? // Store as string path
+    var videoSnapshotData: Data? // Store snapshot as Data
     
     // Social Login
     var socialLoginProvider: String? // "google" or "apple"
@@ -65,6 +68,15 @@ final class UserDefaultsManager {
             if let data = try? JSONEncoder().encode(newValue) {
                 UserDefaults.standard.set(data, forKey: Keys.signupData)
             }
+            
+            guard let data = UserDefaults.standard.data(forKey: Keys.signupData),
+                  let signupData = try? JSONDecoder().decode(SignupUserData.self, from: data) else {
+                print("Guard failed")
+                return
+            }
+            print("setting")
+            print(data)
+            print(signupData)
         }
     }
     
@@ -146,10 +158,14 @@ final class UserDefaultsManager {
     }
     
     /// Update video analysis information
-    func updateVideoAnalysis(didUpload: Bool, videoData: VideoAnalysisData? = nil) {
+    func updateVideoAnalysis(didUpload: Bool, videoData: VideoAnalysisData? = nil, videoURL: URL? = nil, videoSnapshot: UIImage? = nil) {
         var data = currentSignupData
         data.didUploadVideoForAnalysis = didUpload
         if let videoData = videoData { data.videoAnalysisData = videoData }
+        if let videoURL = videoURL { data.videoURL = videoURL.path }
+        if let videoSnapshot = videoSnapshot { 
+            data.videoSnapshotData = videoSnapshot.jpegData(compressionQuality: 0.8)
+        }
         data.lastUpdatedAt = Date()
         currentSignupData = data
         print("📝 UserDefaultsManager: Updated video analysis - uploaded: \(didUpload)")
@@ -169,6 +185,14 @@ final class UserDefaultsManager {
     /// Get all current signup data
     func getSignupData() -> SignupUserData {
         return currentSignupData
+    }
+    
+    /// Get video URL and snapshot for analysis
+    func getVideoData() -> (videoURL: URL?, videoSnapshot: UIImage?) {
+        let data = currentSignupData
+        let url = data.videoURL.flatMap { URL(fileURLWithPath: $0) }
+        let snapshot = data.videoSnapshotData.flatMap { UIImage(data: $0) }
+        return (videoURL: url, videoSnapshot: snapshot)
     }
     
     /// Get specific data fields
@@ -231,13 +255,5 @@ final class UserDefaultsManager {
         print("  - Did Upload Video: \(data.didUploadVideoForAnalysis)")
         print("  - Social Login: \(data.socialLoginProvider ?? "none")")
         print("  - Ready for Account Creation: \(isReadyForAccountCreation())")
-    }
-    
-    /// Clear all signup data (for testing/reset)
-    func clearAllSignupData() {
-        UserDefaults.standard.removeObject(forKey: Keys.signupData)
-        UserDefaults.standard.set(false, forKey: Keys.isSignupInProgress)
-        UserDefaults.standard.removeObject(forKey: Keys.signupSessionId)
-        print("🗑️ UserDefaultsManager: Cleared all signup data")
     }
 }
