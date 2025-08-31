@@ -61,7 +61,7 @@ final class HeightAndWeightViewController: BaseSignupViewController, UIPickerVie
         buildUI()
         super.viewDidLoad()
 
-        setProgress(0.75, animated: false)
+        setProgress(0.45, animated: false)
 
         wire()
         updateUnitUI(fromToggle: false) // reflects initial values in wheels

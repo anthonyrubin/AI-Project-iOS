@@ -83,9 +83,9 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
     // MARK: – Lifecycle
     override func viewDidLoad() {
         killDefaultLayout = true
-        setupSecondaryButton(text: "Skip for now", selector: #selector(skipTapped))
+        //setupSecondaryButton(text: "Skip for now", selector: #selector(skipTapped))
         super.viewDidLoad()
-        setProgress(0.88, animated: false)
+        setProgress(0.91, animated: false)
         buildUI()
         layoutUI()
     }
@@ -353,17 +353,16 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
     }
 
     // MARK: – Actions
-    @objc private func skipTapped() {
-        setUserDefaults()
-        let vc = CreateAccountViewController(didUploadVideoForAnalysis: false)
-        navigationController?.pushViewController(vc, animated: true)
-    }
+//    @objc private func skipTapped() {
+//        setUserDefaults()
+//        let vc = CreateAccountViewController()
+//        navigationController?.pushViewController(vc, animated: true)
+//    }
 
     override func didTapContinue() {
         super.didTapContinue()
         setUserDefaults()
-        // Use `selectedSport`, `detailsText.text`, `thumbnail`, `videoURL`
-        let vc = CreateAccountViewController(didUploadVideoForAnalysis: true)
+        let vc = CreateAccountViewController()
         navigationController?.pushViewController(vc, animated: true)
     }
     

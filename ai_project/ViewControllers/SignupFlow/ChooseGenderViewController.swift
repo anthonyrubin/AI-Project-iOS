@@ -12,7 +12,7 @@ final class ChooseGenderViewController: BaseSignupTableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setProgress(0.65, animated: false)
+        setProgress(0.36, animated: false)
         updateContinueState()
     }
 

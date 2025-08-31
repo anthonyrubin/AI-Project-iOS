@@ -176,7 +176,7 @@ final class ThanksForTrustingUsViewController: BaseSignupViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setProgress(1.0, animated: false)
+        setProgress(0.64, animated: false)
     }
 
     override func layout() {

@@ -31,7 +31,7 @@ final class GoalsViewController: BaseSignupTableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setProgress(0.45, animated: false)
+        setProgress(0.18, animated: false)
         updateContinueState()
     }
     

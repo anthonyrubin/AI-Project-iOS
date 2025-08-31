@@ -53,7 +53,7 @@ final class AllowNotificationsViewController: BaseSignupViewController {
         buildUI()
         super.viewDidLoad()
 
-        setProgress(0.95, animated: false)
+        setProgress(0.73, animated: false)
         wire()
         startFingerAnimation()
     }

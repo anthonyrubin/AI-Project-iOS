@@ -150,14 +150,7 @@ class CreateAccountViewModel: ObservableObject {
                     print("Checkpoint be")
                     print(self?.checkpoint)
                     print(response.checkpoint)
-//
-//                    // Check if user uploaded video for analysis
-//                    let signupData = UserDefaultsManager.shared.getSignupData()
-//                    if signupData.didUploadVideoForAnalysis {
-//                        self?.checkpoint = .videoAnalysis
-//                    } else {
-//                        self?.checkpoint = .home
-//                    }
+
                 case .failure(let error):
                     self?.errorMessage = error.localizedDescription
                 }

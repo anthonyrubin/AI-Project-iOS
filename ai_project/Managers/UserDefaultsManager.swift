@@ -158,10 +158,9 @@ final class UserDefaultsManager {
     }
     
     /// Update video analysis information
-    func updateVideoAnalysis(didUpload: Bool, videoData: VideoAnalysisData? = nil, videoURL: URL? = nil, videoSnapshot: UIImage? = nil) {
+    func updateVideoAnalysis(didUpload: Bool, videoURL: URL? = nil, videoSnapshot: UIImage? = nil) {
         var data = currentSignupData
         data.didUploadVideoForAnalysis = didUpload
-        if let videoData = videoData { data.videoAnalysisData = videoData }
         if let videoURL = videoURL { data.videoURL = videoURL.path }
         if let videoSnapshot = videoSnapshot { 
             data.videoSnapshotData = videoSnapshot.jpegData(compressionQuality: 0.8)

@@ -180,13 +180,26 @@ class VideoAnalysisRepository {
         }
     }
     
+    func getLastAnalysis() -> VideoAnalysisObject? {
+        do {
+            let realm = try RealmProvider.make()
+            // TODO: LOG HERE
+            return realm.objects(VideoAnalysisObject.self).last
+        } catch {
+            // TODO: LOG HERE
+            return VideoAnalysisObject() // Return empty video analysis object in this case
+        }
+    }
+    
     // MARK: - Local Data Access
     
     func getAllAnalyses() -> Results<VideoAnalysisObject> {
         do {
             let realm = try RealmProvider.make()
+            // TODO: LOG HERE
             return realm.objects(VideoAnalysisObject.self).sorted(byKeyPath: "createdAt", ascending: false)
         } catch {
+            // TODO: LOG HERE
             // Return empty results instead of crashing
             let realm = try! RealmProvider.make()
             return realm.objects(VideoAnalysisObject.self).filter("serverId == -1") // Empty results

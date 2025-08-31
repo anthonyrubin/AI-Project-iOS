@@ -21,7 +21,7 @@ final class GreatPotentialViewController: BaseSignupViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        setProgress(0.55, animated: false)
+        setProgress(0.27, animated: false)
     }
     
     override func layout() {

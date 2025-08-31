@@ -139,7 +139,5 @@ class LoginViewController: BaseViewController {
         let selectSportsVC = SelectSportViewController()
          
         pushWithFade(selectSportsVC)
-
-        //navigationController?.pushViewController(selectSportsVC, animated: true)
     }
 }

@@ -88,9 +88,11 @@ final class VideoAnalysisLoadingViewController: BaseSignupViewController {
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
+        killDefaultLayout = true
         setProgress(0.95, animated: false)
         buildUI()
         hideBackButton = true
+        hidesProgressBar = true
         super.viewDidLoad()
         setupProgressSteps()
         setupViewModelBindings()
@@ -99,7 +101,6 @@ final class VideoAnalysisLoadingViewController: BaseSignupViewController {
 
     // MARK: - Build
     private func buildUI() {
-        setContinueButton(isEnabled: false)
         view.backgroundColor = .systemBackground
 
         // Title & card
@@ -140,7 +141,7 @@ final class VideoAnalysisLoadingViewController: BaseSignupViewController {
             cardView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 24),
             cardView.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 20),
             cardView.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -20),
-            cardView.bottomAnchor.constraint(lessThanOrEqualTo: continueButton.topAnchor, constant: -28),
+            cardView.bottomAnchor.constraint(lessThanOrEqualTo: g.bottomAnchor, constant: -28),
 
             // Stack inside card
             hStack.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 16),
@@ -170,13 +171,22 @@ final class VideoAnalysisLoadingViewController: BaseSignupViewController {
 
     // MARK: - Steps / VM
     private func setupProgressSteps() {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 16, weight: .semibold)
+        label.numberOfLines = 0
+        
+        label.text = "Analyzing Features"
+        
         let steps = [
-            "Extracting keyframes…",
-            "Calibrating motion…",
-            "Detecting joints…",
-            "Computing kinematics…",
-            "Scoring technique…"
+            "• Keyframes",
+            "• Motion",
+            "• Joints",
+            "• Kinematics",
+            "• Technique"
         ]
+        
+        progressStackView.addArrangedSubview(label)
+        
         steps.forEach {
             let v = ProgressStepView(text: $0, isCompleted: false)
             progressStepViews.append(v)
@@ -221,6 +231,7 @@ final class VideoAnalysisLoadingViewController: BaseSignupViewController {
     }
 
     func startLoading() {
+        titleLabel.text = "Your first AI analysis is underway"
         if stepThresholds.isEmpty { configureStepThresholds() }
         lastStepFlipAt = 0
 
@@ -351,16 +362,11 @@ final class VideoAnalysisLoadingViewController: BaseSignupViewController {
                     self?.startLoading()
                 } else {
                     self?.finishLoading {
-                        self?.setContinueButton(isEnabled: true)
+                        self?.pushNext()
                     }
                 }
             }
             .store(in: &cancellables)
-    }
-    
-    private func setContinueButton(isEnabled: Bool) {
-        continueButton.isEnabled = isEnabled
-        continueButton.alpha = isEnabled ? 1 : 0.5
     }
 
     private func startVideoUpload() {
@@ -370,9 +376,11 @@ final class VideoAnalysisLoadingViewController: BaseSignupViewController {
     private func updateProgressSteps(currentIndex: Int) {
         for (i, v) in progressStepViews.enumerated() { v.setCompleted(i <= currentIndex, animated: true) }
     }
-
-    override func didTapContinue() {
-        // next step
+    
+    private func pushNext() {
+        let vc = BecomeAMemberViewController()
+        
+        navigationController?.pushViewController(vc, animated: true)
     }
 }
 
@@ -413,13 +421,13 @@ class ProgressStepView: UIView {
         addSubview(textLabel)
         
         NSLayoutConstraint.activate([
-            checkmarkImageView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            checkmarkImageView.trailingAnchor.constraint(equalTo: trailingAnchor),
             checkmarkImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
             checkmarkImageView.widthAnchor.constraint(equalToConstant: 20),
             checkmarkImageView.heightAnchor.constraint(equalToConstant: 20),
             
-            textLabel.leadingAnchor.constraint(equalTo: checkmarkImageView.trailingAnchor, constant: 12),
-            textLabel.trailingAnchor.constraint(equalTo: trailingAnchor),
+            checkmarkImageView.leadingAnchor.constraint(equalTo: textLabel.trailingAnchor),
+            textLabel.leadingAnchor.constraint(equalTo: leadingAnchor),
             textLabel.topAnchor.constraint(equalTo: topAnchor),
             textLabel.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
@@ -429,6 +437,9 @@ class ProgressStepView: UIView {
         let changes = {
             self.checkmarkImageView.tintColor = completed ? .systemGreen : .systemGray4
             self.textLabel.textColor = completed ? .label : .secondaryLabel
+            let g = UIImpactFeedbackGenerator(style: .soft)
+            g.prepare()
+            g.impactOccurred()
         }
         
         if animated {
@@ -438,3 +449,4 @@ class ProgressStepView: UIView {
         }
     }
 }
+

@@ -4,19 +4,7 @@ import Combine
 import AuthenticationServices
 
 final class CreateAccountViewController: BaseSignupViewController {
-    
-    // The screen before this is the StartAnalysisViewController where ther uer can submit
-    // a video to be analyzed during the signup flow. However, they can also skip this step.
-    // This boolean indicates whether or not they submitted a video for analysis during signup
-    private var didUploadVideoForAnalysis = false
-    
-    init(didUploadVideoForAnalysis: Bool) {
-        self.didUploadVideoForAnalysis = didUploadVideoForAnalysis
-        super.init(nibName: nil, bundle: nil)
-    }
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    
     let viewModel = CreateAccountViewModel(
         authRepository: AuthRepositoryImpl(
             authAPI: NetworkManager(tokenManager: TokenManager()),
@@ -98,16 +86,9 @@ final class CreateAccountViewController: BaseSignupViewController {
         killDefaultLayout = true
         super.viewDidLoad()
         buildUI()
-        setProgress(0.55, animated: false)
-        
-        // Start signup session if not already started
-//        if !UserDefaultsManager.shared.isSignupInProgress {
-//            UserDefaultsManager.shared.startSignupSession()
-//        }
-        
-        // Update progress and save video upload status
+        setProgress(1.0, animated: false)
+
         UserDefaultsManager.shared.updateProgress(progress: 0.55, step: "create_account")
-        UserDefaultsManager.shared.updateVideoAnalysis(didUpload: didUploadVideoForAnalysis)
         
         // Debug: Print current signup data
         UserDefaultsManager.shared.debugPrintSignupData()
@@ -117,7 +98,7 @@ final class CreateAccountViewController: BaseSignupViewController {
     }
     
     func buildUI() {
-        if didUploadVideoForAnalysis {
+        if UserDefaultsManager.shared.getDidUploadVideo() {
             titleLabel.text = "Create an account to start your analysis"
         } else {
             titleLabel.text = "Create an account to begin your coaching journey"

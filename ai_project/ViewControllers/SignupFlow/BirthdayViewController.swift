@@ -42,7 +42,7 @@ final class BirthdayViewController: BaseSignupViewController {
         buildUI()                 // add subviews BEFORE calling super (base calls layout())
         super.viewDidLoad()
 
-        setProgress(0.75, animated: false)
+        setProgress(0.55, animated: false)
 
         wire()
         updateFromState()

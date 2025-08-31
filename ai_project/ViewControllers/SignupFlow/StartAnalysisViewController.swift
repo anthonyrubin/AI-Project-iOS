@@ -119,7 +119,7 @@ final class StartAnalysisViewController: BaseSignupViewController, PHPickerViewC
         killDefaultLayout = true
         setupSecondaryButton(text: "Skip for now", selector: #selector(didTapSkip))
         super.viewDidLoad()
-        setProgress(0.90, animated: false)
+        setProgress(0.82, animated: false)
         configureData()
     }
 
@@ -175,6 +175,11 @@ final class StartAnalysisViewController: BaseSignupViewController, PHPickerViewC
             continueButton.heightAnchor.constraint(equalToConstant: 56)
         ])
     }
+    
+    override func setupContinueButton() {
+        super.setupContinueButton()
+        continueButton.setTitle("Analyze Performance", for: .normal)
+    }
 
     private func configureData() {
         mediaCard.imageView.image = UIImage(named: "golf_preview")
@@ -193,7 +198,7 @@ final class StartAnalysisViewController: BaseSignupViewController, PHPickerViewC
     // MARK: Actions
     @objc private func didTapSkip() {
         // Skip straight to questions (no video)
-        let vc = CreateAccountViewController(didUploadVideoForAnalysis: false)
+        let vc = CreateAccountViewController()
         navigationController?.pushViewController(vc, animated: true)
     }
 

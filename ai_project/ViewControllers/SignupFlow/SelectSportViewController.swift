@@ -29,7 +29,7 @@ final class SelectSportViewController: BaseSignupTableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setProgress(0.15, animated: false)
+        setProgress(0.09, animated: false)
         updateContinueState()
     }
     
@@ -50,7 +50,6 @@ final class SelectSportViewController: BaseSignupTableViewController {
     
     override func didTapContinue() {
         super.didTapContinue()
-        
         let vc = GoalsViewController(sportDisplay: selectedItem!.passdownTitle!)
         navigationController?.pushViewController(vc, animated: true)
     }
