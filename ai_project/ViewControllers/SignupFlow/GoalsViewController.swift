@@ -24,10 +24,19 @@ final class GoalsViewController: BaseSignupTableViewController {
         updateContinueState()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        tableView.cascadeReset()                 // reset state & reload
+        tableView.cascadePrepareInitialIfNeeded()// prep icon cells BEFORE screen is shown (no flash)
+        // Kick the cascade exactly with the nav transition (instant start)
+        tableView.cascadeRunInitialIfNeeded(coordinator: transitionCoordinator)
+    }
+    
     override func setupTable() {
         super.setupTable()
         tableView.dataSource = self
-        tableView.delegate = self
+        tableView.enableCascade(delegate: self)
+        tableView.cascadeShouldAnimateCell = { $0 is LeftSFIconCell }
         tableView.register(StandardTitleCell.self, forCellReuseIdentifier: "StandardTitleCell")
         tableView.register(LeftSFIconCell.self, forCellReuseIdentifier: LeftSFIconCell.reuseID)
         tableView.allowsMultipleSelection = true

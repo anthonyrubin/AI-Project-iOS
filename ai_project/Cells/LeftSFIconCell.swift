@@ -87,10 +87,16 @@ final class LeftSFIconCell: UITableViewCell {
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        // ✅ hard reset
+        // reset selection visuals
         setSelectedAppearance(false, animated: false)
         iconView.tintColor = .label
         iconCircle.backgroundColor = .systemBackground
+
+        // reset any animation state so recycled cells don’t flicker
+        contentView.layer.removeAllAnimations()
+        contentView.alpha = 1
+        contentView.transform = .identity
+        contentView.layer.shouldRasterize = false
     }
     
     override func setSelected(_ selected: Bool, animated: Bool) {
