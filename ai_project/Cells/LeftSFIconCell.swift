@@ -4,17 +4,11 @@ import UIKit
 struct LeftSFIconCellData: Hashable {
     let title: String
     let iconName: String
+
     
-    // This is an optional title that is "passed down"
-    // It is used for example if we want to pass the title
-    // down to another component upon selection,
-    // but the title we passdown is slightly different
-    let passdownTitle: String?
-    
-    init(title: String, iconName: String, passdownTitle: String? = nil) {
+    init(title: String, iconName: String) {
         self.title = title
         self.iconName = iconName
-        self.passdownTitle = passdownTitle
     }
 }
 

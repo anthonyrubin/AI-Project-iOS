@@ -367,7 +367,6 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
     }
     
     private func setUserDefaults() {
-        UserDefaultsManager.shared.updateGoals(sportDisplay: selectedSport)
         UserDefaultsManager.shared.updateProgress(progress: 0.50, step: "sport_selected")
         
         // Save video data for analysis

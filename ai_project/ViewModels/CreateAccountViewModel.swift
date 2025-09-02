@@ -68,7 +68,7 @@ class CreateAccountViewModel: ObservableObject {
         let signupData = UserDefaultsManager.shared.getSignupData()
         let hasSignupData = signupData.birthday != nil || signupData.gender != nil || 
                            signupData.height != nil || signupData.weight != nil ||
-                           signupData.selectedGoals != nil || signupData.sportDisplay != nil
+                            signupData.selectedGoals != nil || signupData.sport != nil
         
         if hasSignupData {
             // New user with signup data - use enhanced endpoint
@@ -180,7 +180,7 @@ class CreateAccountViewModel: ObservableObject {
         signupDataDict["weight"] = signupData.weight ?? 0
         signupDataDict["is_metric"] = signupData.isMetric ?? false
         signupDataDict["selected_goals"] = signupData.selectedGoals ?? []
-        signupDataDict["sport_display"] = signupData.sportDisplay ?? ""
+        signupDataDict["sport"] = signupData.sport ?? ""
         signupDataDict["did_upload_video"] = signupData.didUploadVideoForAnalysis
         
         requestData["signup_data"] = signupDataDict

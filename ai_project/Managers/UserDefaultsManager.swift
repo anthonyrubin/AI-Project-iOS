@@ -15,7 +15,8 @@ struct SignupUserData: Codable {
     
     // Goals & Preferences
     var selectedGoals: [String]?
-    var sportDisplay: String?
+    var sport: String?
+    
     
     // Video Analysis
     var didUploadVideoForAnalysis: Bool = false
@@ -138,10 +139,10 @@ final class UserDefaultsManager {
     }
     
     /// Update goals and preferences
-    func updateGoals(selectedGoals: [String]? = nil, sportDisplay: String? = nil) {
+    func updateGoals(selectedGoals: [String]? = nil, sport: String? = nil) {
         var data = currentSignupData
         if let selectedGoals = selectedGoals { data.selectedGoals = selectedGoals }
-        if let sportDisplay = sportDisplay { data.sportDisplay = sportDisplay }
+        if let sport = sport { data.sport = sport }
         data.lastUpdatedAt = Date()
         currentSignupData = data
         print("📝 UserDefaultsManager: Updated goals")
@@ -202,7 +203,7 @@ final class UserDefaultsManager {
     func getWeight() -> Double? { return currentSignupData.weight }
     func getIsMetric() -> Bool? { return currentSignupData.isMetric }
     func getSelectedGoals() -> [String]? { return currentSignupData.selectedGoals }
-    func getSportDisplay() -> String? { return currentSignupData.sportDisplay }
+    func getSport() -> String? { return currentSignupData.sport }
     func getDidUploadVideo() -> Bool { return currentSignupData.didUploadVideoForAnalysis }
     func getVideoAnalysisData() -> VideoAnalysisData? { return currentSignupData.videoAnalysisData }
     func getSocialLoginProvider() -> String? { return currentSignupData.socialLoginProvider }
@@ -218,7 +219,7 @@ final class UserDefaultsManager {
                data.height != nil &&
                data.weight != nil &&
                data.selectedGoals != nil &&
-               data.sportDisplay != nil
+               data.sport != nil
     }
     
     /// Get missing required fields
@@ -231,7 +232,7 @@ final class UserDefaultsManager {
         if data.height == nil { missing.append("Height") }
         if data.weight == nil { missing.append("Weight") }
         if data.selectedGoals == nil { missing.append("Goals") }
-        if data.sportDisplay == nil { missing.append("Sport") }
+        if data.sport == nil { missing.append("Sport") }
         
         return missing
     }
@@ -250,7 +251,7 @@ final class UserDefaultsManager {
         print("  - Weight: \(data.weight ?? 0)")
         print("  - Is Metric: \(data.isMetric ?? false)")
         print("  - Goals: \(data.selectedGoals?.joined(separator: ", ") ?? "nil")")
-        print("  - Sport: \(data.sportDisplay ?? "nil")")
+        print("  - Sport: \(data.sport ?? "nil")")
         print("  - Did Upload Video: \(data.didUploadVideoForAnalysis)")
         print("  - Social Login: \(data.socialLoginProvider ?? "none")")
         print("  - Ready for Account Creation: \(isReadyForAccountCreation())")

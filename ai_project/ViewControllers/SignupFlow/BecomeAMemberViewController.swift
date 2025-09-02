@@ -400,7 +400,7 @@ private extension CAMediaTimingFunction {
 private final class StickyCTAView: UIView {
     let titleLabel: UILabel = {
         let l = UILabel()
-        l.text = "Join 5+ million users worldwide"
+        l.text = "Join elite athletes worldwide"
         l.font = .systemFont(ofSize: 16, weight: .semibold)
         l.textAlignment = .center
         l.numberOfLines = 0
@@ -410,7 +410,10 @@ private final class StickyCTAView: UIView {
 
     let ctaButton: UIButton = {
         let b = UIButton(type: .system)
-        b.setTitle("Start Free Trial", for: .normal)
+        b.setTitle(
+            "Become a member",
+            for: .normal
+        )
         b.setTitleColor(.white, for: .normal)
         b.backgroundColor = .label
         b.titleLabel?.font = .systemFont(ofSize: 18, weight: .bold)
@@ -421,7 +424,7 @@ private final class StickyCTAView: UIView {
 
     let finePrint: UILabel = {
         let l = UILabel()
-        l.text = "First 3 days free, then $29.99 / year"
+        l.text = "Elite coaching in your pocket for only $19.99 / month"
         l.font = .systemFont(ofSize: 13)
         l.textColor = .secondaryLabel
         l.textAlignment = .center
@@ -466,55 +469,210 @@ private final class StickyCTAView: UIView {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
+
+
+
+
+
+
+import UIKit
+
+// =======================================================
+// MARK: EventsPaywallOverlay (view)
+// =======================================================
+
+/// Overlay that hides everything *after a pixel cutoff* inside a card.
+/// The overlay has two vertical regions:
+///  1) A top scrim (transparent → white) to softly fade out underlying content.
+///  2) A solid-white block that contains a lock + message.
+///
+/// HOW TO USE (pixel-based cutoff):
+///  - Add this overlay as a subview of your card (e.g., eventsView).
+///  - Pin overlay.leading/trailing/bottom to the card.
+///  - Keep a reference to the overlay's TOP constraint and set its `constant` to the
+///    **cutoff in points** (the amount of content you want to leave visible at the top).
+///  - Separately, make sure the *card’s height* is:  cutoff + requiredOverlayHeight(for: cardWidth)
+///    so the scrim + lock/message have room to render below the cutoff.
+///
+/// NOTES:
+///  - The overlay itself doesn’t decide the cutoff—YOU pass the pixel amount via the top constraint.
+///  - `requiredOverlayHeight(for:)` guarantees the lock/message are fully below the faded region.
+///  - The overlay never darkens content (it fades to white).
+final class EventsPaywallOverlay: UIView {
+
+    // MARK: - Public knobs
+
+    /// Clear gap (pts) before the scrim fade starts.
+    /// Increase if you want a bit of fully-clear area right under your cutoff.
+    var clearHeadroom: CGFloat = 8 { didSet { scrimTop.constant = clearHeadroom } }
+
+    /// Height (pts) of the fade from clear → white.
+    var fadeHeight: CGFloat = 80 { didSet { scrimHeight.constant = fadeHeight } }
+
+    /// Minimum overall height for the overlay (scrim + solid block).
+    var minOverlayHeight: CGFloat = 200
+
+    /// Bottom padding (pts) from the message to the overlay’s bottom.
+    var bottomMargin: CGFloat = 30 { didSet { stackBottom?.constant = -bottomMargin } }
+
+    /// Horizontal text padding (pts) inside the solid block.
+    var horizontalPadding: CGFloat = 20 {
+        didSet {
+            content.layoutMargins = UIEdgeInsets(
+                top: 0, left: horizontalPadding, bottom: bottomMargin, right: horizontalPadding
+            )
+        }
+    }
+
+    // MARK: - Subviews
+
+    private let scrim = FadeScrimView()   // transparent → white gradient
+    private let content = UIView()        // solid white region for lock/message
+    let lockLabel = UILabel()
+    let textLabel = UILabel()
+    private let stack = UIStackView()
+
+    // MARK: - Adjustable constraints (internal)
+
+    private var scrimTop: NSLayoutConstraint!
+    private var scrimHeight: NSLayoutConstraint!
+    private var stackBottom: NSLayoutConstraint?
+
+    // MARK: - Init
+
+    override init(frame: CGRect) { super.init(frame: frame); build() }
+    required init?(coder: NSCoder) { super.init(coder: coder); build() }
+
+    // MARK: - Build
+
+    private func build() {
+        backgroundColor = .clear
+
+        // Scrim
+        scrim.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(scrim)
+
+        // Solid content
+        content.backgroundColor = .white
+        content.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(content)
+
+        // Lock + message stack
+        stack.axis = .vertical
+        stack.alignment = .center
+        stack.spacing = 12
+        stack.isLayoutMarginsRelativeArrangement = true
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
+        lockLabel.text = "🔒"
+        lockLabel.font = .systemFont(ofSize: 42, weight: .regular)
+        lockLabel.textAlignment = .center
+
+        textLabel.text = "Unlock the full timestamped analysis of your performance."
+        textLabel.font = .systemFont(ofSize: 18, weight: .semibold)
+        textLabel.textAlignment = .center
+        textLabel.textColor = .label
+        textLabel.numberOfLines = 0
+
+        content.addSubview(stack)
+        stack.addArrangedSubview(lockLabel)
+        stack.addArrangedSubview(textLabel)
+        content.layoutMargins = UIEdgeInsets(top: 0, left: horizontalPadding, bottom: bottomMargin, right: horizontalPadding)
+
+        // Constraints (internal)
+        scrimTop = scrim.topAnchor.constraint(equalTo: topAnchor, constant: clearHeadroom)
+        scrimHeight = scrim.heightAnchor.constraint(equalToConstant: fadeHeight)
+        stackBottom = stack.bottomAnchor.constraint(equalTo: content.layoutMarginsGuide.bottomAnchor)
+
+        NSLayoutConstraint.activate([
+            // Scrim spans width; top/height adjustable via knobs
+            scrimTop,
+            scrim.leadingAnchor.constraint(equalTo: leadingAnchor),
+            scrim.trailingAnchor.constraint(equalTo: trailingAnchor),
+            scrimHeight,
+
+            // Solid content fills below scrim down to bottom
+            content.topAnchor.constraint(equalTo: scrim.bottomAnchor),
+            content.leadingAnchor.constraint(equalTo: leadingAnchor),
+            content.trailingAnchor.constraint(equalTo: trailingAnchor),
+            content.bottomAnchor.constraint(equalTo: bottomAnchor),
+
+            // Center stack; wrap by margins; honor bottom padding
+            stack.centerXAnchor.constraint(equalTo: content.centerXAnchor),
+            stack.leadingAnchor.constraint(greaterThanOrEqualTo: content.layoutMarginsGuide.leadingAnchor),
+            stack.trailingAnchor.constraint(lessThanOrEqualTo: content.layoutMarginsGuide.trailingAnchor),
+            stackBottom!
+        ])
+    }
+
+    // MARK: - Sizing
+
+    /// Calculates how tall the overlay must be (scrim + solid) for a given width.
+    /// Use this to size the *card* height:  cardHeight = cutoff (pts visible) + requiredOverlayHeight(for: width)
+    func requiredOverlayHeight(for width: CGFloat) -> CGFloat {
+        let textWidth = max(0, width - 2 * horizontalPadding)
+        let lockH = lockLabel.intrinsicContentSize.height
+        let textH = textLabel.sizeThatFits(CGSize(width: textWidth, height: .greatestFiniteMagnitude)).height
+        let contentH = lockH + 12 + textH + bottomMargin + 12 // tiny safety
+        return max(minOverlayHeight, clearHeadroom + fadeHeight + contentH)
+    }
+}
+
+/// Gradient view (clear → white). We resize the gradient layer on layout
+/// so it always matches the view’s bounds after Auto Layout changes.
+private final class FadeScrimView: UIView {
+    override class var layerClass: AnyClass { CAGradientLayer.self }
+    override init(frame: CGRect) { super.init(frame: frame); setup() }
+    required init?(coder: NSCoder) { super.init(coder: coder); setup() }
+
+    private func setup() {
+        let g = layer as! CAGradientLayer
+        g.colors = [
+            UIColor.white.withAlphaComponent(0.0).cgColor,
+            UIColor.white.withAlphaComponent(0.6).cgColor,
+            UIColor.white.cgColor
+        ]
+        g.locations = [0.0, 0.6, 1.0]
+        g.startPoint = CGPoint(x: 0.5, y: 0.0)
+        g.endPoint   = CGPoint(x: 0.5, y: 1.0)
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        (layer as! CAGradientLayer).frame = bounds
+    }
+}
+
+
+
+// =======================================================
+// MARK: BecomeAMemberViewController (pixel-cutoff version)
+// =======================================================
+//
+// WHAT CHANGED:
+//  • We no longer compute the cutoff by counting rows.
+//  • You set a single number: `freeRevealHeight` (in points). That’s how much of the top
+//    of the card stays visible. The overlay starts exactly at that y-offset.
+//  • The card’s height is set to  freeRevealHeight + overlay.requiredOverlayHeight(for: cardWidth).
+//
+// HOW IT WORKS:
+//  1) overlay.top = freeRevealHeight (pts from the card’s top).
+//  2) eventsView.height = freeRevealHeight + requiredOverlayHeight
+//     (so the scrim + lock/message fully fit).
+//  3) The overlay is never hidden. If your content is shorter than the cutoff, you’ll
+//     simply see no fade/lock until content grows past it (by design).
+//
 final class BecomeAMemberViewController: BaseSignupViewController {
 
-    // MARK: - Deps
+    // MARK: - Dependencies
     private let viewModel = BecomeAMemberViewModel(
         repository: VideoAnalysisRepository(
             analysisAPI: NetworkManager(tokenManager: TokenManager())
         )
     )
 
-    // MARK: - UI
+    // MARK: - Header / summary
     private let laurel5StarsView = Laurel5StarsView()
-    private let scrollView = UIScrollView()
-    private let contentView = UIView()
-    private let scoreRingView = ScoreRingView()
-
-    private let summaryView: UIView = {
-        let v = UIView()
-        v.layer.borderWidth = 1
-        v.layer.cornerRadius = 12
-        v.layer.borderColor = UIColor.systemGray.cgColor
-        v.translatesAutoresizingMaskIntoConstraints = false
-        return v
-    }()
-
-    private let summaryLabel: UILabel = {
-        let l = UILabel()
-        l.font = .systemFont(ofSize: 18, weight: .regular)
-        l.numberOfLines = 0
-        l.lineBreakMode = .byWordWrapping
-        l.translatesAutoresizingMaskIntoConstraints = false
-        return l
-    }()
-
-    private let summarySectionTitle: UILabel = {
-        let l = UILabel()
-        l.font = .systemFont(ofSize: 20, weight: .bold)
-        l.text = "AI Analysis Summary"
-        l.translatesAutoresizingMaskIntoConstraints = false
-        return l
-    }()
-
-    private let summaryStack: UIStackView = {
-        let s = UIStackView()
-        s.axis = .horizontal
-        s.alignment = .top
-        s.spacing = 10
-        s.translatesAutoresizingMaskIntoConstraints = false
-        return s
-    }()
 
     private let titleLabel: UILabel = {
         let l = UILabel()
@@ -535,77 +693,163 @@ final class BecomeAMemberViewController: BaseSignupViewController {
         return l
     }()
 
-    // Sticky card
+    private let summarySectionTitle: UILabel = {
+        let l = UILabel()
+        l.font = .systemFont(ofSize: 20, weight: .bold)
+        l.text = "AI Analysis Summary"
+        l.translatesAutoresizingMaskIntoConstraints = false
+        return l
+    }()
+
+    private let summaryView: UIView = {
+        let v = UIView()
+        v.layer.borderWidth = 1
+        v.layer.cornerRadius = 12
+        v.layer.borderColor = UIColor.systemGray.cgColor
+        v.translatesAutoresizingMaskIntoConstraints = false
+        return v
+    }()
+
+    private let summaryLabel: UILabel = {
+        let l = UILabel()
+        l.font = .systemFont(ofSize: 18)
+        l.numberOfLines = 0
+        l.translatesAutoresizingMaskIntoConstraints = false
+        return l
+    }()
+
+    private let scoreRingView = ScoreRingView()
+
+    private let summaryStack: UIStackView = {
+        let s = UIStackView()
+        s.axis = .horizontal
+        s.alignment = .top
+        s.spacing = 10
+        s.translatesAutoresizingMaskIntoConstraints = false
+        return s
+    }()
+
+    // MARK: - Scroll container
+    private let scrollView = UIScrollView()
+    private let contentView = UIView()
+
+    // MARK: - Events card + overlay
+    private let eventsView = UIView()
+    private let eventsStack = UIStackView()
+    private let overlay = EventsPaywallOverlay()
+
+    // Constraints we mutate
+    private var overlayTopConstraint: NSLayoutConstraint!
+    private var eventsHeightConstraint: NSLayoutConstraint!
+
+    // MARK: - Sticky CTA + spacer
     private let stickyCard = StickyCTAView()
-    private var stickyBottomConstraint: NSLayoutConstraint?
+    private let bottomSpacer = UIView()
+    private var spacerHeight: NSLayoutConstraint!
+    private let spacerExtra: CGFloat = 12
+
+    // MARK: - Pixel-based cutoff (in points)
+    /// Amount of content (in points) to leave visible at the top of the card.
+    /// The overlay starts exactly after this many points.
+    var freeRevealHeight: CGFloat = 100 {
+        didSet {
+            freeRevealHeight = max(0, freeRevealHeight)
+            if isViewLoaded { repositionOverlay() }
+        }
+    }
 
     // MARK: - Lifecycle
+
     override func viewDidLoad() {
         hideBackButton = true
         hidesProgressBar = true
         buildUI()
         super.viewDidLoad()
 
-        // Add sticky card as sibling above scroll view
-        view.addSubview(stickyCard)
-        view.bringSubviewToFront(stickyCard)
+        buildEventsRows()
+        repositionOverlay()
 
-        stickyBottomConstraint = stickyCard.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        // Sticky CTA (sibling of scroll view)
+        view.addSubview(stickyCard)
         NSLayoutConstraint.activate([
             stickyCard.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             stickyCard.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            stickyBottomConstraint!
+            stickyCard.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+
+        // Control indicator insets manually
+        scrollView.automaticallyAdjustsScrollIndicatorInsets = false
+
+        stickyCard.ctaButton.addTarget(self, action: #selector(didTapStartFreeTrial), for: .touchUpInside)
     }
 
-    private var didAnimate = false
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        if !didAnimate {
-            didAnimate = true
-            let aiScore = Int(viewModel.getLastUpload()?.professionalScore ?? 0)
-            scoreRingView.animate(to: aiScore, duration: 0.6)
-        }
+        let aiScore = Int(viewModel.getLastUpload()?.professionalScore ?? 0)
+        scoreRingView.animate(to: aiScore, duration: 0.6)
+        updateCardInsets()
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        // Make room so content scrolls behind the sticky card without being obscured
-        let cardHeight = stickyCard.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).height
-        let inset = cardHeight + 12
-        scrollView.contentInset.bottom = inset
-        scrollView.verticalScrollIndicatorInsets.bottom = inset
+        updateCardInsets()
+        repositionOverlay() // handle rotations / width changes
     }
 
-    // MARK: - Build / Layout
+    // MARK: - Build UI
+
     private func buildUI() {
-        view.addSubview(scrollView)
-        scrollView.addSubview(contentView)
-
-        [titleLabel, subtitleLabel, laurel5StarsView, summarySectionTitle, summaryView]
-            .forEach { contentView.addSubview($0) }
-
-        summaryView.addSubview(summaryStack)
-        summaryStack.addArrangedSubview(scoreRingView)
-        summaryStack.addArrangedSubview(summaryLabel)
-
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        contentView.translatesAutoresizingMaskIntoConstraints = false
-        laurel5StarsView.translatesAutoresizingMaskIntoConstraints = false
-        scoreRingView.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .systemBackground
 
         summaryLabel.text = viewModel.getLastUpload()?.clipSummary
         summaryLabel.setContentCompressionResistancePriority(.required, for: .vertical)
 
-        layoutUI()
+        // Scroll + content
+        view.addSubview(scrollView)
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(contentView)
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+
+        // Header/summary
+        [titleLabel, subtitleLabel, laurel5StarsView, summarySectionTitle, summaryView, eventsView, bottomSpacer]
+            .forEach { contentView.addSubview($0) }
+        laurel5StarsView.translatesAutoresizingMaskIntoConstraints = false
+        bottomSpacer.translatesAutoresizingMaskIntoConstraints = false
+
+        summaryView.addSubview(summaryStack)
+        summaryStack.addArrangedSubview(scoreRingView)
+        summaryStack.addArrangedSubview(summaryLabel)
+        scoreRingView.translatesAutoresizingMaskIntoConstraints = false
+
+        // Events card
+        eventsView.layer.borderWidth = 1
+        eventsView.layer.cornerRadius = 12
+        eventsView.layer.borderColor = UIColor.systemGray.cgColor
+        eventsView.backgroundColor = .systemBackground
+        eventsView.clipsToBounds = true
+        eventsView.translatesAutoresizingMaskIntoConstraints = false
+
+        // Events stack (your rows)
+        eventsStack.axis = .vertical
+        eventsStack.alignment = .fill
+        eventsStack.spacing = 16
+        eventsStack.translatesAutoresizingMaskIntoConstraints = false
+        eventsView.addSubview(eventsStack)
+
+        // Overlay
+        overlay.translatesAutoresizingMaskIntoConstraints = false
+        eventsView.addSubview(overlay)
+        eventsView.bringSubviewToFront(overlay)
     }
 
-    private func layoutUI() {
+    override func layout() {
         let content = scrollView.contentLayoutGuide
         let frame = scrollView.frameLayoutGuide
 
+        spacerHeight = bottomSpacer.heightAnchor.constraint(equalToConstant: 0)
+
         NSLayoutConstraint.activate([
-            // Scroll view frame
+            // Scroll frame (full screen)
             frame.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             frame.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             frame.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -618,7 +862,7 @@ final class BecomeAMemberViewController: BaseSignupViewController {
             contentView.bottomAnchor.constraint(equalTo: content.bottomAnchor),
             contentView.widthAnchor.constraint(equalTo: frame.widthAnchor),
 
-            // Title / subtitle
+            // Header
             titleLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
             titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
@@ -627,44 +871,115 @@ final class BecomeAMemberViewController: BaseSignupViewController {
             subtitleLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
             subtitleLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
 
-            // Laurels
             laurel5StarsView.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 60),
             laurel5StarsView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 40),
             laurel5StarsView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -40),
 
-            // Summary title
             summarySectionTitle.topAnchor.constraint(equalTo: laurel5StarsView.bottomAnchor, constant: 60),
             summarySectionTitle.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             summarySectionTitle.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
 
-            // Summary container
+            // Summary card
             summaryView.topAnchor.constraint(equalTo: summarySectionTitle.bottomAnchor, constant: 15),
             summaryView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             summaryView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
 
-            // Summary stack fills container with insets
             summaryStack.topAnchor.constraint(equalTo: summaryView.topAnchor, constant: 10),
             summaryStack.leadingAnchor.constraint(equalTo: summaryView.leadingAnchor, constant: 10),
             summaryStack.trailingAnchor.constraint(equalTo: summaryView.trailingAnchor, constant: -10),
             summaryStack.bottomAnchor.constraint(equalTo: summaryView.bottomAnchor, constant: -10),
 
-            // Ring size
             scoreRingView.widthAnchor.constraint(equalToConstant: 70),
             scoreRingView.heightAnchor.constraint(equalToConstant: 70),
 
-            // Content bottom follows summaryView
-            contentView.bottomAnchor.constraint(equalTo: summaryView.bottomAnchor, constant: 40)
+            // Events card
+            eventsView.topAnchor.constraint(equalTo: summaryView.bottomAnchor, constant: 20),
+            eventsView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            eventsView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+
+            // Rows inside card
+            eventsStack.topAnchor.constraint(equalTo: eventsView.topAnchor, constant: 16),
+            eventsStack.leadingAnchor.constraint(equalTo: eventsView.leadingAnchor, constant: 16),
+            eventsStack.trailingAnchor.constraint(equalTo: eventsView.trailingAnchor, constant: -16),
+
+            // Overlay pinned sides + bottom (we only move TOP)
+            overlay.leadingAnchor.constraint(equalTo: eventsView.leadingAnchor),
+            overlay.trailingAnchor.constraint(equalTo: eventsView.trailingAnchor),
+            overlay.bottomAnchor.constraint(equalTo: eventsView.bottomAnchor),
+
+            // Bottom spacer so content doesn’t hide behind sticky card
+            bottomSpacer.topAnchor.constraint(equalTo: eventsView.bottomAnchor, constant: 20),
+            bottomSpacer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            bottomSpacer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            bottomSpacer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+            spacerHeight
         ])
+
+        // Mutable constraints we update at runtime
+        eventsHeightConstraint = eventsView.heightAnchor.constraint(equalToConstant: 260)
+        eventsHeightConstraint.priority = .required
+        eventsHeightConstraint.isActive = true
+
+        overlayTopConstraint = overlay.topAnchor.constraint(equalTo: eventsView.topAnchor)
+        overlayTopConstraint.isActive = true
+    }
+
+    // MARK: - Build event rows (your data)
+    private func buildEventsRows() {
+        eventsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        for e in viewModel.getEvents() {
+            let row = EventElement()
+            row.configure(with: e)
+            eventsStack.addArrangedSubview(row)
+        }
+        if let last = eventsStack.arrangedSubviews.last {
+            // Helps the stack’s intrinsic height match the last row.
+            last.bottomAnchor.constraint(equalTo: eventsStack.bottomAnchor).isActive = true
+        }
+    }
+
+    // MARK: - Overlay placement (pixel cutoff)
+
+    /// Places the overlay at `freeRevealHeight` points from the top of the card and
+    /// resizes the card so the overlay (scrim + lock/message) fully fits below that cutoff.
+    private func repositionOverlay() {
+        eventsView.layoutIfNeeded()
+
+        let width = eventsView.bounds.width
+        guard width > 0 else { return } // need width to measure label wrapping
+
+        overlay.isHidden = false // always show the paywall area
+
+        let cutoffY = freeRevealHeight
+        let overlayH = overlay.requiredOverlayHeight(for: width)
+
+        overlayTopConstraint.constant = cutoffY
+        eventsHeightConstraint.constant = cutoffY + overlayH
+
+        eventsView.bringSubviewToFront(overlay)
+        overlay.setNeedsLayout()
+    }
+
+    // MARK: - Sticky CTA spacing & indicator
+
+    /// Makes space for the sticky card at the bottom of the scroll content,
+    /// and makes the scroll indicator stop exactly at the sticky card’s top.
+    private func updateCardInsets() {
+        let cardHeight = stickyCard.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).height
+
+        // Content spacer (so last content isn’t under the card)
+        spacerHeight.constant = cardHeight + spacerExtra
+
+        // Scrollbar track ends at the card’s top
+        scrollView.verticalScrollIndicatorInsets.bottom = cardHeight
+    }
+
+    // MARK: - CTA action
+    @objc private func didTapStartFreeTrial() {
+        // Hook into your purchase flow
+        print("Start Free Trial tapped")
     }
 }
-
-
-
-
-
-
-
-
 
 
 

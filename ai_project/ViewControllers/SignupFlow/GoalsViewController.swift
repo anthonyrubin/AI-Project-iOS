@@ -3,17 +3,6 @@ import UIKit
 // MARK: - ViewController
 final class GoalsViewController: BaseSignupTableViewController {
     
-    var sportDisplay: String
-    
-    init(sportDisplay: String) {
-        self.sportDisplay = sportDisplay
-        super.init(nibName: nil, bundle: nil)
-    }
-    
-    @MainActor required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
     private let items: [LeftSFIconCellData] = [
         .init(title: "Improve consistently", iconName: "chart.line.uptrend.xyaxis"),
         .init(title: "Fix my form / technique", iconName: "wrench.and.screwdriver.fill"),
@@ -56,12 +45,11 @@ final class GoalsViewController: BaseSignupTableViewController {
         // Save goals to UserDefaults
         let selectedGoalTitles = Array(selected).map { $0.title }
         UserDefaultsManager.shared.updateGoals(
-            selectedGoals: selectedGoalTitles,
-            sportDisplay: sportDisplay
+            selectedGoals: selectedGoalTitles
         )
         UserDefaultsManager.shared.updateProgress(progress: 0.55, step: "goals_set")
         
-        let vc = GreatPotentialViewController(sportDisplay: sportDisplay)
+        let vc = GreatPotentialViewController()
         navigationController?.pushViewController(vc, animated: true)
     }
 }

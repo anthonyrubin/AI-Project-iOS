@@ -111,16 +111,27 @@ final class StartAnalysisViewController: BaseSignupViewController, PHPickerViewC
     private let scrollView = UIScrollView()
     private let content = UIStackView()
 
-    private let mediaCard = MediaCardView()
+    private var mediaCard: LoadingScannerView? = nil
+
     private let tipsStack = UIStackView()
 
     override func viewDidLoad() {
+        let sport = Sport(rawValue: UserDefaultsManager.shared.getSport()!)
+        mediaCard = LoadingScannerView(
+            base: UIImage(named: "\(sport!.data().imagePrefix)_preview")!,
+            overlay: UIImage(named: "\(sport!.data().imagePrefix)_overlay")!
+        )
         buildUI()
         killDefaultLayout = true
         setupSecondaryButton(text: "Skip for now", selector: #selector(didTapSkip))
         super.viewDidLoad()
         setProgress(0.82, animated: false)
         configureData()
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        mediaCard!.startScan(duration: 2.0)
     }
 
     // MARK: UI
@@ -141,8 +152,9 @@ final class StartAnalysisViewController: BaseSignupViewController, PHPickerViewC
         content.addArrangedSubview(subtitleLabel)
         content.setCustomSpacing(16, after: subtitleLabel)
 
+        mediaCard!.contentCornerRadius = 14
         // Image card
-        content.addArrangedSubview(mediaCard)
+        content.addArrangedSubview(mediaCard!)
 
         // Tips
         tipsStack.axis = .vertical
@@ -171,7 +183,7 @@ final class StartAnalysisViewController: BaseSignupViewController, PHPickerViewC
             // Make content match scroll width so it only scrolls when needed
             content.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -48),
 
-            mediaCard.heightAnchor.constraint(greaterThanOrEqualToConstant: 260),
+            mediaCard!.heightAnchor.constraint(greaterThanOrEqualToConstant: 260),
             continueButton.heightAnchor.constraint(equalToConstant: 56)
         ])
     }
@@ -182,10 +194,10 @@ final class StartAnalysisViewController: BaseSignupViewController, PHPickerViewC
     }
 
     private func configureData() {
-        mediaCard.imageView.image = UIImage(named: "golf_preview")
-        if mediaCard.imageView.image == nil {
-            mediaCard.imageView.backgroundColor = .tertiarySystemFill
-        }
+//        mediaCard.imageView.image = UIImage(named: "golf_preview")
+//        if mediaCard.imageView.image == nil {
+//            mediaCard.imageView.backgroundColor = .tertiarySystemFill
+//        }
 
         let tips: [(String, String)] = [
             ("Be well lit and fully in frame.", "camera.viewfinder"),
