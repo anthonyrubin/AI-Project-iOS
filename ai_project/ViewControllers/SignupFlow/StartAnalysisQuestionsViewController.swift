@@ -37,19 +37,17 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
     private let cornerRadius: CGFloat = 12
 
     // Sports
-    private let sports: [String] = [
-        "Golf","Tennis","Pickleball","Basketball","Baseball","Soccer","Weightlifting","Running",
-        "Track & Field","Football (American)","Volleyball","Hockey","Softball","Lacrosse",
-        "Cricket","Badminton","Table Tennis","Rowing","Striking (Boxing / Kickboxing / TKD)"
-    ]
-    private var selectedSport: String = "Golf" {
+    private var sports: [String] = []
+    private var selectedSport: String = "" {
         didSet { sportValue.text = selectedSport }
     }
+    
+    private var sport: Sport
 
     // Prompt
     private let promptLabel: UILabel = {
         let l = UILabel()
-        l.text = "Is there anything you’d like CoachAI to focus on in this video?"
+        l.text = "Is there anything you’d like CoachCam to focus on in this video?"
         l.font = .systemFont(ofSize: 18, weight: .regular)
         l.numberOfLines = 0
         l.translatesAutoresizingMaskIntoConstraints = false
@@ -67,27 +65,28 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
     private let maxChars = 500
 
     // MARK: – Init
-    init(thumbnail: UIImage?, videoURL: URL? = nil, prefill: String? = nil, preselectedSport: String? = nil) {
+    init(thumbnail: UIImage?, videoURL: URL? = nil, prefill: String? = nil) {
+        
+        self.sport = Sport(rawValue: UserDefaultsManager.shared.getSport()!)!
+        selectedSport = self.sport.rawValue.capitalized
+        for _sport in Sport.allCases {
+            sports.append(_sport.rawValue.capitalized)
+        }
+        
         self.thumbnail = thumbnail
         self.videoURL = videoURL
+        
         super.init(nibName: nil, bundle: nil)
-        if let s = preselectedSport, sports.contains(s) { selectedSport = s }
-        if let prefill, !prefill.isEmpty {
-            detailsText.text = prefill
-            placeholder.isHidden = true
-            updateCount()
-        }
     }
+
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     // MARK: – Lifecycle
     override func viewDidLoad() {
+        buildUI()
         killDefaultLayout = true
-        //setupSecondaryButton(text: "Skip for now", selector: #selector(skipTapped))
         super.viewDidLoad()
         setProgress(0.91, animated: false)
-        buildUI()
-        layoutUI()
     }
 
     // MARK: – Build
@@ -173,6 +172,7 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
 
         // Prompt
         content.addArrangedSubview(promptLabel)
+        content.setCustomSpacing(10, after: promptLabel)
 
         // Details card
         detailsCard.backgroundColor = .secondarySystemBackground
@@ -207,7 +207,7 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
         detailsText.translatesAutoresizingMaskIntoConstraints = false
         detailsCard.addSubview(detailsText)
 
-        placeholder.text = "I would like to know how I can do better on this sport."
+        placeholder.text = sport.analysisPlaceholder()
         placeholder.textColor = .tertiaryLabel
         placeholder.font = .systemFont(ofSize: 18, weight: .regular)
         placeholder.numberOfLines = 0
@@ -219,7 +219,7 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
         content.addArrangedSubview(continueButton)
     }
 
-    private func layoutUI() {
+    override func layout() {
         let g = view.safeAreaLayoutGuide
 
         // Scroll containment
@@ -348,16 +348,11 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
     // MARK: – UITableViewDelegate
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         selectedSport = sports[indexPath.row]
+        sport = Sport(rawValue: selectedSport.lowercased())!
+        placeholder.text = sport.analysisPlaceholder()
         tableView.reloadData()
         toggleDropdown()
     }
-
-    // MARK: – Actions
-//    @objc private func skipTapped() {
-//        setUserDefaults()
-//        let vc = CreateAccountViewController()
-//        navigationController?.pushViewController(vc, animated: true)
-//    }
 
     override func didTapContinue() {
         super.didTapContinue()

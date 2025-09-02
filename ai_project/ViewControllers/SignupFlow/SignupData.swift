@@ -57,5 +57,44 @@ extension Sport {
         case .trackAndField: return SportData(sport: self, icon: "figure.track.and.field", sentenceTitle: "track athlete", imagePrefix: "track_and_field")
         }
     }
+    
+    func analysisPlaceholder() -> String {
+        switch self {
+        case .golf:
+            return "Analyze my driver swing: club path, face angle, contact, weight shift."
+        case .tennis:
+            return "Break down my serve: toss, racquet drop, pronation, leg drive."
+        case .pickleball:
+            return "Assess my third-shot drop and dinks: paddle angle, contact point, footwork."
+        case .basketball:
+            return "Critique my jump shot: release, elbow alignment, lift, balance."
+        case .baseball:
+            return "Analyze my batting swing: timing, hip rotation, bat path."
+        case .soccer:
+            return "Assess my shooting form: plant foot, hip rotation, contact point."
+        case .weightlifting:
+            return "Check my back squat: depth, knee tracking, bracing, bar path."
+        case .running:
+            return "Evaluate my distance form: cadence, foot strike, hip posture, arm swing."
+        case .football:
+            return "Analyze my acceleration and cutting on this route: stance, first step, change of direction."
+        case .volleyball:
+            return "Break down my spike: approach steps, jump timing, arm swing, contact."
+        case .hockey:
+            return "Assess my skating stride: knee bend, edge control, extension, recovery."
+        case .softball:
+            return "Analyze my swing: timing, hip rotation, bat path."
+        case .badminton:
+            return "Evaluate my overhead smash: grip, footwork, contact height, recovery."
+        case .rowing:
+            return "Break down my stroke: catch, drive, finish, sequencing."
+        case .striking:
+            return "Critique my cross and hook: guard, hip rotation, weight transfer, recoil."
+        case .tableTennis:
+            return "Assess my forehand loop: timing, footwork, contact point, spin."
+        case .trackAndField:
+            return "Analyze my sprint mechanics: block setup, drive, transition, upright posture."
+        }
+    }
 }
 
