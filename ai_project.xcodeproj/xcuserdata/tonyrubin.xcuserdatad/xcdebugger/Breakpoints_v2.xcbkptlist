@@ -146,36 +146,6 @@
             endingLineNumber = "193"
             landmarkName = "handleUploadCompletion()"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "3C362C8D-52E7-45E3-8C26-D0063A526BA0 - dea572cae3687143"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "ai_project.SessionViewController.handleUploadCompletion() -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewControllers/SessionViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "193"
-                  endingLineNumber = "193">
-               </Location>
-               <Location
-                  uuid = "3C362C8D-52E7-45E3-8C26-D0063A526BA0 - a3d18b1b42012376"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #2 () -&gt; () in ai_project.SessionViewController.handleUploadCompletion() -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewControllers/SessionViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "193"
-                  endingLineNumber = "193">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -192,36 +162,6 @@
             endingLineNumber = "181"
             landmarkName = "handleUploadCompletion()"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "5DB1ABA0-9DC5-4A84-AA72-9DFCA484FE3A - dea572cae36873d7"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "ai_project.SessionViewController.handleUploadCompletion() -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewControllers/SessionViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "181"
-                  endingLineNumber = "181">
-               </Location>
-               <Location
-                  uuid = "5DB1ABA0-9DC5-4A84-AA72-9DFCA484FE3A - dea572cae36873d7"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "ai_project.SessionViewController.handleUploadCompletion() -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewControllers/SessionViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "181"
-                  endingLineNumber = "181">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -238,36 +178,6 @@
             endingLineNumber = "182"
             landmarkName = "handleUploadCompletion()"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "A724C549-A746-45C9-8956-10CF6CD6F5C6 - dea572cae3687036"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "ai_project.SessionViewController.handleUploadCompletion() -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewControllers/SessionViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "182"
-                  endingLineNumber = "182">
-               </Location>
-               <Location
-                  uuid = "A724C549-A746-45C9-8956-10CF6CD6F5C6 - 11bd6e2deae4ee02"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 () -&gt; () in ai_project.SessionViewController.handleUploadCompletion() -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewControllers/SessionViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "182"
-                  endingLineNumber = "182">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -316,36 +226,6 @@
             endingLineNumber = "185"
             landmarkName = "handleUploadCompletion()"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "4807E1BB-C9D4-4795-91D8-3400BF617E93 - 11bd6e2deae4ee7f"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 () -&gt; () in ai_project.SessionViewController.handleUploadCompletion() -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewControllers/SessionViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "185"
-                  endingLineNumber = "185">
-               </Location>
-               <Location
-                  uuid = "4807E1BB-C9D4-4795-91D8-3400BF617E93 - 83af514c51c06162"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 () -&gt; () in closure #1 () -&gt; () in ai_project.SessionViewController.handleUploadCompletion() -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewControllers/SessionViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "185"
-                  endingLineNumber = "185">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -415,22 +295,6 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "89C0181E-8E9C-46F3-A42F-DFAE5468A8AB"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "ai_project/ViewModels/CreateAccountViewModel.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "132"
-            endingLineNumber = "132"
-            landmarkName = "sendSignupDataToBackend(socialResult:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
             uuid = "2BA93070-40E1-48F5-8C4B-2918E8EF23D7"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
@@ -442,96 +306,6 @@
             endingLineNumber = "203"
             landmarkName = "CreateAccountViewController"
             landmarkType = "3">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "0E8DCDAF-8E01-47DD-A560-49C8CDE0B93D"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "ai_project/ViewModels/CreateAccountViewModel.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "138"
-            endingLineNumber = "138"
-            landmarkName = "sendSignupDataToBackend(socialResult:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "0D7C8160-EE10-4B00-9222-63CAD6D919AF"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "ai_project/ViewModels/CreateAccountViewModel.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "142"
-            endingLineNumber = "142"
-            landmarkName = "sendSignupDataToBackend(socialResult:)"
-            landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "0D7C8160-EE10-4B00-9222-63CAD6D919AF - 970cf117cb3eec03"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "ai_project.CreateAccountViewModel.sendSignupDataToBackend(socialResult: ai_project.SocialLoginResult) -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewModels/CreateAccountViewModel.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "142"
-                  endingLineNumber = "142">
-               </Location>
-               <Location
-                  uuid = "0D7C8160-EE10-4B00-9222-63CAD6D919AF - 2609de440df5bee1"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 (Swift.Result&lt;ai_project.SocialSignInResponse, ai_project.NetworkError&gt;) -&gt; () in ai_project.CreateAccountViewModel.sendSignupDataToBackend(socialResult: ai_project.SocialLoginResult) -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewModels/CreateAccountViewModel.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "142"
-                  endingLineNumber = "142">
-               </Location>
-               <Location
-                  uuid = "0D7C8160-EE10-4B00-9222-63CAD6D919AF - 73c3ec8425aeb5a5"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 @Swift.MainActor () async -&gt; () in closure #1 (Swift.Result&lt;ai_project.SocialSignInResponse, ai_project.NetworkError&gt;) -&gt; () in ai_project.CreateAccountViewModel.sendSignupDataToBackend(socialResult: ai_project.SocialLoginResult) -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewModels/CreateAccountViewModel.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "142"
-                  endingLineNumber = "142">
-               </Location>
-               <Location
-                  uuid = "0D7C8160-EE10-4B00-9222-63CAD6D919AF - a75e0fe10c4d319f"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(1) suspend resume partial function for closure #1 @Swift.MainActor () async -&gt; () in closure #1 (Swift.Result&lt;ai_project.SocialSignInResponse, ai_project.NetworkError&gt;) -&gt; () in ai_project.CreateAccountViewModel.sendSignupDataToBackend(socialResult: ai_project.SocialLoginResult) -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewModels/CreateAccountViewModel.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "142"
-                  endingLineNumber = "142">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -564,64 +338,6 @@
             endingLineNumber = "99"
             landmarkName = "sendSimpleSocialLogin(socialResult:)"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "A9381EF2-1F88-46BA-9E26-6A765217B547 - 694507db9444c2f5"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "ai_project.CreateAccountViewModel.sendSimpleSocialLogin(socialResult: ai_project.SocialLoginResult) -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewModels/CreateAccountViewModel.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "99"
-                  endingLineNumber = "99">
-               </Location>
-               <Location
-                  uuid = "A9381EF2-1F88-46BA-9E26-6A765217B547 - ba7c6c867ab081a4"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 (Swift.Result&lt;ai_project.SocialSignInResponse, ai_project.NetworkError&gt;) -&gt; () in ai_project.CreateAccountViewModel.sendSimpleSocialLogin(socialResult: ai_project.SocialLoginResult) -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewModels/CreateAccountViewModel.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "99"
-                  endingLineNumber = "99">
-               </Location>
-               <Location
-                  uuid = "A9381EF2-1F88-46BA-9E26-6A765217B547 - 400143f49f8ff96d"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 @Swift.MainActor () async -&gt; () in closure #1 (Swift.Result&lt;ai_project.SocialSignInResponse, ai_project.NetworkError&gt;) -&gt; () in ai_project.CreateAccountViewModel.sendSimpleSocialLogin(socialResult: ai_project.SocialLoginResult) -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewModels/CreateAccountViewModel.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "99"
-                  endingLineNumber = "99">
-               </Location>
-               <Location
-                  uuid = "A9381EF2-1F88-46BA-9E26-6A765217B547 - 1123fe7492c5c832"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(1) suspend resume partial function for closure #1 @Swift.MainActor () async -&gt; () in closure #1 (Swift.Result&lt;ai_project.SocialSignInResponse, ai_project.NetworkError&gt;) -&gt; () in ai_project.CreateAccountViewModel.sendSimpleSocialLogin(socialResult: ai_project.SocialLoginResult) -&gt; ()"
-                  moduleName = "ai_project.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewModels/CreateAccountViewModel.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "99"
-                  endingLineNumber = "99">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -643,22 +359,6 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "045F7BAC-39F0-49E9-B4A5-B1D70DDC9000"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "ai_project/ViewModels/CreateAccountViewModel.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "75"
-            endingLineNumber = "75"
-            landmarkName = "handleSocialLogin(_:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
             uuid = "D2707486-3F48-4BF9-BAEC-9465C8E910F1"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
@@ -669,54 +369,6 @@
             startingLineNumber = "95"
             endingLineNumber = "95"
             landmarkName = "sendSimpleSocialLogin(socialResult:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "3C687928-FF68-4043-8C18-990FE1195A8F"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "ai_project/ViewControllers/SignupFlow/CreateAccountViewController.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "165"
-            endingLineNumber = "165"
-            landmarkName = "setupViewModelBindings()"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "8C712131-169A-4208-B063-71D4EB262F7A"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "ai_project/ViewModels/CreateAccountViewModel.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "73"
-            endingLineNumber = "73"
-            landmarkName = "handleSocialLogin(_:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "1406CBE4-0F40-415E-AA3C-C2427045F799"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "ai_project/ViewModels/CreateAccountViewModel.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "69"
-            endingLineNumber = "69"
-            landmarkName = "handleSocialLogin(_:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -787,70 +439,6 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "A3C3E791-F523-426E-AE8A-716C393D91D7"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "ai_project/ViewControllers/SignupFlow/CreateAccountViewController.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "211"
-            endingLineNumber = "211"
-            landmarkName = "navigateToVideoAnalysis()"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "80E2C8A6-68B4-4562-9D56-9B617AD8D9AE"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "ai_project/ViewControllers/SignupFlow/CreateAccountViewController.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "180"
-            endingLineNumber = "180"
-            landmarkName = "handleCheckpoint(checkpoint:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "24C4809E-D12B-4BCE-A105-1FEF81E1A81E"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "ai_project/ViewControllers/SignupFlow/CreateAccountViewController.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "188"
-            endingLineNumber = "188"
-            landmarkName = "handleCheckpoint(checkpoint:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "CA615528-D72F-44FC-8E88-EE08A7F7689F"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "ai_project/ViewControllers/SignupFlow/CreateAccountViewController.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "181"
-            endingLineNumber = "181"
-            landmarkName = "handleCheckpoint(checkpoint:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
             uuid = "8BCD4A80-8A91-4CE7-90FD-A42D0922FE55"
             shouldBeEnabled = "No"
             ignoreCount = "0"
@@ -861,22 +449,6 @@
             startingLineNumber = "205"
             endingLineNumber = "205"
             landmarkName = "navigateToHome()"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "7CDBC982-5301-45AF-AE56-83409B40AD2A"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "ai_project/ViewControllers/SignupFlow/VideoAnalysisLoadingViewController.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "262"
-            endingLineNumber = "262"
-            landmarkName = "finishLoading(completion:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -899,32 +471,176 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "6914DEBC-1CBC-43F6-BE68-44A50E0EBB40"
+            uuid = "3603CEA3-AE7B-41CB-9B34-8AEF9ADB69A9"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "ai_project/ViewControllers/SignupFlow/BecomeAMemberViewController.swift"
+            filePath = "ai_project/ViewControllers/SignupFlow/CreateAccountViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1012"
-            endingLineNumber = "1012"
-            landmarkName = "didTapStartFreeTrial()"
+            startingLineNumber = "165"
+            endingLineNumber = "165"
+            landmarkName = "setupViewModelBindings()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "0D88A692-F370-4F8B-8602-BF0DFE51A11B"
+            uuid = "AB2E96C7-E153-4A80-AAAA-66E6ADABDD65"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "ai_project/Managers/SocialLoginManager.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "115"
+            endingLineNumber = "115"
+            landmarkName = "signInWithGoogle(completion:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "542E8173-906C-45B9-9401-98FF4C01B142"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "ai_project/Managers/SocialLoginManager.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "84"
+            endingLineNumber = "84"
+            landmarkName = "signInWithGoogle(completion:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "BE87C159-65D8-453C-B9AD-8F8597A783B7"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "ai_project/ViewModels/CreateAccountViewModel.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "75"
+            endingLineNumber = "75"
+            landmarkName = "handleSocialLogin(_:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "219B8248-CDAB-4499-8AB5-2330E4B24D8B"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "ai_project/ViewModels/CreateAccountViewModel.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "78"
+            endingLineNumber = "78"
+            landmarkName = "handleSocialLogin(_:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "B49AEC90-8EFF-48B7-BEFD-E84EEA2CB745"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "ai_project/ViewModels/CreateAccountViewModel.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "146"
+            endingLineNumber = "146"
+            landmarkName = "sendSignupDataToBackend(socialResult:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "7AF3F0BD-8CD1-449F-989D-9BA753177ECA"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "ai_project/ViewModels/CreateAccountViewModel.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "155"
+            endingLineNumber = "155"
+            landmarkName = "sendSignupDataToBackend(socialResult:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "AAF6152C-79D2-4D02-B17A-28185AD536C5"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "ai_project/ViewModels/CreateAccountViewModel.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "151"
+            endingLineNumber = "151"
+            landmarkName = "sendSignupDataToBackend(socialResult:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "07A61114-F81A-4277-AC7B-6F414261F7E7"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "ai_project/ViewControllers/SignupFlow/BecomeAMemberViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1014"
-            endingLineNumber = "1014"
-            landmarkName = "didTapStartFreeTrial()"
+            startingLineNumber = "1087"
+            endingLineNumber = "1087"
+            landmarkName = "initiateMembershipPurchase()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "7BC6FD04-7278-4A01-819C-87DD6F1AC34D"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "ai_project/ViewControllers/SignupFlow/BecomeAMemberViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1092"
+            endingLineNumber = "1092"
+            landmarkName = "initiateMembershipPurchase()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "883EB23F-5CA0-41FF-AF5A-64EB151E3A90"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "ai_project/ViewControllers/SignupFlow/BecomeAMemberViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1099"
+            endingLineNumber = "1099"
+            landmarkName = "initiateMembershipPurchase()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

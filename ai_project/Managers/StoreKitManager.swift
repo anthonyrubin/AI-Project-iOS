@@ -1,264 +1,119 @@
 import Foundation
 import StoreKit
 
-typealias RenewalState = StoreKit.Product.SubscriptionInfo.RenewalState
+typealias RenewalState = StoreKit.Product.SubscriptionInfo.Status
 
-class StoreKitManager: ObservableObject {
+@MainActor
+final class StoreKitManager: ObservableObject {
     static let shared = StoreKitManager()
+
     @Published private(set) var subscriptions: [Product] = []
     @Published private(set) var purchasedSubscriptions: [Product] = []
     @Published private(set) var subscriptionGroupStatus: RenewalState?
-    
+
+    private let productIDs = ["subscription.monthly"]
+
     var monthlyMembershipProduct: Product? {
         subscriptions.first { $0.id == "subscription.monthly" }
     }
-    
-    private let productIDs = ["subscription.monthly"]
-    
-    private var updateListenerTask: Task<Void, Error>?
-    
-    init () {
-        
+
+    private var updateListenerTask: Task<Void, Never>?
+
+    init() {
         updateListenerTask = listenForTransactions()
-        
         Task {
             await requestProducts()
             await updateCustomerProductStatus()
         }
     }
 
-    deinit {
-        updateListenerTask?.cancel()
-    }
-    
-    private func listenForTransactions() -> Task<Void, Error> {
-        return Task.detached {
-            for await result in Transaction.updates {
-                
-                do {
-                    let transaction = try self.checkVerified(result)
-                    await self.updateCustomerProductStatus()
-                    await transaction.finish()
-                
-                    print("Transaction failed verification")
-                }
+    deinit { updateListenerTask?.cancel() }
 
-            }
-        }
-    }
-
-    @MainActor
     func requestProducts() async {
-        do {
-            subscriptions = try await Product.products(for: productIDs)
-        } catch {
-            print("Failed to load products: \(error)")
-        }
+        do { subscriptions = try await Product.products(for: productIDs) }
+        catch { print("⚠️ Failed to load products: \(error)") }
     }
-    
-    func purchase(_ product: Product) async throws -> Transaction? {
-        let result = try await product.purchase()
-        
+
+    struct PurchaseOutcome {
+        let transaction: Transaction
+        let jws: String?        // signed JWS from Apple’s VerificationResult
+    }
+
+    /// Purchase wrapper. If you have an appAccountToken for this user, pass it.
+    /// Apple will store it and return it in all server webhooks and API responses.
+    func purchase(_ product: Product, appAccountToken: UUID? = nil) async throws -> PurchaseOutcome? {
+        let options: Set<Product.PurchaseOption> = appAccountToken.map { [.appAccountToken($0)] } ?? []
+
+        let result = try await product.purchase(options: options)
+
         switch result {
         case .success(let verification):
-            // Check whether the transaction is verified. If it isn't,
-            // this function re-throws the verification error
-            let transaction = try checkVerified(verification)
-            
-            // The transaction is verified.
-            //
+            // This is Apple’s signed payload – keep it and send to your server.
+            let jws = verification.jwsRepresentation
+
+            // Verify locally to get a Transaction object
+            let tx: Transaction = try checkVerified(verification)
+
             await updateCustomerProductStatus()
-            await transaction.finish()
-            return transaction
-        case .userCancelled:
+            await tx.finish()
+
+            return PurchaseOutcome(transaction: tx, jws: jws)
+
+        case .userCancelled, .pending:
             return nil
-        case .pending:
-            return nil
+
         @unknown default:
             return nil
         }
-        
+    }
 
-    }
-    
-    private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
-        switch result {
-        case .unverified:
-            throw StoreError.failedVerification
-        case .verified(let safe):
-            return safe
-        }
-    }
-    
-    @MainActor
-    private func updateCustomerProductStatus() async {
-        for await result in Transaction.currentEntitlements {
-            do {
-                // Check whether the transaction is verified.
-                // If it isn't, catch `failedVerification` error.
-                
-                let transaction = try checkVerified(result)
-                
-                switch transaction.productType {
-                case .autoRenewable:
-                    if let subscription = subscriptions.first(where: {$0.id == transaction.productID}) {
-                        purchasedSubscriptions.append(subscription)
-                    }
-                default:
-                    break
+    private func listenForTransactions() -> Task<Void, Never> {
+        Task.detached(priority: .background) { [weak self] in
+            guard let self else { return }
+            for await update in Transaction.updates {
+                do {
+                    let tx: Transaction = try await self.checkVerified(update)
+                    await self.updateCustomerProductStatus()
+                    await tx.finish()
+                } catch {
+                    print("⚠️ Transaction failed verification: \(error)")
                 }
-                
-                // Always finish a transaction
-                await transaction.finish()
-            } catch {
-                print("Failed updating products")
             }
         }
-        
-//        for await result in Transaction.currentEntitlements {
-//            guard let transaction = try? checkVerified(result) else {
-//                continue
-//            }
-//
-//            if transaction.revocationDate == nil {
-//                purchasedProductIDs.insert(transaction.productID)
-//            } else {
-//                purchasedProductIDs.remove(transaction.productID)
-//            }
-//        }
+    }
+
+    func updateCustomerProductStatus() async {
+        var owned = Set<String>()
+        for await r in Transaction.currentEntitlements {
+            guard case .verified(let tx) = r else { continue }
+            if tx.productType == .autoRenewable { owned.insert(tx.productID) }
+        }
+        purchasedSubscriptions = subscriptions.filter { owned.contains($0.id) }
+
+        if let sub = subscriptions.first(where: { $0.type == .autoRenewable }),
+           let statuses = try? await sub.subscription?.status,
+           let first = statuses.first {
+            subscriptionGroupStatus = first
+        } else {
+            subscriptionGroupStatus = nil
+        }
+    }
+
+    private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
+        switch result {
+        case .verified(let safe): return safe
+        case .unverified: throw StoreError.failedVerification
+        }
     }
 }
 
 enum StoreError: LocalizedError {
     case failedVerification
-
+    case purchaseNotCompleted
     var errorDescription: String? {
         switch self {
-        case .failedVerification:
-            return "Transaction verification failed"
+        case .failedVerification: return "Transaction verification failed."
+        case .purchaseNotCompleted: return "Purchase not completed."
         }
     }
 }
-
-//@MainActor
-//class StoreKitManager: NSObject, ObservableObject {
-//    static let shared = StoreKitManager()
-//    
-//    @Published var products: [Product] = []
-//    @Published var purchasedProductIDs = Set<String>()
-//    @Published var isPurchasing = false
-//    @Published var errorMessage: String?
-//    
-//    private var productIDs = ["subscription.monthly"]
-//    private var updateListenerTask: Task<Void, Error>?
-//    
-//    override init() {
-//        super.init()
-//        updateListenerTask = listenForTransactions()
-//        
-//        Task {
-//            await requestProducts()
-//            await updatePurchasedProducts()
-//        }
-//    }
-//    
-//    deinit {
-//        updateListenerTask?.cancel()
-//    }
-//    
-//    func requestProducts() async {
-//        do {
-//            products = try await Product.products(for: productIDs)
-//        } catch {
-//            print("Failed to load products: \(error)")
-//            errorMessage = "Failed to load products"
-//        }
-//    }
-//    
-//    func purchase(_ product: Product) async throws -> Transaction? {
-//        isPurchasing = true
-//        defer { isPurchasing = false }
-//        
-//        do {
-//            let result = try await product.purchase()
-//            
-//            switch result {
-//            case .success(let verification):
-//                let transaction = try checkVerified(verification)
-//                await updatePurchasedProducts()
-//                await transaction.finish()
-//                return transaction
-//            case .userCancelled:
-//                return nil
-//            case .pending:
-//                return nil
-//            @unknown default:
-//                return nil
-//            }
-//        } catch {
-//            errorMessage = error.localizedDescription
-//            throw error
-//        }
-//    }
-//    
-//    func restorePurchases() async throws {
-//        try await AppStore.sync()
-//        await updatePurchasedProducts()
-//    }
-//    
-//    private func updatePurchasedProducts() async {
-//        for await result in Transaction.currentEntitlements {
-//            guard let transaction = try? checkVerified(result) else {
-//                continue
-//            }
-//            
-//            if transaction.revocationDate == nil {
-//                purchasedProductIDs.insert(transaction.productID)
-//            } else {
-//                purchasedProductIDs.remove(transaction.productID)
-//            }
-//        }
-//    }
-//    
-//    private func listenForTransactions() -> Task<Void, Error> {
-//        let manager = self
-//        return Task.detached {
-//            for await result in Transaction.updates {
-//                guard let transaction = try? await manager.checkVerified(result) else {
-//                    continue
-//                }
-//                
-//                await manager.updatePurchasedProducts()
-//                await transaction.finish()
-//            }
-//        }
-//    }
-//    
-//    private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
-//        switch result {
-//        case .unverified:
-//            throw StoreError.failedVerification
-//        case .verified(let safe):
-//            return safe
-//        }
-//    }
-//    
-//    var monthlyMembershipProduct: Product? {
-//        products.first { $0.id == "subscription.monthly" }
-//    }
-//    
-//    var hasActiveMembership: Bool {
-//        !purchasedProductIDs.isEmpty
-//    }
-//}
-//
-//enum StoreError: LocalizedError {
-//    case failedVerification
-//    
-//    var errorDescription: String? {
-//        switch self {
-//        case .failedVerification:
-//            return "Transaction verification failed"
-//        }
-//    }
-//}

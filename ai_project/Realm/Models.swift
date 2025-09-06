@@ -4,6 +4,7 @@ import Foundation
 // MARK: - User
 final class UserObject: Object {
     @Persisted(primaryKey: true) var serverId: Int      // your backend user id
+    @Persisted var appAccountToken: UUID
     @Persisted var email: String = ""
     @Persisted var username: String = ""
     @Persisted var firstName: String = ""

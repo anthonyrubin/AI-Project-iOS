@@ -44,37 +44,7 @@ class MembershipManager: ObservableObject {
         
         isLoading = false
     }
-    
-    func verifyReceipt(receiptData: String, transactionId: String) async -> Bool {
-        isLoading = true
-        errorMessage = nil
-        
-        do {
-            let request = VerifyReceiptRequest(
-                receiptData: receiptData,
-                transactionId: transactionId
-            )
-            
-            let response: VerifyReceiptResponse = try await networkManager.request(
-                endpoint: "/membership/verify-receipt/",
-                method: .post,
-                body: request,
-                responseType: VerifyReceiptResponse.self
-            )
-            
-            // Update local membership status
-            await checkMembershipStatus()
-            
-            isLoading = false
-            return response.success
-            
-        } catch {
-            errorMessage = error.localizedDescription
-            print("Error verifying receipt: \(error)")
-            isLoading = false
-            return false
-        }
-    }
+
     
     func restorePurchase() async -> Bool {
         isLoading = true
@@ -119,6 +89,59 @@ class MembershipManager: ObservableObject {
     }
 }
 
+
+struct AttachPayload: Codable {
+    let productId: String
+    let jws: String
+    let appAccountToken: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case productId = "product_id"
+        case jws
+        case appAccountToken = "app_account_token"
+    }
+}
+
+struct AttachSubscriptionResponse: Codable {
+    let success: Bool
+    let message: String
+    let membership: MembershipDetails?
+}
+
+// Add this method inside @MainActor MembershipManager
+extension MembershipManager {
+    /// POST /membership/attach-subscription/
+    /// Server decodes JWS, validates with Apple, and attaches to this user.
+    func attachSubscription(_ payload: AttachPayload) async -> Bool {
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+
+        do {
+            struct AttachResponse: Codable {
+                let success: Bool
+                let message: String
+            }
+
+            let resp: AttachResponse = try await networkManager.request(
+                endpoint: "/membership/attach-subscription/",
+                method: .post,
+                body: payload,
+                responseType: AttachResponse.self
+            )
+
+            // Pull latest state
+            await checkMembershipStatus()
+
+            return resp.success
+        } catch {
+            errorMessage = error.localizedDescription
+            print("Error attaching subscription: \(error)")
+            return false
+        }
+    }
+}
+
 // MARK: - Response Models
 
 struct MembershipStatusResponse: Codable {
@@ -155,22 +178,6 @@ struct MonthlyUsageInfo: Codable {
         case minutesAllowed = "minutes_allowed"
         case minutesRemaining = "minutes_remaining"
     }
-}
-
-struct VerifyReceiptRequest: Codable {
-    let receiptData: String
-    let transactionId: String
-    
-    enum CodingKeys: String, CodingKey {
-        case receiptData = "receipt_data"
-        case transactionId = "transaction_id"
-    }
-}
-
-struct VerifyReceiptResponse: Codable {
-    let success: Bool
-    let message: String
-    let membership: MembershipDetails?
 }
 
 struct MembershipDetails: Codable {

@@ -3,6 +3,7 @@ import RealmSwift
 
 struct UserDTO: Codable {
     let id: Int
+    let appAccountToken: UUID
     let username: String
     let email: String
     let firstName: String?
@@ -35,6 +36,7 @@ final class RealmUserDataStore: UserDataStore {
         
         let userDTO = UserDTO(
             id: user.id,
+            appAccountToken: user.app_account_token,
             username: user.username,
             email: user.email,
             firstName: user.first_name,

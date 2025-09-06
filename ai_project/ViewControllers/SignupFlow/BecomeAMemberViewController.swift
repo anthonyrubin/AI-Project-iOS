@@ -1067,44 +1067,48 @@ final class BecomeAMemberViewController: BaseSignupViewController {
         }
     }
     
+
     private func initiateMembershipPurchase() {
-        guard let product = storeKitManager.monthlyMembershipProduct else {
+        guard let product = StoreKitManager.shared.monthlyMembershipProduct else {
             showError("Product not available")
             return
         }
-        
-        Task {
+
+        // Your stored user UUID that your backend minted at signup/login.
+        // Make sure this actually exists; if not, create on server and refetch profile first.
+        let appAccountToken = RealmUserDataStore().load()?.appAccountToken  // UUID?
+
+        Task { @MainActor in
             do {
-                if let transaction = try await storeKitManager.purchase(product) {
-                    // Get the actual receipt data from the app bundle
-                    guard let receiptURL = Bundle.main.appStoreReceiptURL,
-                          let receiptData = try? Data(contentsOf: receiptURL) else {
-                        showError("Receipt not available")
-                        return
-                    }
-                    
-                    // Convert receipt data to base64 string
-                    let receiptString = receiptData.base64EncodedString()
-                    
-                    // Verify receipt with backend
-                    let success = await membershipManager.verifyReceipt(
-                        receiptData: receiptString,  // Base64 encoded receipt data
-                        transactionId: transaction.id.description
-                    )
-                    
-                    if success {
-                        showSuccess("Membership activated successfully!")
-                        // Update UI and proceed
-                        updateUIForMembershipStatus(true)
-                    } else {
-                        showError("Failed to activate membership")
-                    }
+                guard let outcome = try await StoreKitManager.shared.purchase(product, appAccountToken: appAccountToken) else {
+                    return // user cancelled or pending
+                }
+
+                guard let jws = outcome.jws else {
+                    showError("Missing signed transaction payload (JWS)")
+                    return
+                }
+
+                // Only send what the server actually needs.
+                let payload = AttachPayload(
+                    productId: product.id,
+                    jws: jws,
+                    appAccountToken: appAccountToken?.uuidString
+                )
+
+                let ok = await membershipManager.attachSubscription(payload)
+                if ok {
+                    showSuccess("Membership activated successfully!")
+                    updateUIForMembershipStatus(true)
+                } else {
+                    showError("Failed to activate membership")
                 }
             } catch {
                 showError(error.localizedDescription)
             }
         }
     }
+
     
     private func showError(_ message: String) {
         let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
