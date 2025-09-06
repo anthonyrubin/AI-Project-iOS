@@ -14,8 +14,8 @@ struct SignupUserData: Codable {
     var isMetric: Bool?
     
     // Goals & Preferences
-    var selectedGoals: [String]?
-    var sport: String?
+    var workoutDaysPerWeek: String?
+    var experience: String?
     
     
     // Video Analysis
@@ -28,8 +28,6 @@ struct SignupUserData: Codable {
     var socialLoginProvider: String? // "google" or "apple"
     var socialLoginToken: String?
 
-    var currentStep: String?
-    
     // Timestamps
     var signupStartedAt: Date?
     var lastUpdatedAt: Date?
@@ -92,7 +90,6 @@ final class UserDefaultsManager {
         var newData = SignupUserData()
         newData.signupStartedAt = Date()
         newData.lastUpdatedAt = Date()
-        newData.currentStep = "started"
         
         currentSignupData = newData
         print("📝 UserDefaultsManager: Started new signup session: \(sessionId)")
@@ -139,10 +136,10 @@ final class UserDefaultsManager {
     }
     
     /// Update goals and preferences
-    func updateGoals(selectedGoals: [String]? = nil, sport: String? = nil) {
+    func updateGoals(workoutDaysPerWeek: String? = nil, experience: String? = nil) {
         var data = currentSignupData
-        if let selectedGoals = selectedGoals { data.selectedGoals = selectedGoals }
-        if let sport = sport { data.sport = sport }
+        if let workoutDaysPerWeek = workoutDaysPerWeek { data.workoutDaysPerWeek = workoutDaysPerWeek }
+        if let experience = experience { data.experience = experience }
         data.lastUpdatedAt = Date()
         currentSignupData = data
         print("📝 UserDefaultsManager: Updated goals")
@@ -171,15 +168,6 @@ final class UserDefaultsManager {
         print("📝 UserDefaultsManager: Updated video analysis - uploaded: \(didUpload)")
     }
     
-    /// Update signup progress
-    func updateProgress(progress: Double, step: String) {
-        var data = currentSignupData
-        data.currentStep = step
-        data.lastUpdatedAt = Date()
-        currentSignupData = data
-        print("📝 UserDefaultsManager: Updated progress to \(progress) at step: \(step)")
-    }
-    
     // MARK: - Data Retrieval Methods
     
     /// Get all current signup data
@@ -202,8 +190,8 @@ final class UserDefaultsManager {
     func getHeight() -> Double? { return currentSignupData.height }
     func getWeight() -> Double? { return currentSignupData.weight }
     func getIsMetric() -> Bool? { return currentSignupData.isMetric }
-    func getSelectedGoals() -> [String]? { return currentSignupData.selectedGoals }
-    func getSport() -> String? { return currentSignupData.sport }
+    func getWorkoutDaysPerWeek() -> String? { return currentSignupData.workoutDaysPerWeek }
+    func getExperience() -> String? { return currentSignupData.experience }
     func getDidUploadVideo() -> Bool { return currentSignupData.didUploadVideoForAnalysis }
     func getVideoAnalysisData() -> VideoAnalysisData? { return currentSignupData.videoAnalysisData }
     func getSocialLoginProvider() -> String? { return currentSignupData.socialLoginProvider }
@@ -218,8 +206,8 @@ final class UserDefaultsManager {
                data.gender != nil &&
                data.height != nil &&
                data.weight != nil &&
-               data.selectedGoals != nil &&
-               data.sport != nil
+               data.workoutDaysPerWeek != nil &&
+               data.experience != nil
     }
     
     /// Get missing required fields
@@ -231,8 +219,8 @@ final class UserDefaultsManager {
         if data.gender == nil { missing.append("Gender") }
         if data.height == nil { missing.append("Height") }
         if data.weight == nil { missing.append("Weight") }
-        if data.selectedGoals == nil { missing.append("Goals") }
-        if data.sport == nil { missing.append("Sport") }
+        if data.workoutDaysPerWeek == nil { missing.append("Goals") }
+        if data.experience == nil { missing.append("Experience") }
         
         return missing
     }
@@ -244,16 +232,15 @@ final class UserDefaultsManager {
         let data = currentSignupData
         print("🔍 UserDefaultsManager Debug:")
         print("  - Session ID: \(signupSessionId ?? "none")")
-        print("  - Current Step: \(data.currentStep ?? "none")")
         print("  - Birthday: \(data.birthday?.description ?? "nil")")
         print("  - Gender: \(data.gender ?? "nil")")
         print("  - Height: \(data.height ?? 0)")
         print("  - Weight: \(data.weight ?? 0)")
         print("  - Is Metric: \(data.isMetric ?? false)")
-        print("  - Goals: \(data.selectedGoals?.joined(separator: ", ") ?? "nil")")
-        print("  - Sport: \(data.sport ?? "nil")")
+        print("  - Workout days per week: \(data.workoutDaysPerWeek ?? "nil")")
+        print("  - Experience: \(data.experience ?? "nil")")
         print("  - Did Upload Video: \(data.didUploadVideoForAnalysis)")
-        print("  - Social Login: \(data.socialLoginProvider ?? "none")")
+        print("  - Social Login: \(data.socialLoginProvider ?? "nil")")
         print("  - Ready for Account Creation: \(isReadyForAccountCreation())")
     }
 }

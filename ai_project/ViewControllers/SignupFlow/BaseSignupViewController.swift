@@ -3,7 +3,6 @@ import UIKit
 class BaseSignupViewController: UIViewController {
     
     // MARK: - Public API
-    var progress: Float = 0 { didSet { updateProgress(animated: false) } }
     var hidesProgressBar: Bool = false { didSet { progressView?.isHidden = hidesProgressBar } }
     
     let continueButton = UIButton(type: .system)
@@ -29,6 +28,7 @@ class BaseSignupViewController: UIViewController {
     private static let progressTag = 426_888
     private weak var progressView: UIProgressView?
     private weak var backButton: UIButton?
+    private var progress = Float(0)
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -62,13 +62,8 @@ class BaseSignupViewController: UIViewController {
     
     // MARK: - Progress
     func setProgress(_ value: Float, animated: Bool) {
-        let clamped = max(0, min(1, value))
-        progress = clamped
         attachProgressInTitleView()
-        progressView?.setProgress(clamped, animated: animated)
-    }
-    
-    private func updateProgress(animated: Bool) {
+        progress = value
         progressView?.setProgress(progress, animated: animated)
     }
     

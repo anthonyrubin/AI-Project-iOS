@@ -5,7 +5,7 @@ final class AllowNotificationsViewController: BaseSignupViewController {
 
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.text = "Enable notifications to get the most out of CoachAI"
+        l.text = "Enable notifications to get the most out of Coach Cam"
         l.font = .systemFont(ofSize: 35, weight: .bold)
         l.numberOfLines = 0
         l.translatesAutoresizingMaskIntoConstraints = false
@@ -17,7 +17,7 @@ final class AllowNotificationsViewController: BaseSignupViewController {
 
     private let messageLabel: UILabel = {
         let l = UILabel()
-        l.text = "Coach AI would like to send you notifications"
+        l.text = "Coach Cam would like to send you notifications"
         l.numberOfLines = 0
         l.textAlignment = .center
         l.font = .systemFont(ofSize: 20, weight: .semibold)

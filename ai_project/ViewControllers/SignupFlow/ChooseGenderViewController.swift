@@ -46,7 +46,6 @@ final class ChooseGenderViewController: BaseSignupTableViewController {
         // Save gender to UserDefaults
         if let selectedItem = selectedItem {
             UserDefaultsManager.shared.updateBasicInfo(gender: selectedItem.title)
-            UserDefaultsManager.shared.updateProgress(progress: 0.35, step: "gender_set")
         }
         
         let vc = HeightAndWeightViewController()
@@ -67,7 +66,7 @@ extension ChooseGenderViewController: UITableViewDataSource, UITableViewDelegate
             let cell = tableView.dequeueReusableCell(withIdentifier: "StandardTitleCell", for: indexPath) as! StandardTitleCell
             cell.configure(
                 with: "Choose your gender",
-                subtitle: "CoachAI uses this information to improve AI accuracy.",
+                subtitle: "Coach Cam uses this information to improve AI accuracy.",
                 fontSize: 35)
             return cell
         }

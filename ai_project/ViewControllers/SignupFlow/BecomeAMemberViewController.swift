@@ -1,6 +1,6 @@
 import UIKit
-
-import UIKit
+import StoreKit
+import Combine
 
 final class Laurel5StarsView: UIView {
 
@@ -758,6 +758,15 @@ final class BecomeAMemberViewController: BaseSignupViewController {
         }
     }
 
+    // MARK: - Membership Properties
+    
+    private let storeKitManager = StoreKitManager.shared
+    private lazy var membershipManager: MembershipManager = {
+        let networkManager = NetworkManager(tokenManager: TokenManager())
+        return MembershipManager(networkManager: networkManager)
+    }()
+    private var cancellables = Set<AnyCancellable>()
+    
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
@@ -776,11 +785,30 @@ final class BecomeAMemberViewController: BaseSignupViewController {
             stickyCard.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             stickyCard.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+        
+        // Add restore purchases button
+        let restoreButton = UIButton(type: .system)
+        restoreButton.setTitle("Restore Purchases", for: .normal)
+        restoreButton.titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        restoreButton.setTitleColor(.systemBlue, for: .normal)
+        restoreButton.backgroundColor = .clear
+        restoreButton.translatesAutoresizingMaskIntoConstraints = false
+        restoreButton.addTarget(self, action: #selector(restorePurchasesTapped), for: .touchUpInside)
+        
+        view.addSubview(restoreButton)
+        NSLayoutConstraint.activate([
+            restoreButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            restoreButton.bottomAnchor.constraint(equalTo: stickyCard.topAnchor, constant: -16)
+        ])
 
         // Control indicator insets manually
         scrollView.automaticallyAdjustsScrollIndicatorInsets = false
 
         stickyCard.ctaButton.addTarget(self, action: #selector(didTapStartFreeTrial), for: .touchUpInside)
+        
+        // Setup membership
+        setupMembership()
+        setupMembershipBindings()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -978,6 +1006,129 @@ final class BecomeAMemberViewController: BaseSignupViewController {
     @objc private func didTapStartFreeTrial() {
         // Hook into your purchase flow
         print("Start Free Trial tapped")
+        
+        // Check if user is already a member
+        
+        if membershipManager.isMember {
+            // User is already a member, proceed to next step
+            print("User is already a member")
+            // TODO: Navigate to next step in signup flow
+        } else {
+            // User needs to become a member
+            initiateMembershipPurchase()
+        }
+    }
+    
+    // MARK: - Membership Methods
+    
+    private func setupMembership() {
+        // Check current membership status
+        Task {
+            await membershipManager.checkMembershipStatus()
+        }
+    }
+    
+    private func setupMembershipBindings() {
+        // Bind membership status changes
+        membershipManager.$isMember
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isMember in
+                self?.updateUIForMembershipStatus(isMember)
+            }
+            .store(in: &cancellables)
+        
+        // Bind loading state
+        membershipManager.$isLoading
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading in
+                // Update UI loading state if needed
+            }
+            .store(in: &cancellables)
+        
+        // Bind error messages
+        membershipManager.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] errorMessage in
+                if let errorMessage = errorMessage {
+                    self?.showError(errorMessage)
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func updateUIForMembershipStatus(_ isMember: Bool) {
+        if isMember {
+            // Update UI to show user is a member
+            stickyCard.ctaButton.setTitle("Continue", for: .normal)
+            // TODO: Update other UI elements as needed
+        } else {
+            // Update UI to show user needs to become a member
+            stickyCard.ctaButton.setTitle("Start Free Trial", for: .normal)
+        }
+    }
+    
+    private func initiateMembershipPurchase() {
+        guard let product = storeKitManager.monthlyMembershipProduct else {
+            showError("Product not available")
+            return
+        }
+        
+        Task {
+            do {
+                if let transaction = try await storeKitManager.purchase(product) {
+                    // Get the actual receipt data from the app bundle
+                    guard let receiptURL = Bundle.main.appStoreReceiptURL,
+                          let receiptData = try? Data(contentsOf: receiptURL) else {
+                        showError("Receipt not available")
+                        return
+                    }
+                    
+                    // Convert receipt data to base64 string
+                    let receiptString = receiptData.base64EncodedString()
+                    
+                    // Verify receipt with backend
+                    let success = await membershipManager.verifyReceipt(
+                        receiptData: receiptString,  // Base64 encoded receipt data
+                        transactionId: transaction.id.description
+                    )
+                    
+                    if success {
+                        showSuccess("Membership activated successfully!")
+                        // Update UI and proceed
+                        updateUIForMembershipStatus(true)
+                    } else {
+                        showError("Failed to activate membership")
+                    }
+                }
+            } catch {
+                showError(error.localizedDescription)
+            }
+        }
+    }
+    
+    private func showError(_ message: String) {
+        let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+    
+    private func showSuccess(_ message: String) {
+        let alert = UIAlertController(title: "Success", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+    
+    @objc private func restorePurchasesTapped() {
+        Task {
+            let success = await membershipManager.restorePurchase()
+            if success {
+                showSuccess("Purchase restored successfully!")
+                // Update UI
+                updateUIForMembershipStatus(true)
+            } else {
+                showError("No active purchases found")
+            }
+        }
     }
 }
 
@@ -1017,7 +1168,7 @@ class FreeTrialStepsView: UIView {
         let thirdStep = FreeTrialStepsData(
             icon: "star.circle.fill",
             title: "In 3 days: Subscription Begins",
-            subtitle: "Unlock your full potential with a CoachAI in your pocket."
+            subtitle: "Unlock your full potential with a Coach Cam in your pocket."
         )
         
         data = [

@@ -4,9 +4,7 @@ final class GreatPotentialViewController: BaseSignupViewController {
     
     private let titleLabel: UILabel = {
         let l = UILabel()
-        let sport = Sport(rawValue: UserDefaultsManager.shared.getSport()!)
-        let title = sport!.data().sentenceTitle
-        l.text = "CoachAI makes you a better \(title)."
+        l.text = "Coach Cam makes your form perfect."
         l.font = .systemFont(ofSize: 35, weight: .bold)
         l.numberOfLines = 0
         l.translatesAutoresizingMaskIntoConstraints = false

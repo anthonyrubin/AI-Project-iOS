@@ -42,7 +42,7 @@ final class HeightAndWeightViewController: BaseSignupViewController, UIPickerVie
 
     private let subtitleLabel: UILabel = {
         let l = UILabel()
-        l.text = "CoachAI uses this to give precise AI analysis and scoring.\n\nWe will never share this."
+        l.text = "Coach Cam uses this to give precise AI analysis and scoring.\n\nWe will never share this."
         l.font = .systemFont(ofSize: 18, weight: .regular)
         l.textColor = .secondaryLabel
         l.numberOfLines = 0
@@ -311,7 +311,6 @@ final class HeightAndWeightViewController: BaseSignupViewController, UIPickerVie
             weight: weightKg,
             isMetric: isMetric
         )
-        UserDefaultsManager.shared.updateProgress(progress: 0.45, step: "height_weight_set")
         
         let vc = BirthdayViewController()
         navigationController?.pushViewController(vc, animated: true)

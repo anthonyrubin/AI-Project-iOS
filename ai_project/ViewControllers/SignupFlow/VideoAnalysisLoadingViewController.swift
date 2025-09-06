@@ -224,7 +224,6 @@ final class VideoAnalysisLoadingViewController: BaseSignupViewController {
             // Throttle so flips never "machine gun"
             if now - lastStepFlipAt < minStepSpacing { break }
 
-            updateProgressSteps(currentIndex: messageIndex)
             messageIndex += 1
             lastStepFlipAt = now
         }
@@ -313,7 +312,6 @@ final class VideoAnalysisLoadingViewController: BaseSignupViewController {
                         // Ensure all steps show complete
                         if self.messageIndex < self.progressStepViews.count {
                             self.messageIndex = self.progressStepViews.count
-                            self.updateProgressSteps(currentIndex: self.progressStepViews.count - 1)
                         }
 
                         UINotificationFeedbackGenerator().notificationOccurred(.success)
@@ -449,4 +447,5 @@ class ProgressStepView: UIView {
         }
     }
 }
+
 

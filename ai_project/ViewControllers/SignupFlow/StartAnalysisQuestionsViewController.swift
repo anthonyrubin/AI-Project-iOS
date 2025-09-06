@@ -24,26 +24,24 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
     private let thumbCard = UIView()
     private let thumbImage = UIImageView()
 
-    private let sportGroup = UIStackView()
-    private let sportField = UIView()
-    private let sportCaption = UILabel()
-    private let sportValue = UILabel()
+    private let liftGroup = UIStackView()
+    private let liftField = UIView()
+    private let liftCaption = UILabel()
+    private let liftValue = UILabel()
     private let chevron = UIImageView(image: UIImage(systemName: "chevron.right"))
-    private let sportTable = UITableView(frame: .zero, style: .plain)
-    private var sportTableHeight: NSLayoutConstraint!
+    private let liftTable = UITableView(frame: .zero, style: .plain)
+    private var liftTableHeight: NSLayoutConstraint!
 
     // Dropdown state
     private var dropdownOpen = false
     private let cornerRadius: CGFloat = 12
 
-    // Sports
-    private var sports: [String] = []
-    private var selectedSport: String = "" {
-        didSet { sportValue.text = selectedSport }
+    // Lift
+    private var lifts: [String] = []
+    private var selectedLift: String = "" {
+        didSet { liftValue.text = selectedLift }
     }
     
-    private var sport: Sport
-
     // Prompt
     private let promptLabel: UILabel = {
         let l = UILabel()
@@ -67,10 +65,8 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
     // MARK: – Init
     init(thumbnail: UIImage?, videoURL: URL? = nil, prefill: String? = nil) {
         
-        self.sport = Sport(rawValue: UserDefaultsManager.shared.getSport()!)!
-        selectedSport = self.sport.rawValue.capitalized
-        for _sport in Sport.allCases {
-            sports.append(_sport.rawValue.capitalized)
+        for _lift in Lift.allCases {
+            lifts.append(_lift.rawValue.capitalized)
         }
         
         self.thumbnail = thumbnail
@@ -120,55 +116,55 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
         thumbCard.addSubview(thumbImage)
 
         // ✅ Sport group (field + table) with spacing = 0
-        sportGroup.axis = .vertical
-        sportGroup.alignment = .fill
-        sportGroup.spacing = 0
-        sportGroup.translatesAutoresizingMaskIntoConstraints = false
-        content.addArrangedSubview(sportGroup)
+        liftGroup.axis = .vertical
+        liftGroup.alignment = .fill
+        liftGroup.spacing = 0
+        liftGroup.translatesAutoresizingMaskIntoConstraints = false
+        content.addArrangedSubview(liftGroup)
 
         // sportField (tappable)
-        sportField.backgroundColor = .secondarySystemBackground
-        sportField.layer.cornerRadius = cornerRadius
-        sportField.layer.cornerCurve = .continuous
-        sportField.translatesAutoresizingMaskIntoConstraints = false
+        liftField.backgroundColor = .secondarySystemBackground
+        liftField.layer.cornerRadius = cornerRadius
+        liftField.layer.cornerCurve = .continuous
+        liftField.translatesAutoresizingMaskIntoConstraints = false
 
         // Field content
-        sportCaption.text = "Sport"
-        sportCaption.font = .systemFont(ofSize: 16, weight: .semibold)
-        sportCaption.textColor = .secondaryLabel
-        sportCaption.translatesAutoresizingMaskIntoConstraints = false
+        liftCaption.text = "Lift"
+        liftCaption.font = .systemFont(ofSize: 16, weight: .semibold)
+        liftCaption.textColor = .secondaryLabel
+        liftCaption.translatesAutoresizingMaskIntoConstraints = false
 
-        sportValue.text = selectedSport
-        sportValue.font = .systemFont(ofSize: 22, weight: .semibold)
-        sportValue.translatesAutoresizingMaskIntoConstraints = false
+        liftValue.text = selectedLift
+        liftValue.font = .systemFont(ofSize: 22, weight: .semibold)
+        liftValue.translatesAutoresizingMaskIntoConstraints = false
 
         chevron.tintColor = .tertiaryLabel
         chevron.translatesAutoresizingMaskIntoConstraints = false
         chevron.contentMode = .scaleAspectFit
 
-        sportField.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(toggleDropdown)))
-        sportField.addSubview(sportCaption)
-        sportField.addSubview(sportValue)
-        sportField.addSubview(chevron)
+        liftField.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(toggleDropdown)))
+        liftField.addSubview(liftCaption)
+        liftField.addSubview(liftValue)
+        liftField.addSubview(chevron)
 
         // sportTable (dropdown)
-        sportTable.isHidden = true
-        sportTable.alpha = 0
-        sportTable.layer.masksToBounds = true
-        sportTable.layer.cornerRadius = cornerRadius
-        sportTable.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner] // bottom only; top corners handled by field
-        sportTable.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
-        sportTable.rowHeight = 52
-        sportTable.dataSource = self
-        sportTable.delegate = self
-        sportTable.translatesAutoresizingMaskIntoConstraints = false
+        liftTable.isHidden = true
+        liftTable.alpha = 0
+        liftTable.layer.masksToBounds = true
+        liftTable.layer.cornerRadius = cornerRadius
+        liftTable.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner] // bottom only; top corners handled by field
+        liftTable.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+        liftTable.rowHeight = 52
+        liftTable.dataSource = self
+        liftTable.delegate = self
+        liftTable.translatesAutoresizingMaskIntoConstraints = false
 
         // Assemble group
-        sportGroup.addArrangedSubview(sportField)
-        sportGroup.addArrangedSubview(sportTable)
+        liftGroup.addArrangedSubview(liftField)
+        liftGroup.addArrangedSubview(liftTable)
 
         // After group, keep normal spacing before prompt
-        content.setCustomSpacing(24, after: sportGroup)
+        content.setCustomSpacing(24, after: liftGroup)
 
         // Prompt
         content.addArrangedSubview(promptLabel)
@@ -207,7 +203,7 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
         detailsText.translatesAutoresizingMaskIntoConstraints = false
         detailsCard.addSubview(detailsText)
 
-        placeholder.text = sport.analysisPlaceholder()
+//        placeholder.text = lift.analysisPlaceholder()
         placeholder.textColor = .tertiaryLabel
         placeholder.font = .systemFont(ofSize: 18, weight: .regular)
         placeholder.numberOfLines = 0
@@ -248,24 +244,24 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
 
         // Sport field internals
         NSLayoutConstraint.activate([
-            sportCaption.topAnchor.constraint(equalTo: sportField.topAnchor, constant: 16),
-            sportCaption.leadingAnchor.constraint(equalTo: sportField.leadingAnchor, constant: 16),
-            sportCaption.trailingAnchor.constraint(lessThanOrEqualTo: sportField.trailingAnchor, constant: -16),
+            liftCaption.topAnchor.constraint(equalTo: liftField.topAnchor, constant: 16),
+            liftCaption.leadingAnchor.constraint(equalTo: liftField.leadingAnchor, constant: 16),
+            liftCaption.trailingAnchor.constraint(lessThanOrEqualTo: liftField.trailingAnchor, constant: -16),
 
-            sportValue.topAnchor.constraint(equalTo: sportCaption.bottomAnchor, constant: 6),
-            sportValue.leadingAnchor.constraint(equalTo: sportCaption.leadingAnchor),
-            sportValue.trailingAnchor.constraint(lessThanOrEqualTo: chevron.leadingAnchor, constant: -8),
-            sportValue.bottomAnchor.constraint(equalTo: sportField.bottomAnchor, constant: -16),
+            liftValue.topAnchor.constraint(equalTo: liftCaption.bottomAnchor, constant: 6),
+            liftValue.leadingAnchor.constraint(equalTo: liftCaption.leadingAnchor),
+            liftValue.trailingAnchor.constraint(lessThanOrEqualTo: chevron.leadingAnchor, constant: -8),
+            liftValue.bottomAnchor.constraint(equalTo: liftField.bottomAnchor, constant: -16),
 
-            chevron.centerYAnchor.constraint(equalTo: sportField.centerYAnchor),
-            chevron.trailingAnchor.constraint(equalTo: sportField.trailingAnchor, constant: -16),
+            chevron.centerYAnchor.constraint(equalTo: liftField.centerYAnchor),
+            chevron.trailingAnchor.constraint(equalTo: liftField.trailingAnchor, constant: -16),
             chevron.widthAnchor.constraint(equalToConstant: 16),
             chevron.heightAnchor.constraint(equalToConstant: 16),
         ])
 
         // Dropdown height (starts collapsed)
-        sportTableHeight = sportTable.heightAnchor.constraint(equalToConstant: 0)
-        sportTableHeight.isActive = true
+        liftTableHeight = liftTable.heightAnchor.constraint(equalToConstant: 0)
+        liftTableHeight.isActive = true
 
         // Details card internals
         NSLayoutConstraint.activate([
@@ -291,9 +287,9 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
     @objc private func toggleDropdown() {
         dropdownOpen.toggle()
 
-        let rows = min(6, sports.count)
-        sportTable.isHidden = false
-        sportTableHeight.constant = dropdownOpen ? CGFloat(rows) * 52.0 : 0
+        let rows = min(6, lifts.count)
+        liftTable.isHidden = false
+        liftTableHeight.constant = dropdownOpen ? CGFloat(rows) * 52.0 : 0
 
         updateCornerMasks(isOpen: dropdownOpen)
 
@@ -302,54 +298,54 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
                        options: [.beginFromCurrentState, .curveEaseInOut]) {
             self.chevron.transform = self.dropdownOpen ? CGAffineTransform(rotationAngle: .pi/2) : .identity
             self.view.layoutIfNeeded()
-            self.sportTable.alpha = self.dropdownOpen ? 1 : 0
+            self.liftTable.alpha = self.dropdownOpen ? 1 : 0
         } completion: { _ in
             if !self.dropdownOpen {
-                self.sportTable.isHidden = true
+                self.liftTable.isHidden = true
                 self.updateCornerMasks(isOpen: false)
-            } else if let idx = self.sports.firstIndex(of: self.selectedSport) {
+            } else if let idx = self.lifts.firstIndex(of: self.selectedLift) {
                 let ip = IndexPath(row: idx, section: 0)
-                self.sportTable.reloadData()
-                self.sportTable.selectRow(at: ip, animated: false, scrollPosition: .middle)
+                self.liftTable.reloadData()
+                self.liftTable.selectRow(at: ip, animated: false, scrollPosition: .middle)
             }
         }
     }
 
     private func updateCornerMasks(isOpen: Bool) {
         if isOpen {
-            sportField.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-            sportTable.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+            liftField.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+            liftTable.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         } else {
-            sportField.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner,
+            liftField.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner,
                                               .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
-            sportTable.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+            liftTable.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         }
     }
 
     // MARK: – UITableViewDataSource
     func numberOfSections(in tableView: UITableView) -> Int { 1 }
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { sports.count }
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { lifts.count }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let id = "sportCell"
         let cell = tableView.dequeueReusableCell(withIdentifier: id) ??
                    UITableViewCell(style: .default, reuseIdentifier: id)
-        let name = sports[indexPath.row]
+        let name = lifts[indexPath.row]
         cell.textLabel?.text = name
         cell.textLabel?.font = .systemFont(ofSize: 18, weight: .regular)
         cell.textLabel?.textColor = .label
         cell.backgroundColor = .secondarySystemBackground
         cell.selectionStyle = .none
-        let isSel = (name == selectedSport)
+        let isSel = (name == selectedLift)
         cell.accessoryType = isSel ? .checkmark : .none
         return cell
     }
 
     // MARK: – UITableViewDelegate
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        selectedSport = sports[indexPath.row]
-        sport = Sport(rawValue: selectedSport.lowercased())!
-        placeholder.text = sport.analysisPlaceholder()
+        selectedLift = lifts[indexPath.row]
+        let lift = Lift(rawValue: selectedLift.lowercased())!
+        placeholder.text = lift.analysisPlaceholder()
         tableView.reloadData()
         toggleDropdown()
     }
@@ -362,8 +358,6 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
     }
     
     private func setUserDefaults() {
-        UserDefaultsManager.shared.updateProgress(progress: 0.50, step: "sport_selected")
-        
         // Save video data for analysis
         UserDefaultsManager.shared.updateVideoAnalysis(
             didUpload: true,

@@ -1,100 +1,154 @@
-//.init(title: "Golf", iconName: "figure.golf", passdownTitle: "golfer"),
-//.init(title: "Tennis", iconName: "figure.tennis", passdownTitle: "tennis player"),
-//.init(title: "Pickleball", iconName: "figure.pickleball", passdownTitle: "pickleball player"),
-//.init(title: "Basketball", iconName: "figure.basketball", passdownTitle: "basketball player"),
-//.init(title: "Baseball", iconName: "figure.baseball", passdownTitle: "baseball player"),
-//.init(title: "Soccer", iconName: "figure.indoor.soccer", passdownTitle: "soccer player"),
-//.init(title: "Weightlifting", iconName: "figure.strengthtraining.traditional", passdownTitle: "weightlifter"),
-//.init(title: "Running", iconName: "figure.run", passdownTitle: "runner"),
-//.init(title: "Track & Field", iconName: "figure.track.and.field", passdownTitle: "track athlete"),
-//.init(title: "Football (American)", iconName: "figure.american.football", passdownTitle: "football player"),
-//.init(title: "Volleyball",  iconName: "figure.volleyball", passdownTitle: "volleyball player"),
-//.init(title: "Hockey", iconName: "figure.hockey", passdownTitle: "hockey player"),
-//.init(title: "Softball", iconName: "figure.softball", passdownTitle: "softball player"),
-////.init(title: "Lacrosse", iconName: "figure.lacrosse", passdownTitle: "lacrosse player"),
-////.init(title: "Cricket", iconName: "figure.cricket", passdownTitle: "cricketer"),
-//.init(title: "Badminton", iconName: "figure.badminton", passdownTitle: "badminton player"),
-//.init(title: "Table Tennis", iconName: "figure.table.tennis", passdownTitle: "table tennis player"),
-//.init(title: "Rowing", iconName: "figure.indoor.rowing", passdownTitle: "rower"),
-//.init(title: "Striking (Boxing / Kickboxing / TKD)", iconName: "figure.boxing", passdownTitle: "fighter")
-
-struct SportData {
-    let sport: Sport
+struct LiftData {
+    let lift: Lift
     let icon: String
-    let sentenceTitle: String
-    let imagePrefix: String
+    let sentenceTitle: String   // e.g., “CoachAI makes you a better \(sentenceTitle)”
+    let imagePrefix: String     // asset key prefix, e.g., “clean_and_jerk”
 }
 
-enum Sport: String, CaseIterable {
-    case golf, tennis, pickleball,
-         basketball, baseball, soccer,
-         weightlifting, running, football,
-         volleyball, hockey, softball,
-         badminton, rowing, striking
-    case trackAndField = "track & field"
-    case tableTennis = "table tennis"
+enum Lift: String, CaseIterable {
+    // Powerlifting / gym staples
+    case deadlift
+    case backSquat = "back squat"
+    case benchPress = "bench press"
+    case overheadPress = "overhead press"
+    case barbellRow = "barbell row"
+    case romanianDeadlift = "romanian deadlift"
+    case hipThrust = "hip thrust"
+    case pullUp = "pull up"
+    case dip
+    case frontSquat = "front squat"
+
+    // Olympic lifts & close variants
+    case cleanAndJerk = "clean and jerk"
+    case snatch
+    case powerClean = "power clean"
+    case powerSnatch = "power snatch"
+    case hangPowerClean = "hang power clean"
+    case hangPowerSnatch = "hang power snatch"
+    case pushPress = "push press"
+    case splitJerk = "split jerk"
 }
 
-extension Sport {
-    func data() -> SportData {
+extension Lift {
+    func data() -> LiftData {
         switch self {
-        case .golf: return SportData(sport: self, icon: "figure.golf", sentenceTitle: "golfer", imagePrefix: "golf")
-        case .tennis: return SportData(sport: self, icon: "figure.tennis", sentenceTitle: "tennis player", imagePrefix: "tennis")
-        case .pickleball: return SportData(sport: self, icon: "figure.pickleball", sentenceTitle: "pickleball player", imagePrefix: "pickleball")
-        case .basketball: return SportData(sport: self, icon: "figure.basketball", sentenceTitle: "basketball player", imagePrefix: "basketball")
-        case .baseball: return SportData(sport: self, icon: "figure.baseball", sentenceTitle: "baseball player", imagePrefix: "baseball")
-        case .soccer: return SportData(sport: self, icon: "figure.indoor.soccer", sentenceTitle: "soccer player", imagePrefix: "soccer")
-        case .weightlifting: return SportData(sport: self, icon: "figure.strengthtraining.traditional", sentenceTitle: "weightlifter", imagePrefix: "weightlifting")
-        case .running: return SportData(sport: self, icon: "figure.run", sentenceTitle: "runner", imagePrefix: "running")
-        case .football: return SportData(sport: self, icon: "figure.american.football", sentenceTitle: "football player", imagePrefix: "football")
-        case .volleyball: return SportData(sport: self, icon: "figure.volleyball", sentenceTitle: "volleyball player", imagePrefix: "volleyball")
-        case .hockey: return SportData(sport: self, icon: "figure.hockey", sentenceTitle: "hockey player", imagePrefix: "hockey")
-        case .softball: return SportData(sport: self, icon: "figure.softball", sentenceTitle: "softball player", imagePrefix: "softball")
-        case .badminton: return SportData(sport: self, icon: "figure.badminton", sentenceTitle: "badminton player", imagePrefix: "badminton")
-        case .rowing: return SportData(sport: self, icon: "figure.indoor.rowing", sentenceTitle: "rower", imagePrefix: "rowing")
-        case .striking: return SportData(sport: self, icon: "figure.boxing", sentenceTitle: "fighter", imagePrefix: "striking")
-        case .tableTennis: return SportData(sport: self, icon: "figure.table.tennis", sentenceTitle: "table tennis player", imagePrefix: "table_tennis")
-        case .trackAndField: return SportData(sport: self, icon: "figure.track.and.field", sentenceTitle: "track athlete", imagePrefix: "track_and_field")
+        // MARK: - Gym staples
+        case .deadlift:
+            return LiftData(lift: self, icon: "figure.strengthtraining.traditional",
+                            sentenceTitle: "deadlifter", imagePrefix: "deadlift")
+
+        case .backSquat:
+            return LiftData(lift: self, icon: "figure.strengthtraining.traditional",
+                            sentenceTitle: "squatter", imagePrefix: "back_squat")
+
+        case .benchPress:
+            return LiftData(lift: self, icon: "dumbbell",
+                            sentenceTitle: "bench presser", imagePrefix: "bench_press")
+
+        case .overheadPress:
+            return LiftData(lift: self, icon: "figure.strengthtraining.traditional",
+                            sentenceTitle: "overhead presser", imagePrefix: "overhead_press")
+
+        case .barbellRow:
+            return LiftData(lift: self, icon: "dumbbell",
+                            sentenceTitle: "barbell rower", imagePrefix: "barbell_row")
+
+        case .romanianDeadlift:
+            return LiftData(lift: self, icon: "figure.strengthtraining.traditional",
+                            sentenceTitle: "RDL lifter", imagePrefix: "rdl")
+
+        case .hipThrust:
+            return LiftData(lift: self, icon: "figure.strengthtraining.traditional",
+                            sentenceTitle: "hip thruster", imagePrefix: "hip_thrust")
+
+        case .pullUp:
+            return LiftData(lift: self, icon: "figure.pullup", // fallback to "figure.strengthtraining.traditional" if needed
+                            sentenceTitle: "pull-up athlete", imagePrefix: "pull_up")
+
+        case .dip:
+            return LiftData(lift: self, icon: "figure.strengthtraining.traditional",
+                            sentenceTitle: "dip athlete", imagePrefix: "dip")
+
+        case .frontSquat:
+            return LiftData(lift: self, icon: "figure.strengthtraining.traditional",
+                            sentenceTitle: "front squatter", imagePrefix: "front_squat")
+
+        // MARK: - Olympic lifts
+        case .cleanAndJerk:
+            return LiftData(lift: self, icon: "figure.strengthtraining.traditional",
+                            sentenceTitle: "Olympic lifter", imagePrefix: "clean_and_jerk")
+
+        case .snatch:
+            return LiftData(lift: self, icon: "figure.strengthtraining.traditional",
+                            sentenceTitle: "Olympic lifter", imagePrefix: "snatch")
+
+        case .powerClean:
+            return LiftData(lift: self, icon: "figure.strengthtraining.traditional",
+                            sentenceTitle: "power cleaner", imagePrefix: "power_clean")
+
+        case .powerSnatch:
+            return LiftData(lift: self, icon: "figure.strengthtraining.traditional",
+                            sentenceTitle: "power snatcher", imagePrefix: "power_snatch")
+
+        case .hangPowerClean:
+            return LiftData(lift: self, icon: "figure.strengthtraining.traditional",
+                            sentenceTitle: "hang power cleaner", imagePrefix: "hang_power_clean")
+
+        case .hangPowerSnatch:
+            return LiftData(lift: self, icon: "figure.strengthtraining.traditional",
+                            sentenceTitle: "hang power snatcher", imagePrefix: "hang_power_snatch")
+
+        case .pushPress:
+            return LiftData(lift: self, icon: "figure.strengthtraining.traditional",
+                            sentenceTitle: "push presser", imagePrefix: "push_press")
+
+        case .splitJerk:
+            return LiftData(lift: self, icon: "figure.strengthtraining.traditional",
+                            sentenceTitle: "jerker", imagePrefix: "split_jerk")
         }
     }
-    
+
     func analysisPlaceholder() -> String {
         switch self {
-        case .golf:
-            return "Analyze my driver swing: club path, face angle, contact, weight shift."
-        case .tennis:
-            return "Break down my serve: toss, racquet drop, pronation, leg drive."
-        case .pickleball:
-            return "Assess my third-shot drop and dinks: paddle angle, contact point, footwork."
-        case .basketball:
-            return "Critique my jump shot: release, elbow alignment, lift, balance."
-        case .baseball:
-            return "Analyze my batting swing: timing, hip rotation, bat path."
-        case .soccer:
-            return "Assess my shooting form: plant foot, hip rotation, contact point."
-        case .weightlifting:
-            return "Check my back squat: depth, knee tracking, bracing, bar path."
-        case .running:
-            return "Evaluate my distance form: cadence, foot strike, hip posture, arm swing."
-        case .football:
-            return "Analyze my acceleration and cutting on this route: stance, first step, change of direction."
-        case .volleyball:
-            return "Break down my spike: approach steps, jump timing, arm swing, contact."
-        case .hockey:
-            return "Assess my skating stride: knee bend, edge control, extension, recovery."
-        case .softball:
-            return "Analyze my swing: timing, hip rotation, bat path."
-        case .badminton:
-            return "Evaluate my overhead smash: grip, footwork, contact height, recovery."
-        case .rowing:
-            return "Break down my stroke: catch, drive, finish, sequencing."
-        case .striking:
-            return "Critique my cross and hook: guard, hip rotation, weight transfer, recoil."
-        case .tableTennis:
-            return "Assess my forehand loop: timing, footwork, contact point, spin."
-        case .trackAndField:
-            return "Analyze my sprint mechanics: block setup, drive, transition, upright posture."
+        // MARK: - Gym staples
+        case .deadlift:
+            return "Check my deadlift: bar over mid-foot, slack pull, hip/shoulder timing, lumbar neutrality, lockout."
+        case .backSquat:
+            return "Check my back squat: depth, knee tracking, bracing, bar path, hip drive."
+        case .benchPress:
+            return "Check my bench press: touch point, elbow flare, bar path (J-curve), scap retraction, leg drive."
+        case .overheadPress:
+            return "Check my overhead press: bar path close to face, rib flare control, vertical forearms, lockout."
+        case .barbellRow:
+            return "Check my barbell row: torso angle, bar path to lower ribcage, scap retraction, momentum control."
+        case .romanianDeadlift:
+            return "Check my RDL: hip hinge, minimal knee travel, bar proximity, neutral lumbar, hamstring tension."
+        case .hipThrust:
+            return "Check my hip thrust: shin vertical at top, full hip extension, posterior pelvic tilt, no lumbar over-extension."
+        case .pullUp:
+            return "Check my pull-up: full range, scap depression first, minimal leg swing, chin clear at top."
+        case .dip:
+            return "Check my dip: shoulder depth (below elbows), forearm vertical, torso angle, scapular position."
+        case .frontSquat:
+            return "Check my front squat: upright torso, full depth, knees tracking, elbows high in the rack, bracing."
+
+        // MARK: - Olympic lifts
+        case .cleanAndJerk:
+            return "Check my clean & jerk: bar path close, powerful extension, fast elbows/rack, solid dip/drive, stable overhead lockout and footwork."
+        case .snatch:
+            return "Check my snatch: balanced start, vertical bar path, full extension, fast turnover, stable overhead in the bottom."
+        case .powerClean:
+            return "Check my power clean: bar close, extension timing, aggressive pull under, rack height without raiding the hips."
+        case .powerSnatch:
+            return "Check my power snatch: bar close, extension timing, punch under to solid overhead catch above parallel."
+        case .hangPowerClean:
+            return "Check my hang power clean: controlled hinge to hang, no early arm pull, vertical drive, quick rack."
+        case .hangPowerSnatch:
+            return "Check my hang power snatch: consistent hang position, vertical drive, fast turnover, stable catch above parallel."
+        case .pushPress:
+            return "Check my push press: vertical dip (knees forward, heels down), dip depth consistency, bar path stacked overhead."
+        case .splitJerk:
+            return "Check my split jerk: balanced dip/drive, aggressive punch under, front/back foot placement, stacked lockout, stable recovery."
         }
     }
 }
-

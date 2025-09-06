@@ -1,22 +1,15 @@
 import UIKit
 
 // MARK: - ViewController
-final class GoalsViewController: BaseSignupTableViewController {
+final class WorkoutDaysPerWeekViewController: BaseSignupTableViewController {
     
     private let items: [LeftSFIconCellData] = [
-        .init(title: "Improve consistently", iconName: "chart.line.uptrend.xyaxis"),
-        .init(title: "Fix my form / technique", iconName: "wrench.and.screwdriver.fill"),
-        .init(title: "Learn a new skill", iconName: "lightbulb.max.fill"),
-        .init(title: "Improve accuracy / consistency", iconName: "dot.scope"),
-        .init(title: "Increase power / speed", iconName: "bolt.fill"),
-        .init(title: "Build endurance / athleticism", iconName: "figure.run"),
-        .init(title: "Prepare for an event / tryout", iconName: "calendar"),
-        .init(title: "Return from injury safely", iconName: "bandage.fill"),
-        .init(title: "Go pro / reach elite level", iconName: "trophy.fill"),
-        .init(title: "Have fun / stay active", iconName: "face.smiling.inverse")
+        .init(title: "1-2 (Casual)", iconName: "leaf"),
+        .init(title: "3-4 (Regular)", iconName: "wind"),
+        .init(title: "5+ (Dedicated)", iconName: "bolt")
     ]
 
-    private var selected = Set<LeftSFIconCellData>() // multi-select, max 3
+    private var selected: LeftSFIconCellData? = nil
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -43,7 +36,7 @@ final class GoalsViewController: BaseSignupTableViewController {
     }
 
     private func updateContinueState() {
-        let enabled = !selected.isEmpty
+        let enabled = (selected != nil)
         continueButton.isEnabled = enabled
         continueButton.alpha = enabled ? 1.0 : 0.4
     }
@@ -52,11 +45,9 @@ final class GoalsViewController: BaseSignupTableViewController {
         super.didTapContinue()
         
         // Save goals to UserDefaults
-        let selectedGoalTitles = Array(selected).map { $0.title }
         UserDefaultsManager.shared.updateGoals(
-            selectedGoals: selectedGoalTitles
+            workoutDaysPerWeek: selected?.title
         )
-        UserDefaultsManager.shared.updateProgress(progress: 0.55, step: "goals_set")
         
         let vc = GreatPotentialViewController()
         navigationController?.pushViewController(vc, animated: true)
@@ -64,7 +55,7 @@ final class GoalsViewController: BaseSignupTableViewController {
 }
 
 // MARK: - Data Source & Delegate
-extension GoalsViewController: UITableViewDataSource, UITableViewDelegate {
+extension WorkoutDaysPerWeekViewController: UITableViewDataSource, UITableViewDelegate {
     func numberOfSections(in tableView: UITableView) -> Int { 2 }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -75,59 +66,49 @@ extension GoalsViewController: UITableViewDataSource, UITableViewDelegate {
         if indexPath.section == 0 {
             let cell = tableView.dequeueReusableCell(withIdentifier: "StandardTitleCell", for: indexPath) as! StandardTitleCell
             cell.configure(
-                with: "What do you want to improve?",
-                subtitle: "Pick up to three.",
+                with: "How many days per week do you train?",
+                subtitle: "This gives our AI model a general idea of your athleticism.",
                 fontSize: 35
             )
             return cell
         }
         let item = items[indexPath.row]
         let cell = tableView.dequeueReusableCell(withIdentifier: LeftSFIconCell.reuseID, for: indexPath) as! LeftSFIconCell
-        cell.configure(item, selected: selected.contains(item))
+        cell.configure(item, selected: selected == item)
         return cell
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         guard indexPath.section == 1 else { return }
+        firePressHaptic()
         tableView.deselectRow(at: indexPath, animated: false)
 
-        let item = items[indexPath.row]
-        let isAlreadySelected = selected.contains(item)
+        let tapped = items[indexPath.row]
 
-        // Enforce cap: if trying to add a 4th, reject and give tiny feedback
-        if !isAlreadySelected && selected.count >= 3 {
-            if let cell = tableView.cellForRow(at: indexPath) {
-                shake(cell)
-            }
-            // Optional: warning haptic
-            // let gen = UINotificationFeedbackGenerator(); gen.notificationOccurred(.warning)
-            return
-        }
-
-        // Toggle selection
-        if isAlreadySelected {
-            selected.remove(item)
+        if selected == tapped {
+            // tap again to clear (optional—keeps UX flexible)
+            selected = nil
             if let cell = tableView.cellForRow(at: indexPath) as? LeftSFIconCell {
                 cell.setSelectedAppearance(false, animated: true)
             }
         } else {
-            selected.insert(item)
-            firePressHaptic() // success haptic only when toggle succeeds
+            // turn off previous
+            if let prev = selected, let prevRow = items.firstIndex(of: prev) {
+                let prevPath = IndexPath(row: prevRow, section: 1)
+                if let prevCell = tableView.cellForRow(at: prevPath) as? LeftSFIconCell {
+                    prevCell.setSelectedAppearance(false, animated: true)
+                } else {
+                    tableView.reloadRows(at: [prevPath], with: .none)
+                }
+            }
+            // select new
+            selected = items[indexPath.row]
             if let cell = tableView.cellForRow(at: indexPath) as? LeftSFIconCell {
                 cell.setSelectedAppearance(true, animated: true)
             }
         }
 
         updateContinueState()
-    }
-
-    // Simple shake for over-limit taps
-    private func shake(_ view: UIView) {
-        let anim = CAKeyframeAnimation(keyPath: "transform.translation.x")
-        anim.values = [0, 8, -8, 6, -6, 0]
-        anim.duration = 0.30
-        anim.calculationMode = .cubic
-        view.layer.add(anim, forKey: "shake")
     }
 }
 

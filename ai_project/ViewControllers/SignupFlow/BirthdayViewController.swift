@@ -23,7 +23,7 @@ final class BirthdayViewController: BaseSignupViewController {
 
     private let subtitleLabel: UILabel = {
         let l = UILabel()
-        l.text = "CoachAI sets age-based targets and comparisons."
+        l.text = "Coach Cam sets age-based targets and comparisons."
         l.font = .systemFont(ofSize: 18, weight: .regular)
         l.textColor = .secondaryLabel
         l.numberOfLines = 0

@@ -87,8 +87,6 @@ final class CreateAccountViewController: BaseSignupViewController {
         super.viewDidLoad()
         buildUI()
         setProgress(1.0, animated: false)
-
-        UserDefaultsManager.shared.updateProgress(progress: 0.55, step: "create_account")
         
         // Debug: Print current signup data
         UserDefaultsManager.shared.debugPrintSignupData()

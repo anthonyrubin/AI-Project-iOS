@@ -1,15 +1,18 @@
 import UIKit
 
 // MARK: - ViewController
-final class SelectSportViewController: BaseSignupTableViewController {
+final class LiftingExperienceViewController: BaseSignupTableViewController {
 
-    private var items: [LeftSFIconCellData] = []
-    private var sports: [Sport] = []
+    private var items: [LeftSFIconCellData] = [
+        LeftSFIconCellData(title: "Beginner (0–6 months)", iconName: "sparkles"),
+        LeftSFIconCellData(title: "Intermediate (1-2 years)", iconName: "figure.highintensity.intervaltraining"),
+        LeftSFIconCellData(title: "Advanced (3–5 years)", iconName: "figure.strengthtraining.traditional"),
+        LeftSFIconCellData(title: "Expert (5+ years)", iconName: "flame"),
+    ]
 
-    private var selectedItem: Sport?   // ← single selection
+    private var selectedItem: LeftSFIconCellData?   // ← single selection
 
     override func viewDidLoad() {
-        setData()
         super.viewDidLoad()
         setProgress(0.09, animated: false)
         updateContinueState()
@@ -41,23 +44,14 @@ final class SelectSportViewController: BaseSignupTableViewController {
     
     override func didTapContinue() {
         super.didTapContinue()
-        UserDefaultsManager.shared.updateGoals(sport: selectedItem!.rawValue)
-        let vc = GoalsViewController()
+        UserDefaultsManager.shared.updateGoals(experience: selectedItem!.title)
+        let vc = WorkoutDaysPerWeekViewController()
         navigationController?.pushViewController(vc, animated: true)
-    }
-    
-    private func setData() {
-        Sport.allCases.forEach({ sport in
-            items.append(LeftSFIconCellData(
-                title: sport.rawValue.capitalized,
-                iconName: sport.data().icon))
-            sports.append(sport)
-        })
     }
 }
 
 // MARK: - Data Source & Delegate
-extension SelectSportViewController: UITableViewDataSource, UITableViewDelegate {
+extension LiftingExperienceViewController: UITableViewDataSource, UITableViewDelegate {
     func numberOfSections(in tableView: UITableView) -> Int { 2 }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -68,16 +62,15 @@ extension SelectSportViewController: UITableViewDataSource, UITableViewDelegate 
         if indexPath.section == 0 {
             let cell = tableView.dequeueReusableCell(withIdentifier: "StandardTitleCell", for: indexPath) as! StandardTitleCell
             cell.configure(
-                with: "What sport are you here for?",
-                subtitle: "Pick one to start. You can change add more any time.",
+                with: "How long have you been lifting?",
+                subtitle: "We custom tailor our AI feedback to your experience level.",
                 fontSize: 35
             )
             return cell
         }
         let item = items[indexPath.row]
-        let sport = sports[indexPath.row]
         let cell = tableView.dequeueReusableCell(withIdentifier: LeftSFIconCell.reuseID, for: indexPath) as! LeftSFIconCell
-        cell.configure(item, selected: selectedItem == sport)
+        cell.configure(item, selected: selectedItem == item)
         return cell
     }
 
@@ -86,7 +79,7 @@ extension SelectSportViewController: UITableViewDataSource, UITableViewDelegate 
         firePressHaptic()
         tableView.deselectRow(at: indexPath, animated: false)
 
-        let tapped = sports[indexPath.row]
+        let tapped = items[indexPath.row]
 
         if selectedItem == tapped {
             // tap again to clear (optional—keeps UX flexible)
@@ -96,7 +89,7 @@ extension SelectSportViewController: UITableViewDataSource, UITableViewDelegate 
             }
         } else {
             // turn off previous
-            if let prev = selectedItem, let prevRow = sports.firstIndex(of: prev) {
+            if let prev = selectedItem, let prevRow = items.firstIndex(of: prev) {
                 let prevPath = IndexPath(row: prevRow, section: 1)
                 if let prevCell = tableView.cellForRow(at: prevPath) as? LeftSFIconCell {
                     prevCell.setSelectedAppearance(false, animated: true)
@@ -105,7 +98,7 @@ extension SelectSportViewController: UITableViewDataSource, UITableViewDelegate 
                 }
             }
             // select new
-            selectedItem = sports[indexPath.row]
+            selectedItem = items[indexPath.row]
             if let cell = tableView.cellForRow(at: indexPath) as? LeftSFIconCell {
                 cell.setSelectedAppearance(true, animated: true)
             }

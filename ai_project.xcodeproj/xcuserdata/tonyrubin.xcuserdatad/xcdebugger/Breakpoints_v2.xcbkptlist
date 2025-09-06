@@ -438,10 +438,10 @@
             filePath = "ai_project/ViewControllers/SignupFlow/CreateAccountViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "205"
-            endingLineNumber = "205"
-            landmarkName = "navigateToName()"
-            landmarkType = "7">
+            startingLineNumber = "203"
+            endingLineNumber = "203"
+            landmarkName = "CreateAccountViewController"
+            landmarkType = "3">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -682,8 +682,8 @@
             filePath = "ai_project/ViewControllers/SignupFlow/CreateAccountViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "167"
-            endingLineNumber = "167"
+            startingLineNumber = "165"
+            endingLineNumber = "165"
             landmarkName = "setupViewModelBindings()"
             landmarkType = "7">
          </BreakpointContent>
@@ -794,9 +794,9 @@
             filePath = "ai_project/ViewControllers/SignupFlow/CreateAccountViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "213"
-            endingLineNumber = "213"
-            landmarkName = "navigateToHome()"
+            startingLineNumber = "211"
+            endingLineNumber = "211"
+            landmarkName = "navigateToVideoAnalysis()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -810,9 +810,9 @@
             filePath = "ai_project/ViewControllers/SignupFlow/CreateAccountViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "182"
-            endingLineNumber = "182"
-            landmarkName = "setupViewModelBindings()"
+            startingLineNumber = "180"
+            endingLineNumber = "180"
+            landmarkName = "handleCheckpoint(checkpoint:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -826,8 +826,8 @@
             filePath = "ai_project/ViewControllers/SignupFlow/CreateAccountViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "190"
-            endingLineNumber = "190"
+            startingLineNumber = "188"
+            endingLineNumber = "188"
             landmarkName = "handleCheckpoint(checkpoint:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -842,9 +842,9 @@
             filePath = "ai_project/ViewControllers/SignupFlow/CreateAccountViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "183"
-            endingLineNumber = "183"
-            landmarkName = "setupViewModelBindings()"
+            startingLineNumber = "181"
+            endingLineNumber = "181"
+            landmarkName = "handleCheckpoint(checkpoint:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -858,9 +858,9 @@
             filePath = "ai_project/ViewControllers/SignupFlow/CreateAccountViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "207"
-            endingLineNumber = "207"
-            landmarkName = "navigateToBirthday()"
+            startingLineNumber = "205"
+            endingLineNumber = "205"
+            landmarkName = "navigateToHome()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -874,9 +874,57 @@
             filePath = "ai_project/ViewControllers/SignupFlow/VideoAnalysisLoadingViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "263"
-            endingLineNumber = "263"
+            startingLineNumber = "262"
+            endingLineNumber = "262"
             landmarkName = "finishLoading(completion:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "9FBB8C44-0EA3-47DC-9AF8-01C76E0613A5"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "ai_project/ViewControllers/SignupFlow/VideoAnalysisLoadingViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "360"
+            endingLineNumber = "360"
+            landmarkName = "setupViewModelBindings()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "6914DEBC-1CBC-43F6-BE68-44A50E0EBB40"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "ai_project/ViewControllers/SignupFlow/BecomeAMemberViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1012"
+            endingLineNumber = "1012"
+            landmarkName = "didTapStartFreeTrial()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "0D88A692-F370-4F8B-8602-BF0DFE51A11B"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "ai_project/ViewControllers/SignupFlow/BecomeAMemberViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1014"
+            endingLineNumber = "1014"
+            landmarkName = "didTapStartFreeTrial()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

@@ -114,7 +114,6 @@ final class SetBirthdayViewController: UIViewController {
         
         // Save to UserDefaults before making API call
         UserDefaultsManager.shared.updateBasicInfo(birthday: birthday)
-        UserDefaultsManager.shared.updateProgress(progress: 0.25, step: "birthday_set")
         
         setLoading(true)
         viewModel.setBirthday(birthday: birthday)

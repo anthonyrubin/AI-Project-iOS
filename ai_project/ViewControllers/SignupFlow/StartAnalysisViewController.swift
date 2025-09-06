@@ -116,10 +116,9 @@ final class StartAnalysisViewController: BaseSignupViewController, PHPickerViewC
     private let tipsStack = UIStackView()
 
     override func viewDidLoad() {
-        let sport = Sport(rawValue: UserDefaultsManager.shared.getSport()!)
         mediaCard = LoadingScannerView(
-            base: UIImage(named: "\(sport!.data().imagePrefix)_preview")!,
-            overlay: UIImage(named: "\(sport!.data().imagePrefix)_overlay")!
+            base: UIImage(named: "weightlifting_preview")!,
+            overlay: UIImage(named: "weightlifting_overlay")!
         )
         buildUI()
         killDefaultLayout = true
