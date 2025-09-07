@@ -167,13 +167,6 @@ final class CreateAccountViewController: BaseSignupViewController {
                 }
             }
             .store(in: &cancellables)
-        
-        viewModel.$isLoading
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] isLoading in
-                self?.setLoading(isLoading)
-            }
-            .store(in: &cancellables)
     }
     
     private func handleCheckpoint(checkpoint: Checkpoint) {

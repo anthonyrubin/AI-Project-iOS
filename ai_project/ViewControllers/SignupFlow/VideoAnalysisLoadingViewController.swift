@@ -223,6 +223,8 @@ final class VideoAnalysisLoadingViewController: BaseSignupViewController {
 
             // Throttle so flips never "machine gun"
             if now - lastStepFlipAt < minStepSpacing { break }
+            
+            updateProgressSteps(currentIndex: messageIndex)
 
             messageIndex += 1
             lastStepFlipAt = now

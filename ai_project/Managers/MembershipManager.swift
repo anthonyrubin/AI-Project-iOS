@@ -19,199 +19,84 @@ class MembershipManager: ObservableObject {
         self.networkManager = networkManager
     }
     
-    func checkMembershipStatus() async {
+    func checkMembershipStatus() {
         isLoading = true
         errorMessage = nil
         
-        do {
-            let response: MembershipStatusResponse = try await networkManager.request(
-                endpoint: "/membership/status/",
-                method: .get,
-                responseType: MembershipStatusResponse.self
-            )
-            
-            isMember = response.isMember
-            membershipStatus = response.membership?.status
-            daysRemaining = response.membership?.daysRemaining ?? 0
-            minutesUsed = response.monthlyUsage.minutesUsed
-            minutesAllowed = response.monthlyUsage.minutesAllowed
-            minutesRemaining = response.monthlyUsage.minutesRemaining
-            
-        } catch {
-            errorMessage = error.localizedDescription
-            print("Error checking membership status: \(error)")
-        }
-        
-        isLoading = false
-    }
-
-    
-    func restorePurchase() async -> Bool {
-        isLoading = true
-        errorMessage = nil
-        
-        do {
-            let response: RestorePurchaseResponse = try await networkManager.request(
-                endpoint: "/membership/restore-purchase/",
-                method: .post,
-                responseType: RestorePurchaseResponse.self
-            )
-            
-            // Update local membership status
-            await checkMembershipStatus()
-            
-            isLoading = false
-            return response.success
-            
-        } catch {
-            errorMessage = error.localizedDescription
-            print("Error restoring purchase: \(error)")
-            isLoading = false
-            return false
-        }
-    }
-    
-    func checkAnalysisAllowance() async -> AnalysisAllowanceResponse? {
-        do {
-            let response: AnalysisAllowanceResponse = try await networkManager.request(
-                endpoint: "/membership/analysis-allowance/",
-                method: .get,
-                responseType: AnalysisAllowanceResponse.self
-            )
-            
-            return response
-            
-        } catch {
-            errorMessage = error.localizedDescription
-            print("Error checking analysis allowance: \(error)")
-            return nil
-        }
-    }
-}
-
-
-struct AttachPayload: Codable {
-    let productId: String
-    let jws: String
-    let appAccountToken: String?
-    
-    enum CodingKeys: String, CodingKey {
-        case productId = "product_id"
-        case jws
-        case appAccountToken = "app_account_token"
-    }
-}
-
-struct AttachSubscriptionResponse: Codable {
-    let success: Bool
-    let message: String
-    let membership: MembershipDetails?
-}
-
-// Add this method inside @MainActor MembershipManager
-extension MembershipManager {
-    /// POST /membership/attach-subscription/
-    /// Server decodes JWS, validates with Apple, and attaches to this user.
-    func attachSubscription(_ payload: AttachPayload) async -> Bool {
-        isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
-
-        do {
-            struct AttachResponse: Codable {
-                let success: Bool
-                let message: String
+        networkManager.checkMembershipStatus { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    self?.isMember = response.isMember
+                    self?.membershipStatus = response.membership?.status
+                    self?.daysRemaining = response.membership?.daysRemaining ?? 0
+                    self?.minutesUsed = response.monthlyUsage.minutesUsed
+                    self?.minutesAllowed = response.monthlyUsage.minutesAllowed
+                    self?.minutesRemaining = response.monthlyUsage.minutesRemaining
+                case .failure(let error):
+                    self?.errorMessage = error.localizedDescription
+                    print("Error checking membership status: \(error)")
+                }
+                self?.isLoading = false
             }
-
-            let resp: AttachResponse = try await networkManager.request(
-                endpoint: "/membership/attach-subscription/",
-                method: .post,
-                body: payload,
-                responseType: AttachResponse.self
-            )
-
-            // Pull latest state
-            await checkMembershipStatus()
-
-            return resp.success
-        } catch {
-            errorMessage = error.localizedDescription
-            print("Error attaching subscription: \(error)")
-            return false
         }
     }
-}
 
-// MARK: - Response Models
-
-struct MembershipStatusResponse: Codable {
-    let isMember: Bool
-    let membership: MembershipInfo?
-    let monthlyUsage: MonthlyUsageInfo
     
-    enum CodingKeys: String, CodingKey {
-        case isMember = "is_member"
-        case membership
-        case monthlyUsage = "monthly_usage"
+    func restorePurchase(completion: @escaping (Bool) -> Void) {
+        isLoading = true
+        errorMessage = nil
+        
+        networkManager.restorePurchase { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    // Update local membership status
+                    self?.checkMembershipStatus()
+                    completion(response.success)
+                case .failure(let error):
+                    self?.errorMessage = error.localizedDescription
+                    print("Error restoring purchase: \(error)")
+                    completion(false)
+                }
+                self?.isLoading = false
+            }
+        }
     }
-}
-
-struct MembershipInfo: Codable {
-    let status: String?
-    let daysRemaining: Int
-    let subscriptionEndDate: String?
     
-    enum CodingKeys: String, CodingKey {
-        case status
-        case daysRemaining = "days_remaining"
-        case subscriptionEndDate = "subscription_end_date"
+    func checkAnalysisAllowance(completion: @escaping (AnalysisAllowanceResponse?) -> Void) {
+        networkManager.checkAnalysisAllowance { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    completion(response)
+                case .failure(let error):
+                    self?.errorMessage = error.localizedDescription
+                    print("Error checking analysis allowance: \(error)")
+                    completion(nil)
+                }
+            }
+        }
     }
-}
-
-struct MonthlyUsageInfo: Codable {
-    let minutesUsed: Double
-    let minutesAllowed: Double
-    let minutesRemaining: Double
     
-    enum CodingKeys: String, CodingKey {
-        case minutesUsed = "minutes_used"
-        case minutesAllowed = "minutes_allowed"
-        case minutesRemaining = "minutes_remaining"
-    }
-}
-
-struct MembershipDetails: Codable {
-    let status: String
-    let daysRemaining: Int
-    let monthlyAllowance: Double
-    let minutesRemaining: Double
-    
-    enum CodingKeys: String, CodingKey {
-        case status
-        case daysRemaining = "days_remaining"
-        case monthlyAllowance = "monthly_allowance"
-        case minutesRemaining = "minutes_remaining"
-    }
-}
-
-struct RestorePurchaseResponse: Codable {
-    let success: Bool
-    let message: String
-    let membership: MembershipDetails?
-}
-
-struct AnalysisAllowanceResponse: Codable {
-    let canAnalyze: Bool
-    let reason: String?
-    let upgradeRequired: Bool?
-    let minutesRemaining: Double?
-    let resetDate: String?
-    
-    enum CodingKeys: String, CodingKey {
-        case canAnalyze = "can_analyze"
-        case reason
-        case upgradeRequired = "upgrade_required"
-        case minutesRemaining = "minutes_remaining"
-        case resetDate = "reset_date"
-    }
+//    func attachSubscription(_ payload: AttachPayload, completion: @escaping (Bool) -> Void) {
+//        isLoading = true
+//        errorMessage = nil
+//
+//        networkManager.attachSubscription(payload: payload) { [weak self] result in
+//            DispatchQueue.main.async {
+//                switch result {
+//                case .success(let response):
+//                    // Pull latest state
+//                    self?.checkMembershipStatus()
+//                    completion(response.success)
+//                case .failure(let error):
+//                    self?.errorMessage = error.localizedDescription
+//                    print("Error attaching subscription: \(error)")
+//                    completion(false)
+//                }
+//                self?.isLoading = false
+//            }
+//        }
+//    }
 }

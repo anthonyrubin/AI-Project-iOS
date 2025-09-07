@@ -46,7 +46,23 @@ protocol AnalysisAPI {
     func refreshSignedUrls(videoIds: [Int], completion: @escaping (Result<UrlRefreshResponse, Error>) -> Void)
 }
 
-class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI {
+protocol MembershipAPI {
+    func attachSubscription(
+        payload: AttachPayload,
+        completion: @escaping (Result<AttachSubscriptionResponse, NetworkError>) -> Void
+    )
+    func checkAnalysisAllowance(
+        completion: @escaping (Result<AnalysisAllowanceResponse, NetworkError>) -> Void
+    )
+    func restorePurchase(
+        completion: @escaping (Result<RestorePurchaseResponse, NetworkError>) -> Void
+    )
+    func checkMembershipStatus(
+        completion: @escaping (Result<MembershipStatusResponse, NetworkError>) -> Void
+    )
+}
+
+class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI, MembershipAPI {
 
     init(
         tokenManager: TokenManager
@@ -464,81 +480,92 @@ class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI {
             }
     }
     
-    // MARK: - Generic Request Method for Membership
+    // MARK: - MembershipAPI Implementation
     
-    func request<T: Codable>(
-        endpoint: String,
-        method: HTTPMethod = .get,
-        body: Encodable? = nil,
-        responseType: T.Type
-    ) async throws -> T {
-        let url = "\(baseURL)\(endpoint)"
-        
-        guard let token = tokenManager.getAccessToken() else {
-            throw NetworkError.unauthorized
-        }
-        
-        let headers: HTTPHeaders = [
-            "Authorization": "Bearer \(token)",
-            "Content-Type": "application/json"
+    func attachSubscription(
+        payload: AttachPayload,
+        completion: @escaping (Result<AttachSubscriptionResponse, NetworkError>) -> Void
+    ) {
+        let url = "\(baseURL)/membership/attach-subscription/"
+        let params: Parameters = [
+            "product_id": payload.productId,
+            "jws": payload.jws,
+            "app_account_token": payload.appAccountToken ?? ""
         ]
         
-        let request: DataRequest
-        
-        if let body = body {
-            let encoder = JSONEncoder()
-            let data = try encoder.encode(body)
-            let parameters = try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
-            
-            request = AF.request(url, method: method, parameters: parameters, encoding: JSONEncoding.default, headers: headers)
-        } else {
-            request = AF.request(url, method: method, headers: headers)
-        }
-        
-        return try await withCheckedThrowingContinuation { continuation in
-            request
-                .validate(statusCode: 200..<300)
-                .responseDecodable(of: responseType) { response in
-                    switch response.result {
-                    case .success(let data):
-                        continuation.resume(returning: data)
-                    case .failure(let error):
-                        if let statusCode = response.response?.statusCode, statusCode == 401 {
-                            // Handle token refresh and retry
-                            self.handleTokenRefresh { refreshResult in
-                                switch refreshResult {
-                                case .success:
-                                    // Retry with new token
-                                    Task {
-                                        do {
-                                            let retryResult: T = try await self.request(
-                                                endpoint: endpoint,
-                                                method: method,
-                                                body: body,
-                                                responseType: responseType
-                                            )
-                                            continuation.resume(returning: retryResult)
-                                        } catch {
-                                            continuation.resume(throwing: error)
-                                        }
-                                    }
-                                case .failure:
-                                    continuation.resume(throwing: NetworkError.tokenRefreshFailed)
-                                }
-                            }
-                        } else {
-                            // Try to parse API error response
-                            if let data = response.data,
-                               let apiErr = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
-                                continuation.resume(throwing: NetworkError.apiError(apiErr.error))
-                            } else {
-                                continuation.resume(throwing: NetworkError.requestFailed(error))
-                            }
-                        }
-                    }
-                }
+        performAuthenticatedRequest(
+            url: url,
+            method: .post,
+            parameters: params,
+            responseType: AttachSubscriptionResponse.self
+        ) { result in
+            switch result {
+            case .success(let response):
+                completion(.success(response))
+            case .failure(let error):
+                completion(.failure(error))
+            }
         }
     }
+    
+    func checkAnalysisAllowance(
+        completion: @escaping (Result<AnalysisAllowanceResponse, NetworkError>) -> Void
+    ) {
+        let url = "\(baseURL)/membership/analysis-allowance/"
+        
+        performAuthenticatedRequest(
+            url: url,
+            method: .get,
+            responseType: AnalysisAllowanceResponse.self
+        ) { result in
+            switch result {
+            case .success(let response):
+                completion(.success(response))
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    func restorePurchase(
+        completion: @escaping (Result<RestorePurchaseResponse, NetworkError>) -> Void
+    ) {
+        let url = "\(baseURL)/membership/restore-purchase/"
+        
+        performAuthenticatedRequest(
+            url: url,
+            method: .post,
+            responseType: RestorePurchaseResponse.self
+        ) { result in
+            switch result {
+            case .success(let response):
+                completion(.success(response))
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    func checkMembershipStatus(
+        completion: @escaping (Result<MembershipStatusResponse, NetworkError>) -> Void
+    ) {
+        let url = "\(baseURL)/membership/status/"
+        
+        performAuthenticatedRequest(
+            url: url,
+            method: .get,
+            responseType: MembershipStatusResponse.self
+        ) { result in
+            switch result {
+            case .success(let response):
+                completion(.success(response))
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    
 }
 
 private extension Data {

@@ -197,3 +197,33 @@ extension UIViewController {
         }
     }
 }
+
+extension UIView {
+    /**
+     Calculates the coordinate at the *bottom* most point of the view relative to its superview
+     - returns: `frame.origin.y + frame.height` */
+    func bottom() -> CGFloat {
+        return frame.origin.y + frame.height
+    }
+    
+    /**
+     Calculates the coordinate at the *right* most point of the view relative to its superview
+     - returns: `frame.origin.y + frame.height` */
+    func right() -> CGFloat {
+        return frame.origin.x + frame.width
+    }
+}
+
+public extension UIColor {
+    
+    /// Get color from a hex code, e.g. 0xffffff
+    convenience init(netHex: UInt32, alpha: CGFloat = 1.0) {
+        
+        let rbgContstant: CGFloat = 255
+        let red = CGFloat((netHex & 0xFF0000) >> 16) / rbgContstant
+        let green = CGFloat((netHex & 0xFF00) >> 8) / rbgContstant
+        let blue = CGFloat(netHex & 0xFF) / rbgContstant
+
+        self.init(red:red, green:green, blue:blue, alpha:CGFloat(alpha))
+    }
+}
