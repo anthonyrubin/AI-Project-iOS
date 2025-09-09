@@ -57,7 +57,16 @@ final class ProfileViewController: UIViewController {
             Section(header: nil, rows: [
                 Row(icon: "text.document", title: "Terms and Conditions", action: { }),
                 Row(icon: "shield.pattern.checkered", title: "Privacy Policy", action: { }),
-                Row(icon: "person.fill.badge.minus", title: "Privacy Policy", action: { }),
+                Row(icon: "book.closed", title: "Attribution & Licenses", action: {
+                    let vc = AttributionsViewController()
+
+                    vc.modalPresentationStyle = .pageSheet
+                    if let sheet = vc.sheetPresentationController {
+                        sheet.detents = [.large()]
+                        sheet.prefersGrabberVisible = false
+                    }
+                    self.present(vc, animated: true)
+                }),
             ]),
             
             Section(header: nil, rows: [

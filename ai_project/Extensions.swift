@@ -47,14 +47,23 @@ extension UIViewController {
     
     func setBackgroundGradient() {
         let gradientLayer = CAGradientLayer()
+        // Option 1: two-stop, cool white bottom
+        // g.colors = [
+        //     UIColor(red: 0.85, green: 0.86, blue: 1.00, alpha: 1).cgColor, // #D9DBFF
+        //     UIColor(red: 0.965, green: 0.973, blue: 1.0, alpha: 1).cgColor  // ~#F6F8FF
+        // ]
+        // g.locations = [0.0, 1.0]
+
+        // Option 2: three-stop to avoid muddy mid
         gradientLayer.colors = [
-            UIColor(red: 0.85, green: 0.86, blue: 1.00, alpha: 1).cgColor, // top tint
-            UIColor.white.cgColor,
-            UIColor.white.cgColor
+            UIColor(red: 0.85, green: 0.86, blue: 1.00, alpha: 1).cgColor,   // top #D9DBFF
+            UIColor(red: 0.92, green: 0.92, blue: 1.00, alpha: 1).cgColor,   // mid  #EAEAFF
+            UIColor(red: 0.973, green: 0.976, blue: 1.00, alpha: 1).cgColor  // bot  #F8F9FF
         ]
-        gradientLayer.locations = [0.0, 0.55, 1.0] as [NSNumber]   // fade by ~55% of height
+        gradientLayer.locations = [0.0, 0.5, 1.0] as [NSNumber]
+
         gradientLayer.startPoint = CGPoint(x: 0.5, y: 0.0)
-        gradientLayer.endPoint   = CGPoint(x: 0.5, y: 1.0)
+        gradientLayer.endPoint = CGPoint(x: 0.5, y: 1.0)
 
         view.layer.insertSublayer(gradientLayer, at: 0)
         gradientLayer.frame = view.bounds

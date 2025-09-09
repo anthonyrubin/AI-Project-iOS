@@ -53,8 +53,6 @@ final class LessonViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         makeNavBarTransparent(for: self)
-        tabBarController?.tabBar.backgroundColor = .white
-        tabBarController?.tabBar.barTintColor = .white
     }
 
     override func viewDidLayoutSubviews() {
