@@ -1,5 +1,5 @@
 {
-  "originHash" : "dcc919b97fe68b19ef84589fe8c93609c23199373cc7ea5d08b2be42079755dd",
+  "originHash" : "557c6630115101e6b4d06ed774fd2845ba3cf86a0c620fd5449071c2d890acbb",
   "pins" : [
     {
       "identity" : "alamofire",
@@ -71,6 +71,15 @@
       "state" : {
         "revision" : "540318ecedd63d883069ae7f1ed811a2df00b6ac",
         "version" : "2.4.0"
+      }
+    },
+    {
+      "identity" : "prynttrimmerview",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/HHK1/PryntTrimmerView.git",
+      "state" : {
+        "revision" : "ac1b60a22c7e6a6514de7a66d2f3d5b537c956d5",
+        "version" : "4.0.2"
       }
     },
     {

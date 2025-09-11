@@ -264,31 +264,12 @@ final class StartAnalysisViewController: BaseSignupViewController, PHPickerViewC
             }
 
             // Generate thumbnail
-            let image = self.generateThumbnail(for: dst)
+            let image = generateThumbnail(for: dst)
 
             DispatchQueue.main.async {
                 let vc = StartAnalysisQuestionsViewController(thumbnail: image, videoURL: dst)
                 self.navigationController?.pushViewController(vc, animated: true)
             }
-        }
-    }
-
-    // MARK: Thumbnail
-    private func generateThumbnail(for url: URL) -> UIImage? {
-        let asset = AVAsset(url: url)
-        let generator = AVAssetImageGenerator(asset: asset)
-        generator.appliesPreferredTrackTransform = true
-
-        let duration = asset.duration.seconds
-        let captureSecond = duration.isFinite && duration > 0 ? min(1.0, duration / 2.0) : 0.5
-        let time = CMTime(seconds: captureSecond, preferredTimescale: 600)
-
-        do {
-            let cg = try generator.copyCGImage(at: time, actualTime: nil)
-            return UIImage(cgImage: cg)
-        } catch {
-            print("Thumbnail generation failed:", error)
-            return nil
         }
     }
 }

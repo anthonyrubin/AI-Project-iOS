@@ -11,6 +11,7 @@
 		DE2C62702E4C1AC800E1EA9B /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = DE2C626F2E4C1AC800E1EA9B /* RealmSwift */; };
 		DE2C62702E4D185B00BF5C7B /* SkeletonView in Frameworks */ = {isa = PBXBuildFile; productRef = DEA183B42E4D185B00BF5C7B /* SkeletonView */; };
 		DEA183B22E4D185B00BF5C7B /* SDWebImage in Frameworks */ = {isa = PBXBuildFile; productRef = DEA183B12E4D185B00BF5C7B /* SDWebImage */; };
+		DECB337E2E72448D00C08EF1 /* PryntTrimmerView in Frameworks */ = {isa = PBXBuildFile; productRef = DECB337D2E72448D00C08EF1 /* PryntTrimmerView */; };
 		DEEBCA492E58D9AC00857FDB /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = DEEBCA482E58D9AC00857FDB /* GoogleSignIn */; };
 		DEEBCA4A2E58E48900857FDB /* RealmSwift in Embed Frameworks */ = {isa = PBXBuildFile; productRef = DE2C626F2E4C1AC800E1EA9B /* RealmSwift */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
@@ -92,6 +93,7 @@
 				DEA183B22E4D185B00BF5C7B /* SDWebImage in Frameworks */,
 				DE2C62702E4D185B00BF5C7B /* SkeletonView in Frameworks */,
 				DE2C62702E4C1AC800E1EA9B /* RealmSwift in Frameworks */,
+				DECB337E2E72448D00C08EF1 /* PryntTrimmerView in Frameworks */,
 				DE276C162E42C66900392987 /* Alamofire in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -166,6 +168,7 @@
 				DE2C626F2E4C1AC800E1EA9B /* RealmSwift */,
 				DEA183B12E4D185B00BF5C7B /* SDWebImage */,
 				DEEBCA482E58D9AC00857FDB /* GoogleSignIn */,
+				DECB337D2E72448D00C08EF1 /* PryntTrimmerView */,
 			);
 			productName = ai_project;
 			productReference = DE276BD32E4287CC00392987 /* ai_project.app */;
@@ -255,6 +258,7 @@
 				DEA183B02E4D185B00BF5C7B /* XCRemoteSwiftPackageReference "SDWebImage" */,
 				DEA183B32E4D185B00BF5C7B /* XCRemoteSwiftPackageReference "SkeletonView" */,
 				DEEBCA472E58D9AC00857FDB /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				DECB32A32E72429400C08EF1 /* XCRemoteSwiftPackageReference "PryntTrimmerView" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DE276BD42E4287CC00392987 /* Products */;
@@ -647,6 +651,14 @@
 				minimumVersion = 1.30.0;
 			};
 		};
+		DECB32A32E72429400C08EF1 /* XCRemoteSwiftPackageReference "PryntTrimmerView" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/HHK1/PryntTrimmerView.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.0.2;
+			};
+		};
 		DEEBCA472E58D9AC00857FDB /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
@@ -677,6 +689,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = DEA183B32E4D185B00BF5C7B /* XCRemoteSwiftPackageReference "SkeletonView" */;
 			productName = SkeletonView;
+		};
+		DECB337D2E72448D00C08EF1 /* PryntTrimmerView */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DECB32A32E72429400C08EF1 /* XCRemoteSwiftPackageReference "PryntTrimmerView" */;
+			productName = PryntTrimmerView;
 		};
 		DEEBCA482E58D9AC00857FDB /* GoogleSignIn */ = {
 			isa = XCSwiftPackageProductDependency;

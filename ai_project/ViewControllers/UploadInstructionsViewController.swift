@@ -159,7 +159,7 @@ final class UploadInstructionsViewController: UIViewController,
             closeButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
 
             stepStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            stepStack.centerYAnchor.constraint(equalTo: closeButton.centerYAnchor)
+            stepStack.topAnchor.constraint(equalTo: view.topAnchor, constant: 16)
         ])
     }
 
