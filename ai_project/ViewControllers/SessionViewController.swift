@@ -18,6 +18,9 @@ final class SessionViewController: UIViewController {
 
     private lazy var loadingOverlay = LoadingOverlay()
     private lazy var errorModalManager = ErrorModalManager(viewController: self)
+    
+    // MARK: - Upload State Management
+    var uploadStateManager: UploadStateManager?
 
     private weak var videoAnalysisLoadingCell: VideoAnalysisLoadingCell? = nil
     private var showLoadingCellPreThumbnail = false
@@ -61,17 +64,30 @@ final class SessionViewController: UIViewController {
             }
             .store(in: &cancellables)
 
-        sessionViewModel.$uploadedVideo
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] videoUploaded in
-                if videoUploaded == true { self?.handleUploadCompletion() }
-            }
-            .store(in: &cancellables)
-
-        sessionViewModel.$isUploadingVideo
+        // Observe upload state from UploadStateManager
+        uploadStateManager?.$isUploading
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isUploading in
-                if isUploading == true { self?.tableView.reloadData() }
+                self?.tableView.reloadData()
+            }
+            .store(in: &cancellables)
+        
+        uploadStateManager?.$uploadCompleted
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] completed in
+                if completed {
+                    self?.handleUploadCompletion()
+                }
+            }
+            .store(in: &cancellables)
+        
+        uploadStateManager?.$uploadError
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] error in
+                if let error = error {
+                    self?.errorModalManager.showError(error)
+                    self?.uploadStateManager?.clearError()
+                }
             }
             .store(in: &cancellables)
     }
@@ -85,15 +101,14 @@ final class SessionViewController: UIViewController {
                 UIView.transition(with: self.tableView, duration: 0.5, options: .transitionCrossDissolve) {
                     self.tableView.reloadRows(at: [recentlyAnalyzedIndexPath], with: .none)
                 } completion: { _ in
-                    self.sessionViewModel.resetUploadState()
                     loadingCell.resetCell()
                 }
             }
         } else {
             UIView.transition(with: self.tableView, duration: 0.5, options: .transitionCrossDissolve) {
                 self.tableView.reloadRows(at: [recentlyAnalyzedIndexPath], with: .none)
-            } completion: { [weak self] _ in
-                self?.sessionViewModel.resetUploadState()
+            } completion: { _ in
+                // Upload completed
             }
         }
     }
@@ -170,7 +185,7 @@ final class SessionViewController: UIViewController {
         if row == currentRow { return .recentlyAnalyzedHeader }
         currentRow += 1
 
-        if sessionViewModel.hasAnalyses() || sessionViewModel.isUploadingVideo {
+        if sessionViewModel.hasAnalyses() || (uploadStateManager?.isUploading ?? false) {
             if row == currentRow { return .recentlyAnalyzedCell }
         } else if row == currentRow {
             return .recentlyAnalyzedCell // empty state cell below
@@ -239,10 +254,10 @@ extension SessionViewController: UITableViewDataSource {
         currentRow += 1
 
         if row == currentRow {
-            if sessionViewModel.isUploadingVideo || showLoadingCellPreThumbnail {
+            if (uploadStateManager?.isUploading ?? false) || showLoadingCellPreThumbnail {
                 showLoadingCellPreThumbnail = false
                 let cell = tableView.dequeueReusableCell(withIdentifier: "VideoAnalysisLoadingCell", for: indexPath) as! VideoAnalysisLoadingCell
-                cell.configure(with: sessionViewModel.uploadSnapshot)
+                cell.configure(with: uploadStateManager?.uploadSnapshot)
                 cell.startLoading()
                 videoAnalysisLoadingCell = cell
                 return cell

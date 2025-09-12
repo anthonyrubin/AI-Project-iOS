@@ -17,9 +17,11 @@ final class UploadVideoCoordinator: NSObject, UINavigationControllerDelegate, PH
     private let header: UploadStepHeaderView
     private var state = UploadFlowState()
     private let totalSteps = 3 // example: 0=select, 1=tips, 2=pick video; metadata is post-steps
+    private let uploadStateManager: UploadStateManager
 
-    init(startingAt presentingVC: UIViewController) {
+    init(startingAt presentingVC: UIViewController, uploadStateManager: UploadStateManager) {
         self.presentingVC = presentingVC
+        self.uploadStateManager = uploadStateManager
         self.header = UploadStepHeaderView(total: totalSteps)
         super.init()
 
@@ -219,15 +221,37 @@ final class UploadVideoCoordinator: NSObject, UINavigationControllerDelegate, PH
     // MARK: - Next Screen (stub)
 
     private func pushVideoReview(thumbnail: UIImage?, videoURL: URL? = nil, prefill: String? = nil) {
-        // Stub VC that just holds the asset; replace with your trimmer/metadata screen
-        let editVideoController = EditVideoViewController(videoURL: videoURL!)
-//        let review = StartAnalysisQuestionsViewController(
-//            thumbnail: thumbnail,
-//            videoURL: videoURL,
-//            prefill: prefill
-//        )
-        // This is *after* the stepped flow, so drop the header
-        editVideoController.navigationItem.titleView = nil
-        nav.pushViewController(editVideoController, animated: true)
+        guard let videoURL = videoURL else { return }
+
+        let edit = EditVideoViewController(videoURL: videoURL)
+        edit.navigationItem.titleView = nil
+
+        edit.onFinish = { [weak self] trimmedURL, range in
+            guard let self = self else { return }
+
+            // Update coordinator state to the TRIMMED clip
+            self.state.pickedAsset = AVAsset(url: trimmedURL)
+            self.state.trimmedTimeRange = range
+
+            // Snapshot from the trimmed clip
+            let thumb = generateThumbnail(for: trimmedURL)
+            let prefill = self.state.selectedLift?.capitalized
+
+            // Push the analysis questions screen with trimmed media
+            let questions = StartAnalysisQuestionsViewController(
+                thumbnail: thumb,
+                videoURL: trimmedURL,
+                prefill: prefill,
+                isSignup: false,
+                selectedLift: state.selectedLift
+            )
+            questions.hidesProgressBar = true
+            questions.navigationItem.titleView = nil
+            questions.uploadStateManager = self.uploadStateManager
+            self.nav.pushViewController(questions, animated: true)
+        }
+
+        nav.pushViewController(edit, animated: true)
     }
+
 }

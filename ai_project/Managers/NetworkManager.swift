@@ -41,7 +41,7 @@ protocol SignupAPI {
 }
 
 protocol AnalysisAPI {
-    func uploadVideo(fileURL: URL, completion: @escaping (Result<VideoAnalysis, NetworkError>) -> Void)
+    func uploadVideo(fileURL: URL, liftType: String, completion: @escaping (Result<VideoAnalysis, NetworkError>) -> Void)
     func getUserAnalyses(lastSyncTimestamp: String?, completion: @escaping (Result<DeltaSyncResponse, NetworkError>) -> Void)
     func refreshSignedUrls(videoIds: [Int], completion: @escaping (Result<UrlRefreshResponse, Error>) -> Void)
 }
@@ -364,7 +364,7 @@ class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI, MembershipAPI {
         }
     }
     
-    func uploadVideo(fileURL: URL, completion: @escaping (Result<VideoAnalysis, NetworkError>) -> Void) {
+    func uploadVideo(fileURL: URL, liftType: String, completion: @escaping (Result<VideoAnalysis, NetworkError>) -> Void) {
         guard let token = tokenManager.getAccessToken() else {
             completion(.failure(NetworkError.unauthorized))
             return
@@ -383,6 +383,10 @@ class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI, MembershipAPI {
                     fileName: fileURL.lastPathComponent,
                     mimeType: "video/mp4"
                 )
+                multipartFormData.append(
+                    liftType.data(using: .utf8) ?? Data(),
+                    withName: "lift_type"
+                )
             },
             to: url,
             headers: headers
@@ -399,7 +403,7 @@ class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI, MembershipAPI {
                         switch refreshResult {
                         case .success:
                             // Retry the upload with new token
-                            self?.uploadVideo(fileURL: fileURL, completion: completion)
+                            self?.uploadVideo(fileURL: fileURL, liftType: liftType, completion: completion)
                         case .failure(_):
                             completion(.failure(.tokenRefreshFailed))
                         }

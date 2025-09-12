@@ -267,7 +267,7 @@ final class StartAnalysisViewController: BaseSignupViewController, PHPickerViewC
             let image = generateThumbnail(for: dst)
 
             DispatchQueue.main.async {
-                let vc = StartAnalysisQuestionsViewController(thumbnail: image, videoURL: dst)
+                let vc = StartAnalysisQuestionsViewController(thumbnail: image, videoURL: dst, selectedLift: nil)
                 self.navigationController?.pushViewController(vc, animated: true)
             }
         }

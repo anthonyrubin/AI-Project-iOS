@@ -22,12 +22,13 @@ class VideoAnalysisLoadingViewModel: ObservableObject {
     
     // MARK: - Public Methods
     
-    func startVideoUpload(videoURL: URL) {
+    func startVideoUpload(videoURL: URL, liftType: String) {
         isLoading = true
         errorMessage = nil
         isUploadComplete = false
+        let lift = Lift(rawValue: liftType)
     
-        videoAnalysisRepository.uploadVideo(fileURL: videoURL) { [weak self] result in
+        videoAnalysisRepository.uploadVideo(fileURL: videoURL, liftType: lift!.data().imagePrefix) { [weak self] result in
             Task { @MainActor in
                 self?.handleUploadResult(result)
             }

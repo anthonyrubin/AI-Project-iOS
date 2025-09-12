@@ -201,12 +201,16 @@ final class CreateAccountViewController: BaseSignupViewController {
     
     private func navigateToVideoAnalysis() {
         // Get video data from UserDefaults
-        let (videoURL, videoSnapshot) = UserDefaultsManager.shared.getVideoData()
+        let (videoURL, videoSnapshot, liftType) = UserDefaultsManager.shared.getVideoData()
         
         guard let videoURL = videoURL else {
             print("❌ No video URL found for analysis")
             navigateToHome()
             return
+        }
+        
+        guard let liftType = liftType else {
+            fatalError("Lift type is nil")
         }
         
         UserDefaultsManager.shared.completeSignupSession()
@@ -215,7 +219,8 @@ final class CreateAccountViewController: BaseSignupViewController {
         // Navigate to video analysis loading screen
         let videoAnalysisVC = VideoAnalysisLoadingViewController(
             videoURL: videoURL,
-            videoSnapshot: videoSnapshot
+            videoSnapshot: videoSnapshot,
+            liftType: liftType
         )
         navigationController?.pushViewController(videoAnalysisVC, animated: true)
     }

@@ -1,8 +1,17 @@
 import UIKit
 import AVFoundation
+import Combine
 
-final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITextViewDelegate, UITableViewDataSource, UITableViewDelegate {
+import UIKit
+import Combine
 
+final class StartAnalysisQuestionsViewController: BaseSignupViewController,
+    UITextViewDelegate,
+    UITableViewDataSource,
+    UITableViewDelegate,
+    UIScrollViewDelegate,
+    UIGestureRecognizerDelegate
+{
     // MARK: – Inputs
     private let thumbnail: UIImage?
     private let videoURL: URL?
@@ -39,9 +48,12 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
     // Lift
     private var lifts: [String] = []
     private var selectedLift: String = "" {
-        didSet { liftValue.text = selectedLift }
+        didSet {
+            liftValue.text = selectedLift
+            updateContinueButtonState()
+        }
     }
-    
+
     // Prompt
     private let promptLabel: UILabel = {
         let l = UILabel()
@@ -62,16 +74,47 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
     private let placeholder = UILabel()
     private let maxChars = 500
 
+    private let isSignup: Bool
+
+    private var cancellables = Set<AnyCancellable>()
+    private lazy var errorModalManager = ErrorModalManager(viewController: self)
+
+    private let viewModel = StartAnalysisQuestionsViewModel(
+        repository: VideoAnalysisRepository(
+            analysisAPI: NetworkManager(tokenManager: TokenManager())
+        )
+    )
+
+    // MARK: - Upload State Management
+    var uploadStateManager: UploadStateManager?
+
+    // MARK: – Keyboard dismissal
+    private lazy var tapToDismiss: UITapGestureRecognizer = {
+        let g = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboardTap))
+        g.cancelsTouchesInView = false // let buttons/table selections go through
+        g.delegate = self
+        return g
+    }()
+
+    @objc private func dismissKeyboardTap() {
+        view.endEditing(true)
+    }
+
     // MARK: – Init
-    init(thumbnail: UIImage?, videoURL: URL? = nil, prefill: String? = nil) {
-        
+    init(thumbnail: UIImage?, videoURL: URL? = nil, prefill: String? = nil, showProgress: Bool = true, isSignup: Bool = true, selectedLift: String?) {
+
         for _lift in Lift.allCases {
             lifts.append(_lift.rawValue.capitalized)
         }
-        
+
         self.thumbnail = thumbnail
         self.videoURL = videoURL
-        
+        self.isSignup = isSignup
+
+        if let _selectedLift = selectedLift {
+            self.selectedLift = _selectedLift
+        }
+
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -82,13 +125,40 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
         buildUI()
         killDefaultLayout = true
         super.viewDidLoad()
+
+        // Keyboard dismissal behaviors
+        scroll.keyboardDismissMode = .interactive  // slide down on drag
+        scroll.delegate = self                      // also end editing on drag start
+        view.addGestureRecognizer(tapToDismiss)     // tap outside to dismiss
+
         setProgress(0.91, animated: false)
+        updateContinueButtonState()
+        setupBindings()
+    }
+
+    private func setupBindings() {
+        viewModel.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] errorMessage in
+                guard let self, let errorMessage else { return }
+                self.errorModalManager.showError(errorMessage)
+                self.viewModel.clearError()
+            }
+            .store(in: &cancellables)
+
+//        viewModel.$isUploadingVideo
+//            .receive(on: DispatchQueue.main)
+//            .sink { [weak self] _ in
+//                self?.navigationController?.dismiss(animated: true)
+//            }
+//            .store(in: &cancellables)
     }
 
     // MARK: – Build
     private func buildUI() {
         // Scroll + content stack
         scroll.translatesAutoresizingMaskIntoConstraints = false
+        scroll.alwaysBounceVertical = true
         view.addSubview(scroll)
 
         content.axis = .vertical
@@ -115,20 +185,19 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
         thumbImage.translatesAutoresizingMaskIntoConstraints = false
         thumbCard.addSubview(thumbImage)
 
-        // ✅ Sport group (field + table) with spacing = 0
+        // Lift group (field + table)
         liftGroup.axis = .vertical
         liftGroup.alignment = .fill
         liftGroup.spacing = 0
         liftGroup.translatesAutoresizingMaskIntoConstraints = false
         content.addArrangedSubview(liftGroup)
 
-        // sportField (tappable)
+        // Field content
         liftField.backgroundColor = .secondarySystemBackground
         liftField.layer.cornerRadius = cornerRadius
         liftField.layer.cornerCurve = .continuous
         liftField.translatesAutoresizingMaskIntoConstraints = false
 
-        // Field content
         liftCaption.text = "Lift"
         liftCaption.font = .systemFont(ofSize: 16, weight: .semibold)
         liftCaption.textColor = .secondaryLabel
@@ -147,12 +216,12 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
         liftField.addSubview(liftValue)
         liftField.addSubview(chevron)
 
-        // sportTable (dropdown)
+        // Dropdown table
         liftTable.isHidden = true
         liftTable.alpha = 0
         liftTable.layer.masksToBounds = true
         liftTable.layer.cornerRadius = cornerRadius
-        liftTable.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner] // bottom only; top corners handled by field
+        liftTable.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         liftTable.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
         liftTable.rowHeight = 52
         liftTable.dataSource = self
@@ -163,7 +232,7 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
         liftGroup.addArrangedSubview(liftField)
         liftGroup.addArrangedSubview(liftTable)
 
-        // After group, keep normal spacing before prompt
+        // Spacing before prompt
         content.setCustomSpacing(24, after: liftGroup)
 
         // Prompt
@@ -203,14 +272,13 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
         detailsText.translatesAutoresizingMaskIntoConstraints = false
         detailsCard.addSubview(detailsText)
 
-//        placeholder.text = lift.analysisPlaceholder()
         placeholder.textColor = .tertiaryLabel
         placeholder.font = .systemFont(ofSize: 18, weight: .regular)
         placeholder.numberOfLines = 0
         placeholder.translatesAutoresizingMaskIntoConstraints = false
         detailsCard.addSubview(placeholder)
 
-        // Continue at the bottom of content
+        // Continue buttons from BaseSignupViewController
         content.addArrangedSubview(secondaryButton)
         content.addArrangedSubview(continueButton)
     }
@@ -242,7 +310,7 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
             thumbImage.heightAnchor.constraint(equalToConstant: 220)
         ])
 
-        // Sport field internals
+        // Lift field internals
         NSLayoutConstraint.activate([
             liftCaption.topAnchor.constraint(equalTo: liftField.topAnchor, constant: 16),
             liftCaption.leadingAnchor.constraint(equalTo: liftField.leadingAnchor, constant: 16),
@@ -317,7 +385,7 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
             liftTable.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         } else {
             liftField.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner,
-                                              .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+                                             .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
             liftTable.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         }
     }
@@ -350,19 +418,62 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
         toggleDropdown()
     }
 
+    // MARK: – Scroll (keyboard)
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        view.endEditing(true)
+    }
+
+    // MARK: – Tap filter (keyboard)
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        guard gestureRecognizer === tapToDismiss else { return true }
+        guard let touched = touch.view else { return true }
+
+        // Ignore taps inside inputs/controls so they still work
+        if touched is UITextView || touched is UIControl { return false }
+
+        // Ignore taps inside dropdown/table so selection still works
+        if touched.isDescendant(of: liftTable) || touched.isDescendant(of: liftField) { return false }
+
+        // Also ignore cell content views so table selection works
+        if String(describing: type(of: touched)).contains("UITableViewCellContentView") { return false }
+
+        return true
+    }
+
+    // MARK: – Continue
     override func didTapContinue() {
         super.didTapContinue()
-        setUserDefaults()
-        let vc = CreateAccountViewController()
-        navigationController?.pushViewController(vc, animated: true)
+
+        if isSignup {
+            setUserDefaults()
+            let vc = CreateAccountViewController()
+            navigationController?.pushViewController(vc, animated: true)
+        } else {
+            startVideoUpload()
+            navigationController?.dismiss(animated: true)
+        }
     }
-    
+
+    private func startVideoUpload() {
+        guard let videoURL = videoURL else {
+            uploadStateManager?.failUpload(with: "No video URL available")
+            return
+        }
+
+        // Start upload with snapshot
+        uploadStateManager?.startUpload(snapshot: thumbnail)
+
+        // Trigger upload in view model
+        viewModel.startVideoUpload(fileURL: videoURL, liftType: selectedLift, uploadStateManager: uploadStateManager)
+    }
+
     private func setUserDefaults() {
         // Save video data for analysis
         UserDefaultsManager.shared.updateVideoAnalysis(
             didUpload: true,
             videoURL: videoURL,
-            videoSnapshot: thumbnail
+            videoSnapshot: thumbnail,
+            liftType: selectedLift
         )
     }
 
@@ -374,6 +485,13 @@ final class StartAnalysisQuestionsViewController: BaseSignupViewController, UITe
         }
         updateCount()
     }
+
     private func updateCount() { countLabel.text = "\(detailsText.text.count)/\(maxChars)" }
+
+    private func updateContinueButtonState() {
+        continueButton.isEnabled = !selectedLift.isEmpty
+        continueButton.alpha = selectedLift.isEmpty ? 0.5 : 1.0
+    }
 }
+
 

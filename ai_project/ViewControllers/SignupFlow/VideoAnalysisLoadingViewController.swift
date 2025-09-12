@@ -74,11 +74,13 @@ final class VideoAnalysisLoadingViewController: BaseSignupViewController {
     }()
 
     private var progressStepViews: [ProgressStepView] = []
+    private let liftType: String
 
     // MARK: - Init
-    init(videoURL: URL, videoSnapshot: UIImage?) {
+    init(videoURL: URL, videoSnapshot: UIImage?, liftType: String) {
         self.videoURL = videoURL
         self.videoSnapshot = videoSnapshot
+        self.liftType = liftType
         self.viewModel = VideoAnalysisLoadingViewModel(
             videoAnalysisRepository: VideoAnalysisRepository(analysisAPI: NetworkManager(tokenManager: TokenManager()))
         )
@@ -370,7 +372,7 @@ final class VideoAnalysisLoadingViewController: BaseSignupViewController {
     }
 
     private func startVideoUpload() {
-        viewModel.startVideoUpload(videoURL: videoURL)
+        viewModel.startVideoUpload(videoURL: videoURL, liftType: liftType)
     }
 
     private func updateProgressSteps(currentIndex: Int) {

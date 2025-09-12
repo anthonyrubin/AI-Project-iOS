@@ -22,6 +22,9 @@ final class TabBarController: UITabBarController {
     private let tapHapticStyle: UIImpactFeedbackGenerator.FeedbackStyle = .light
 
     private let tallBar = TallTabBar()
+    
+    // MARK: - Upload State Management
+    private let uploadStateManager = UploadStateManager()
 
     private let plusButton: UIButton = {
         let b = UIButton(type: .system)
@@ -58,7 +61,9 @@ final class TabBarController: UITabBarController {
 
     private func buildTabs() {
         let lessons = nav(LessonsViewController(), title: "Home",     baseName: "HomeTabIcon")
-        let session = nav(SessionViewController(), title: "Progress", baseName: "ProgressTabIcon")
+        let sessionVC = SessionViewController()
+        sessionVC.uploadStateManager = uploadStateManager
+        let session = nav(sessionVC, title: "Progress", baseName: "ProgressTabIcon")
         let profile = nav(ProfileViewController(), title: "Settings", baseName: "SettingsTabIcon")
 
         // Placeholder tab to shift real tabs left (disabled & invisible)
@@ -134,7 +139,7 @@ final class TabBarController: UITabBarController {
 
     func presentPlusFlow() {
         
-        coordinator = UploadVideoCoordinator(startingAt: self)
+        coordinator = UploadVideoCoordinator(startingAt: self, uploadStateManager: uploadStateManager)
         coordinator?.start()
     }
 }

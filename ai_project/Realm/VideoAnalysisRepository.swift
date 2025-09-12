@@ -37,8 +37,8 @@ class VideoAnalysisRepository {
         }
     }
     
-    func uploadVideo(fileURL: URL, completion: @escaping (Result<Void, NetworkError>) -> Void) {
-        analysisAPI.uploadVideo(fileURL: fileURL) { [weak self] result in
+    func uploadVideo(fileURL: URL, liftType: String, completion: @escaping (Result<Void, NetworkError>) -> Void) {
+        analysisAPI.uploadVideo(fileURL: fileURL, liftType: liftType) { [weak self] result in
             switch result {
             case .success(let analysis):
                 self?.storeNewAnalyses([analysis]) { saveToRealmResult in

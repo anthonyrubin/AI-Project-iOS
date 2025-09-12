@@ -21,6 +21,7 @@ struct SignupUserData: Codable {
     // Video Analysis
     var didUploadVideoForAnalysis: Bool = false
     var videoAnalysisData: VideoAnalysisData?
+    var liftType: String?
     var videoURL: String? // Store as string path
     var videoSnapshotData: Data? // Store snapshot as Data
     
@@ -156,13 +157,14 @@ final class UserDefaultsManager {
     }
     
     /// Update video analysis information
-    func updateVideoAnalysis(didUpload: Bool, videoURL: URL? = nil, videoSnapshot: UIImage? = nil) {
+    func updateVideoAnalysis(didUpload: Bool, videoURL: URL? = nil, videoSnapshot: UIImage? = nil, liftType: String) {
         var data = currentSignupData
         data.didUploadVideoForAnalysis = didUpload
         if let videoURL = videoURL { data.videoURL = videoURL.path }
         if let videoSnapshot = videoSnapshot { 
             data.videoSnapshotData = videoSnapshot.jpegData(compressionQuality: 0.8)
         }
+        data.liftType = liftType
         data.lastUpdatedAt = Date()
         currentSignupData = data
         print("📝 UserDefaultsManager: Updated video analysis - uploaded: \(didUpload)")
@@ -176,11 +178,11 @@ final class UserDefaultsManager {
     }
     
     /// Get video URL and snapshot for analysis
-    func getVideoData() -> (videoURL: URL?, videoSnapshot: UIImage?) {
+    func getVideoData() -> (videoURL: URL?, videoSnapshot: UIImage?, liftType: String?) {
         let data = currentSignupData
         let url = data.videoURL.flatMap { URL(fileURLWithPath: $0) }
         let snapshot = data.videoSnapshotData.flatMap { UIImage(data: $0) }
-        return (videoURL: url, videoSnapshot: snapshot)
+        return (videoURL: url, videoSnapshot: snapshot, liftType: data.liftType)
     }
     
     /// Get specific data fields
