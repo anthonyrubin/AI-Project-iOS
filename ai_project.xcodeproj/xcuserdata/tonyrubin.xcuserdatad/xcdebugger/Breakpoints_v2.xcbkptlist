@@ -494,9 +494,9 @@
             filePath = "ai_project/ViewControllers/SessionViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "99"
-            endingLineNumber = "99"
-            landmarkName = "handleUploadCompletion()"
+            startingLineNumber = "94"
+            endingLineNumber = "94"
+            landmarkName = "setupBindings()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -510,8 +510,8 @@
             filePath = "ai_project/ViewControllers/SessionViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "109"
-            endingLineNumber = "109"
+            startingLineNumber = "104"
+            endingLineNumber = "104"
             landmarkName = "handleUploadCompletion()"
             landmarkType = "7">
          </BreakpointContent>

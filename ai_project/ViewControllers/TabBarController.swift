@@ -1,20 +1,39 @@
 import UIKit
 
+import UIKit
+
 final class TallTabBar: UITabBar {
     var extraHeight: CGFloat = 8
+    
+    // Hold a weak reference to the button to avoid retain cycles.
+    weak var plusButton: UIButton?
 
     override func sizeThatFits(_ size: CGSize) -> CGSize {
         var s = super.sizeThatFits(size)
         s.height += extraHeight
         return s
     }
-
-    // If you were nudging subviews before, keep it; otherwise remove.
-    // Leaving it out to avoid odd spacing with titles.
-    // override func layoutSubviews() { ... }
+    
+    // Override hitTest to forward taps on the plus button.
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        // If the button exists and the tap is inside its bounds,
+        // return the button to handle the tap.
+        if let button = plusButton, !button.isHidden {
+            // Convert the point from the tab bar's coordinate system
+            // to the button's coordinate system.
+            let buttonPoint = button.convert(point, from: self)
+            if button.bounds.contains(buttonPoint) {
+                return button
+            }
+        }
+        
+        // Otherwise, let the default behavior continue.
+        // This ensures the other tab items are still tappable.
+        return super.hitTest(point, with: event)
+    }
 }
 
-final class TabBarController: UITabBarController {
+final class TabBarController: UITabBarController, UITabBarControllerDelegate {
 
     private var coordinator: UploadVideoCoordinator? = nil
     // Change once, affects all icons (points, not pixels)
@@ -25,7 +44,8 @@ final class TabBarController: UITabBarController {
     
     // MARK: - Upload State Management
     private let uploadStateManager = UploadStateManager()
-
+    
+    // MARK: - Plus Button State
     private let plusButton: UIButton = {
         let b = UIButton(type: .system)
         b.translatesAutoresizingMaskIntoConstraints = false
@@ -60,6 +80,7 @@ final class TabBarController: UITabBarController {
     // MARK: - Tabs
 
     private func buildTabs() {
+        // --- RESTORED your original view controllers ---
         let lessons = nav(LessonsViewController(), title: "Home",     baseName: "HomeTabIcon")
         let sessionVC = SessionViewController()
         sessionVC.uploadStateManager = uploadStateManager
@@ -79,12 +100,13 @@ final class TabBarController: UITabBarController {
     // Wrap in a nav and assign a correctly-sized item (same image for both states)
     private func nav(_ root: UIViewController, title: String, baseName: String) -> UINavigationController {
         let n = UINavigationController(rootViewController: root)
+        // --- RESTORED your call to your custom tabIcon function ---
         let img = tabIcon(baseName, pointSize: iconPointSize)
-        // Same sized template image for selected & unselected
         n.tabBarItem = UITabBarItem(title: title, image: img, selectedImage: img)
         return n
     }
 
+    /// --- RESTORED your original helper function for rendering icons ---
     /// Resizes your PNG asset to the requested point size and returns a template image.
     private func tabIcon(_ name: String, pointSize: CGFloat) -> UIImage {
         guard let src = UIImage(named: name) else { return UIImage() }
@@ -97,17 +119,14 @@ final class TabBarController: UITabBarController {
     // MARK: - Appearance
 
     private func configureTabBarAppearance() {
-        // Legacy props (harmless)
         tabBar.backgroundColor = .white
         tabBar.isTranslucent = false
 
-        // Modern appearance
         let ap = UITabBarAppearance()
         ap.configureWithOpaqueBackground()
         ap.backgroundColor = .systemBackground
         ap.shadowColor = .clear
 
-        // Colors for icons/titles
         ap.stackedLayoutAppearance.normal.iconColor = .secondaryLabel
         ap.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.secondaryLabel]
         ap.stackedLayoutAppearance.selected.iconColor = .black
@@ -116,149 +135,34 @@ final class TabBarController: UITabBarController {
         tabBar.standardAppearance = ap
         tabBar.scrollEdgeAppearance = ap
 
-        tabBar.tintColor = .black               // selected icon/title tint
+        tabBar.tintColor = .black
         tabBar.unselectedItemTintColor = .secondaryLabel
     }
 
-    // MARK: - Plus button
+    // MARK: - Plus button (No changes here, the fix is the same)
 
     private func setupPlusButton() {
-        view.addSubview(plusButton)
+        tabBar.addSubview(plusButton)
+        
+        if let tallBar = self.tabBar as? TallTabBar {
+            tallBar.plusButton = plusButton
+        }
+        
         NSLayoutConstraint.activate([
             plusButton.widthAnchor.constraint(equalToConstant: 60),
             plusButton.heightAnchor.constraint(equalToConstant: 60),
-            plusButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -32),
-            // Keep your original visual: center on the bar's top edge
-            plusButton.centerYAnchor.constraint(equalTo: tabBar.topAnchor)
+            plusButton.trailingAnchor.constraint(equalTo: tabBar.trailingAnchor, constant: -32),
+            plusButton.centerYAnchor.constraint(equalTo: tabBar.topAnchor, constant: 12)
         ])
-        tabBar.bringSubviewToFront(plusButton)
+        
         plusButton.addTarget(self, action: #selector(plusTapped), for: .touchUpInside)
     }
 
     @objc private func plusTapped() { presentPlusFlow() }
 
     func presentPlusFlow() {
-        
         coordinator = UploadVideoCoordinator(startingAt: self, uploadStateManager: uploadStateManager)
         coordinator?.start()
-    }
-}
-
-
-
-
-
-
-
-final class OneFullRep: UIView {
-
-    // MARK: UI
-    private let titleLabel: UILabel = {
-        let l = UILabel()
-        l.text = "One full rep"
-        l.font = .systemFont(ofSize: 35, weight: .bold)
-        l.numberOfLines = 0
-        l.translatesAutoresizingMaskIntoConstraints = false
-        return l
-    }()
-
-    private let scannerContainer = UIView()
-    private let stepsView: FreeTrialStepsView
-
-    // You already have this view; keep its contentMode/aspect-fit behavior internally
-    private let scannerView: LoadingScannerView
-
-    // MARK: Aspect constraints we’ll rebuild when needed
-    private var arEqual: NSLayoutConstraint?
-    private var arMax: NSLayoutConstraint?
-
-    // Pass the images in so we can read the aspect
-    init() {
-        let base = UIImage(named: "weightlifting_preview")!
-        let overlay = UIImage(named: "weightlifting_overlay")!
-        self.scannerView = LoadingScannerView(base: base, overlay: overlay)
-        self.scannerView.contentCornerRadius = 14
-        self.stepsView   = FreeTrialStepsView(steps: [
-            .init(icon: "1.circle", title: nil,
-                  subtitle: "Film a single rep from start to finish"),
-            .init(icon: "hand.raised", title: nil,
-                  subtitle: "Make a full stop at lockout and descent")
-        ])
-        super.init(frame: .zero)
-        setup()
-
-        // Build aspect constraints from the **image’s** ratio (H/W)
-        let aspect = base.size.height / base.size.width
-        setScannerAspect(aspect)
-        scannerView.startScan(duration: 6)
-    }
-
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
-    private func setup() {
-        translatesAutoresizingMaskIntoConstraints = false
-        scannerContainer.translatesAutoresizingMaskIntoConstraints = false
-        scannerView.translatesAutoresizingMaskIntoConstraints = false
-        stepsView.translatesAutoresizingMaskIntoConstraints = false
-
-        // Layout: scanner (flex) → title → steps (required)
-        let stack = UIStackView(arrangedSubviews: [scannerContainer, titleLabel, stepsView])
-        stack.axis = .vertical
-        stack.spacing = 20
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(stack)
-
-        // Scanner fills its container
-        scannerContainer.addSubview(scannerView)
-        NSLayoutConstraint.activate([
-            scannerView.topAnchor.constraint(equalTo: scannerContainer.topAnchor),
-            scannerView.leadingAnchor.constraint(equalTo: scannerContainer.leadingAnchor),
-            scannerView.trailingAnchor.constraint(equalTo: scannerContainer.trailingAnchor),
-            scannerView.bottomAnchor.constraint(equalTo: scannerContainer.bottomAnchor),
-
-            stack.topAnchor.constraint(equalTo: topAnchor),
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
-            stack.bottomAnchor.constraint(equalTo: bottomAnchor)
-        ])
-
-        // Priorities so title/steps never clip; scanner shrinks first
-        [titleLabel, stepsView].forEach {
-            $0.setContentHuggingPriority(.required, for: .vertical)
-            $0.setContentCompressionResistancePriority(.required, for: .vertical)
-        }
-        scannerContainer.setContentHuggingPriority(.defaultLow, for: .vertical)
-        scannerContainer.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
-
-        // (Optional) minimum scanner height so it never fully disappears
-        let minH = scannerContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: 120)
-        minH.priority = .defaultHigh
-        minH.isActive = true
-    }
-
-    /// Rebuild aspect constraints using the given H/W ratio.
-    func setScannerAspect(_ aspect: CGFloat) {
-        arEqual?.isActive = false
-        arMax?.isActive   = false
-
-        // Prefer exact aspect when there is room…
-        arEqual = scannerContainer.heightAnchor.constraint(
-            equalTo: scannerContainer.widthAnchor,
-            multiplier: aspect
-        )
-        arEqual?.priority = .defaultHigh   // 750
-        arEqual?.isActive = true
-
-        // …but never exceed it if vertical space is tight
-        arMax = scannerContainer.heightAnchor.constraint(
-            lessThanOrEqualTo: scannerContainer.widthAnchor,
-            multiplier: aspect
-        )
-        arMax?.priority = .required        // 1000
-        arMax?.isActive = true
-
-        setNeedsLayout()
-        layoutIfNeeded()
     }
 }
 

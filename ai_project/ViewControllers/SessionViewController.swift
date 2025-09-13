@@ -304,6 +304,7 @@ extension SessionViewController: UITableViewDelegate {
         case .recentlyAnalyzedCell:
             if let last = sessionViewModel.lastSession {
                 let lesson = LessonViewController(analysis: last)
+                lesson.hidesBottomBarWhenPushed = true
                 navigationController?.pushViewController(lesson, animated: true)
             }
         default: break

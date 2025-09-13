@@ -210,6 +210,8 @@ extension LessonsViewController: UITableViewDelegate {
         if indexPath.row > 0 {
             if let analysis = viewModel.getAnalysis(at: indexPath.row - 1) {
                 let lessonViewController = LessonViewController(analysis: analysis)
+                lessonViewController.hidesBottomBarWhenPushed = true
+                
                 navigationController?.pushViewController(lessonViewController, animated: true)
             }
         }
