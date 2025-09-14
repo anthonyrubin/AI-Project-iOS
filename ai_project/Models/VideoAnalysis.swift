@@ -12,9 +12,8 @@ struct VideoAnalysis: Codable {
     let lift_score: Int?
     let confidence: Double?
     let overall_analysis: String
-    let metrics_breakdown: [String: MetricBreakdown]
-    let overall_tips: [String]
-    let progression_drills: [String]
+    let strengths: [Strength]
+    let areas_for_improvement: [AreaForImprovement]
     let metrics_catalog: [String]
     let created_at: String
     
@@ -31,9 +30,8 @@ struct VideoAnalysis: Codable {
         lift_score = try container.decodeIfPresent(Int.self, forKey: .lift_score)
         confidence = try container.decodeIfPresent(Double.self, forKey: .confidence)
         overall_analysis = try container.decode(String.self, forKey: .overall_analysis)
-        metrics_breakdown = try container.decode([String: MetricBreakdown].self, forKey: .metrics_breakdown)
-        overall_tips = try container.decode([String].self, forKey: .overall_tips)
-        progression_drills = try container.decode([String].self, forKey: .progression_drills)
+        strengths = try container.decode([Strength].self, forKey: .strengths)
+        areas_for_improvement = try container.decode([AreaForImprovement].self, forKey: .areas_for_improvement)
         metrics_catalog = try container.decode([String].self, forKey: .metrics_catalog)
         created_at = try container.decode(String.self, forKey: .created_at)
         icon = try container.decode(String.self, forKey: .icon)
@@ -96,14 +94,18 @@ struct AnyCodable: Codable {
 }
 
 
-// MARK: - New Metrics Breakdown Structure
+// MARK: - New Analysis Structure
 
-struct MetricBreakdown: Codable {
-    let human_readable_name: String
-    let description: String
-    let score_percent: Int
-    let analysis_text: String
-    let how_to_improve: String
+struct Strength: Codable {
+    let title: String
+    let analysis: String
+}
+
+struct AreaForImprovement: Codable {
+    let title: String
+    let analysis: String
+    let actionable_tips: [String]
+    let corrective_drills: [String]
 }
 
 struct Video: Codable {

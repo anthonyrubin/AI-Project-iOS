@@ -33,7 +33,7 @@ final class LessonViewController: UIViewController {
     private var panOnHandle: UIPanGestureRecognizer!
 
     private let metricsContainerView = UIView()
-    private let metricsCollectionView: UICollectionView
+    private let metricsTableView = UITableView()
 
     private let playButton = UIButton(type: .system)
     private let progressSlider = UISlider()
@@ -48,12 +48,12 @@ final class LessonViewController: UIViewController {
 
     // MARK: - Init
     init(analysis: VideoAnalysisObject) {
-        let layout = UICollectionViewFlowLayout()
-        layout.scrollDirection = .vertical
-        layout.minimumInteritemSpacing = 12
-        layout.minimumLineSpacing = 12
-        layout.sectionInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
-        self.metricsCollectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+//        let layout = UICollectionViewFlowLayout()
+//        layout.scrollDirection = .vertical
+//        layout.minimumInteritemSpacing = 12
+//        layout.minimumLineSpacing = 12
+//        layout.sectionInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+//        self.metricsTableView = UICollectionView(frame: .zero, collectionViewLayout: layout)
 
         self.viewModel = LessonViewModel(
             analysis: analysis,
@@ -328,20 +328,22 @@ final class LessonViewController: UIViewController {
         metricsContainerView.backgroundColor = .systemBackground
         view.addSubview(metricsContainerView)
 
-        if let flow = metricsCollectionView.collectionViewLayout as? UICollectionViewFlowLayout {
-            flow.scrollDirection = .vertical
-            flow.minimumInteritemSpacing = 12
-            flow.minimumLineSpacing = 12
-            flow.sectionInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
-        }
-        metricsCollectionView.translatesAutoresizingMaskIntoConstraints = false
-        metricsCollectionView.backgroundColor = .clear
-        metricsCollectionView.delegate = self
-        metricsCollectionView.dataSource = self
-        metricsCollectionView.alwaysBounceVertical = true
-        metricsCollectionView.keyboardDismissMode = .onDrag
-        metricsCollectionView.register(MetricGridCell.self, forCellWithReuseIdentifier: "MetricGridCell")
-        metricsContainerView.addSubview(metricsCollectionView)
+//        if let flow = metricsCollectionView.collectionViewLayout as? UICollectionViewFlowLayout {
+//            flow.scrollDirection = .vertical
+//            flow.minimumInteritemSpacing = 12
+//            flow.minimumLineSpacing = 12
+//            flow.sectionInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+//        }
+        metricsTableView.translatesAutoresizingMaskIntoConstraints = false
+        metricsTableView.backgroundColor = .clear
+        metricsTableView.delegate = self
+        metricsTableView.dataSource = self
+        metricsTableView.alwaysBounceVertical = true
+        metricsTableView.keyboardDismissMode = .onDrag
+        metricsTableView.register(StrengthsCardCell.self, forCellReuseIdentifier: "StrengthsCardCell")
+        metricsTableView.register(AreasForImprovementCardCell.self, forCellReuseIdentifier: "AreasForImprovementCardCell")
+        metricsTableView.register(OverallPerformanceCardCell.self, forCellReuseIdentifier: "OverallPerformanceCardCell")
+        metricsContainerView.addSubview(metricsTableView)
 
         // Video controls
         playButton.translatesAutoresizingMaskIntoConstraints = false
@@ -398,10 +400,10 @@ final class LessonViewController: UIViewController {
             metricsContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             // Collection view fills metrics container
-            metricsCollectionView.topAnchor.constraint(equalTo: metricsContainerView.topAnchor),
-            metricsCollectionView.leadingAnchor.constraint(equalTo: metricsContainerView.leadingAnchor),
-            metricsCollectionView.trailingAnchor.constraint(equalTo: metricsContainerView.trailingAnchor),
-            metricsCollectionView.bottomAnchor.constraint(equalTo: metricsContainerView.bottomAnchor),
+            metricsTableView.topAnchor.constraint(equalTo: metricsContainerView.topAnchor),
+            metricsTableView.leadingAnchor.constraint(equalTo: metricsContainerView.leadingAnchor),
+            metricsTableView.trailingAnchor.constraint(equalTo: metricsContainerView.trailingAnchor),
+            metricsTableView.bottomAnchor.constraint(equalTo: metricsContainerView.bottomAnchor),
 
             // Video controls inside video container
             playButton.centerXAnchor.constraint(equalTo: videoContainerView.centerXAnchor),
@@ -504,49 +506,47 @@ extension LessonViewController: UIGestureRecognizerDelegate {
 }
 
 // MARK: - UICollectionViewDataSource
-extension LessonViewController: UICollectionViewDataSource {
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return viewModel.analysis.metricsBreakdownDict?.count ?? 0
+extension LessonViewController: UITableViewDataSource {
+    func numberOfSections(in tableView: UITableView) -> Int {
+        var numberOfSections = 1
+        if viewModel.analysis.strengthsArray?.isEmpty == false {
+            numberOfSections += 1
+        }
+        if viewModel.analysis.areasForImprovementArray?.isEmpty == false {
+            numberOfSections += 1
+        }
+        return numberOfSections
     }
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "MetricGridCell", for: indexPath) as! MetricGridCell
-        if let metricsBreakdown = viewModel.analysis.metricsBreakdownDict {
-            let metricNames = Array(metricsBreakdown.keys)
-            if indexPath.item < metricNames.count {
-                let metricName = metricNames[indexPath.item]
-                let metricData = metricsBreakdown[metricName]!
-                cell.configure(with: metricName, metricBreakdown: metricData)
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return 1
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if indexPath.section == 0 {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "OverallPerformanceCardCell", for: indexPath) as! OverallPerformanceCardCell
+            cell.configure(with: viewModel.analysis)
+            return cell
+        } else if indexPath.section == 1 {
+            if !viewModel.analysis.strengthsArray!.isEmpty {
+                let cell = tableView.dequeueReusableCell(withIdentifier: "StrengthsCardCell", for: indexPath) as! StrengthsCardCell
+                cell.configure(with: viewModel.analysis.strengthsArray!)
+                return cell
+            } else {
+                if !viewModel.analysis.areasForImprovementArray!.isEmpty {
+                    let cell = tableView.dequeueReusableCell(withIdentifier: "AreasForImprovementCardCell", for: indexPath) as! AreasForImprovementCardCell
+                    cell.configure(with: viewModel.analysis.areasForImprovementArray!)
+                    return cell
+                }
             }
         }
-        return cell
+            let cell = tableView.dequeueReusableCell(withIdentifier: "AreasForImprovementCardCell", for: indexPath) as! AreasForImprovementCardCell
+            cell.configure(with: viewModel.analysis.areasForImprovementArray!)
+            return cell
     }
 }
 
 // MARK: - UICollectionViewDelegate
-extension LessonViewController: UICollectionViewDelegate {
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        collectionView.deselectItem(at: indexPath, animated: true)
-        if let metricsBreakdown = viewModel.analysis.metricsBreakdownDict {
-            let metricNames = Array(metricsBreakdown.keys)
-            if indexPath.item < metricNames.count {
-                let metricName = metricNames[indexPath.item]
-                let metricData = metricsBreakdown[metricName]!
-                let metricVC = MetricViewController(metricName: metricName, metricBreakdown: metricData)
-                navigationController?.pushViewController(metricVC, animated: true)
-            }
-        }
-    }
-}
+extension LessonViewController: UITableViewDelegate {
 
-// MARK: - UICollectionViewDelegateFlowLayout
-extension LessonViewController: UICollectionViewDelegateFlowLayout {
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        let padding: CGFloat = 16
-        let spacing: CGFloat = 12
-        let availableWidth = collectionView.frame.width - (padding * 2) - spacing
-        let cellWidth = availableWidth / 2
-        let cellHeight: CGFloat = 140
-        return CGSize(width: cellWidth, height: cellHeight)
-    }
 }
-

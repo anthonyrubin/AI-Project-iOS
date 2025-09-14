@@ -19,11 +19,6 @@ protocol UserDataStore {
     func clearAllData() throws
 }
 
-protocol AnalysisDataStore {
-    func save(userServerId: Int, sport: String, score: Double, fps: Int, json: Data, videoPath: String?) throws
-//    func latest(for userServerId: Int) -> Results<AnalysisObject>
-}
-
 final class RealmUserDataStore: UserDataStore {
 
     func upsert(user: User) throws {

@@ -86,9 +86,8 @@ final class VideoAnalysisObject: Object {
     @Persisted var liftScore: Int?
     @Persisted var confidence: Double?
     @Persisted var overallAnalysis: String = ""
-    @Persisted var metricsBreakdown: String = "" // JSON string of metrics breakdown
-    @Persisted var overallTips: List<String> = List<String>()
-    @Persisted var progressionDrills: List<String> = List<String>()
+    @Persisted var strengths: String = "" // JSON string of strengths
+    @Persisted var areasForImprovement: String = "" // JSON string of areas for improvement
     @Persisted var metricsCatalog: List<String> = List<String>()
     @Persisted var createdAt: Date = Date()
     @Persisted var analysisData: String = "" // JSON string of analysis data
@@ -118,17 +117,32 @@ final class VideoAnalysisObject: Object {
         return nil
     }
     
-    // Computed property to get parsed metrics breakdown
-    var metricsBreakdownDict: [String: MetricBreakdown]? {
-        guard !metricsBreakdown.isEmpty else { return nil }
+    // Computed property to get parsed strengths
+    var strengthsArray: [Strength]? {
+        guard !strengths.isEmpty else { return nil }
         
         do {
-            if let data = metricsBreakdown.data(using: .utf8) {
+            if let data = strengths.data(using: .utf8) {
                 let decoder = JSONDecoder()
-                return try decoder.decode([String: MetricBreakdown].self, from: data)
+                return try decoder.decode([Strength].self, from: data)
             }
         } catch {
-            print("❌ Error parsing metrics breakdown: \(error)")
+            print("❌ Error parsing strengths: \(error)")
+        }
+        return nil
+    }
+    
+    // Computed property to get parsed areas for improvement
+    var areasForImprovementArray: [AreaForImprovement]? {
+        guard !areasForImprovement.isEmpty else { return nil }
+        
+        do {
+            if let data = areasForImprovement.data(using: .utf8) {
+                let decoder = JSONDecoder()
+                return try decoder.decode([AreaForImprovement].self, from: data)
+            }
+        } catch {
+            print("❌ Error parsing areas for improvement: \(error)")
         }
         return nil
     }
@@ -137,18 +151,8 @@ final class VideoAnalysisObject: Object {
     
     // MARK: - Helper Methods for UI
     
-    /// Get overall tips as array
-    var overallTipsArray: [String] {
-        return Array(overallTips)
-    }
-    
     /// Get metrics catalog as array
     var metricsCatalogArray: [String] {
         return Array(metricsCatalog)
-    }
-    
-    /// Get progression drills as array
-    var progressionDrillsArray: [String] {
-        return Array(progressionDrills)
     }
 }

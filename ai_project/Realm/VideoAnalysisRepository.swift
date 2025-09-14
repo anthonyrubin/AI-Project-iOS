@@ -138,29 +138,29 @@ class VideoAnalysisRepository {
                             }
                         }
                         
-                        // Add overall tips
-                        for tip in analysis.overall_tips {
-                            analysisObject.overallTips.append(tip)
-                        }
-                        
                         // Add metrics catalog
                         for metric in analysis.metrics_catalog {
                             analysisObject.metricsCatalog.append(metric)
                         }
                         
-                        // Add progression drills
-                        for drill in analysis.progression_drills {
-                            analysisObject.progressionDrills.append(drill)
-                        }
-                        
-                        // Store metrics breakdown as JSON string
+                        // Store strengths as JSON string
                         do {
                             let encoder = JSONEncoder()
-                            let metricsBreakdownData = try encoder.encode(analysis.metrics_breakdown)
-                            analysisObject.metricsBreakdown = String(data: metricsBreakdownData, encoding: .utf8) ?? ""
+                            let strengthsData = try encoder.encode(analysis.strengths)
+                            analysisObject.strengths = String(data: strengthsData, encoding: .utf8) ?? ""
                         } catch {
-                            print("❌ Error encoding metrics breakdown: \(error)")
-                            analysisObject.metricsBreakdown = ""
+                            print("❌ Error encoding strengths: \(error)")
+                            analysisObject.strengths = ""
+                        }
+                        
+                        // Store areas for improvement as JSON string
+                        do {
+                            let encoder = JSONEncoder()
+                            let areasData = try encoder.encode(analysis.areas_for_improvement)
+                            analysisObject.areasForImprovement = String(data: areasData, encoding: .utf8) ?? ""
+                        } catch {
+                            print("❌ Error encoding areas for improvement: \(error)")
+                            analysisObject.areasForImprovement = ""
                         }
                         
                         // Store analysis data as JSON string
