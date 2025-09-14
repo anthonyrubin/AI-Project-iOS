@@ -119,22 +119,6 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "234BE203-15ED-4809-9584-81F4D285B513"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "ai_project/Cells/VideoAnalysisLoadingCell.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "405"
-            endingLineNumber = "405"
-            landmarkName = "resetCell()"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
             uuid = "2BA93070-40E1-48F5-8C4B-2918E8EF23D7"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
@@ -178,6 +162,64 @@
             endingLineNumber = "99"
             landmarkName = "sendSimpleSocialLogin(socialResult:)"
             landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "A9381EF2-1F88-46BA-9E26-6A765217B547 - 694507db9444c2f5"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "ai_project.CreateAccountViewModel.sendSimpleSocialLogin(socialResult: ai_project.SocialLoginResult) -&gt; ()"
+                  moduleName = "ai_project.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewModels/CreateAccountViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "99"
+                  endingLineNumber = "99">
+               </Location>
+               <Location
+                  uuid = "A9381EF2-1F88-46BA-9E26-6A765217B547 - ba7c6c867ab081a4"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #1 (Swift.Result&lt;ai_project.SocialSignInResponse, ai_project.NetworkError&gt;) -&gt; () in ai_project.CreateAccountViewModel.sendSimpleSocialLogin(socialResult: ai_project.SocialLoginResult) -&gt; ()"
+                  moduleName = "ai_project.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewModels/CreateAccountViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "99"
+                  endingLineNumber = "99">
+               </Location>
+               <Location
+                  uuid = "A9381EF2-1F88-46BA-9E26-6A765217B547 - 400143f49f8ff96d"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #1 @Swift.MainActor () async -&gt; () in closure #1 (Swift.Result&lt;ai_project.SocialSignInResponse, ai_project.NetworkError&gt;) -&gt; () in ai_project.CreateAccountViewModel.sendSimpleSocialLogin(socialResult: ai_project.SocialLoginResult) -&gt; ()"
+                  moduleName = "ai_project.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewModels/CreateAccountViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "99"
+                  endingLineNumber = "99">
+               </Location>
+               <Location
+                  uuid = "A9381EF2-1F88-46BA-9E26-6A765217B547 - 1123fe7492c5c832"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(1) suspend resume partial function for closure #1 @Swift.MainActor () async -&gt; () in closure #1 (Swift.Result&lt;ai_project.SocialSignInResponse, ai_project.NetworkError&gt;) -&gt; () in ai_project.CreateAccountViewModel.sendSimpleSocialLogin(socialResult: ai_project.SocialLoginResult) -&gt; ()"
+                  moduleName = "ai_project.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewModels/CreateAccountViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "99"
+                  endingLineNumber = "99">
+               </Location>
+            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -354,6 +396,36 @@
             endingLineNumber = "84"
             landmarkName = "signInWithGoogle(completion:)"
             landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "542E8173-906C-45B9-9401-98FF4C01B142 - 78ecd3995c0bcd98"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "ai_project.SocialLoginManager.signInWithGoogle(completion: (Swift.Result&lt;ai_project.SocialLoginResult, ai_project.SocialLoginError&gt;) -&gt; ()) -&gt; ()"
+                  moduleName = "ai_project.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/Managers/SocialLoginManager.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "84"
+                  endingLineNumber = "84">
+               </Location>
+               <Location
+                  uuid = "542E8173-906C-45B9-9401-98FF4C01B142 - 55e1f9b65a38fb"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #1 (__C.UIWindow) -&gt; Swift.Bool in ai_project.SocialLoginManager.signInWithGoogle(completion: (Swift.Result&lt;ai_project.SocialLoginResult, ai_project.SocialLoginError&gt;) -&gt; ()) -&gt; ()"
+                  moduleName = "ai_project.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/Managers/SocialLoginManager.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "84"
+                  endingLineNumber = "84">
+               </Location>
+            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -402,6 +474,36 @@
             endingLineNumber = "146"
             landmarkName = "sendSignupDataToBackend(socialResult:)"
             landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "B49AEC90-8EFF-48B7-BEFD-E84EEA2CB745 - a75e0fe10c4d311b"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(1) suspend resume partial function for closure #1 @Swift.MainActor () async -&gt; () in closure #1 (Swift.Result&lt;ai_project.SocialSignInResponse, ai_project.NetworkError&gt;) -&gt; () in ai_project.CreateAccountViewModel.sendSignupDataToBackend(socialResult: ai_project.SocialLoginResult) -&gt; ()"
+                  moduleName = "ai_project.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewModels/CreateAccountViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "146"
+                  endingLineNumber = "146">
+               </Location>
+               <Location
+                  uuid = "B49AEC90-8EFF-48B7-BEFD-E84EEA2CB745 - a75e0fe10c4d311b"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(1) suspend resume partial function for closure #1 @Swift.MainActor () async -&gt; () in closure #1 (Swift.Result&lt;ai_project.SocialSignInResponse, ai_project.NetworkError&gt;) -&gt; () in ai_project.CreateAccountViewModel.sendSignupDataToBackend(socialResult: ai_project.SocialLoginResult) -&gt; ()"
+                  moduleName = "ai_project.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewModels/CreateAccountViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "146"
+                  endingLineNumber = "146">
+               </Location>
+            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -482,38 +584,50 @@
             endingLineNumber = "418"
             landmarkName = "initiateMembershipPurchase()"
             landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "CD507F58-CB04-4A28-BB41-2B6430785271"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "ai_project/ViewControllers/SessionViewController.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "94"
-            endingLineNumber = "94"
-            landmarkName = "setupBindings()"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "6561A66C-9EEB-4D2C-99AF-7E27FF11A905"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "ai_project/ViewControllers/SessionViewController.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "104"
-            endingLineNumber = "104"
-            landmarkName = "handleUploadCompletion()"
-            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "883EB23F-5CA0-41FF-AF5A-64EB151E3A90 - c5ae4a1387162c20"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(3) suspend resume partial function for closure #1 () async -&gt; () in ai_project.BecomeAMemberViewController.initiateMembershipPurchase() -&gt; ()"
+                  moduleName = "ai_project.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewControllers/SignupFlow/BecomeAMemberViewController.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "418"
+                  endingLineNumber = "418">
+               </Location>
+               <Location
+                  uuid = "883EB23F-5CA0-41FF-AF5A-64EB151E3A90 - ab6b043b7cf0cd76"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #1 (Swift.Bool) -&gt; () in closure #1 () async -&gt; () in ai_project.BecomeAMemberViewController.initiateMembershipPurchase() -&gt; ()"
+                  moduleName = "ai_project.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewControllers/SignupFlow/BecomeAMemberViewController.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "418"
+                  endingLineNumber = "418">
+               </Location>
+               <Location
+                  uuid = "883EB23F-5CA0-41FF-AF5A-64EB151E3A90 - d409b008acb4f151"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #1 @Swift.MainActor @Sendable () -&gt; () in closure #1 (Swift.Bool) -&gt; () in closure #1 () async -&gt; () in ai_project.BecomeAMemberViewController.initiateMembershipPurchase() -&gt; ()"
+                  moduleName = "ai_project.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/tonyrubin/CoachAI/CoachAIiOS/ai_project/ViewControllers/SignupFlow/BecomeAMemberViewController.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "418"
+                  endingLineNumber = "418">
+               </Location>
+            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

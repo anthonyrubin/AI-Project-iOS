@@ -131,7 +131,7 @@ class SessionHistoryCell: UITableViewCell {
         ])
     }
     
-    func configure(totalMinutes: Int, averageScore: Double) {
+    func configure(totalMinutes: Int, averageScore: Int) {
         // Format total minutes
         if totalMinutes >= 60 {
             let hours = totalMinutes / 60
@@ -142,7 +142,7 @@ class SessionHistoryCell: UITableViewCell {
         }
         
         // Format average score as percentage
-        let percentage = Int(averageScore * 10) // Convert 0-10 scale to 0-100
+        let percentage = averageScore
         averageScoreLabel.text = "\(percentage)%"
     }
 }

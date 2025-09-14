@@ -9,7 +9,7 @@ struct VideoAnalysis: Codable {
     let icon: String
     let sport: String
     let sport_category: String
-    let lift_score: Double?
+    let lift_score: Int?
     let confidence: Double?
     let overall_analysis: String
     let metrics_breakdown: [String: MetricBreakdown]
@@ -28,7 +28,7 @@ struct VideoAnalysis: Codable {
         analysis_data = try container.decode([String: AnyCodable].self, forKey: .analysis_data)
         sport = try container.decode(String.self, forKey: .sport)
         sport_category = try container.decode(String.self, forKey: .sport_category)
-        lift_score = try container.decodeIfPresent(Double.self, forKey: .lift_score)
+        lift_score = try container.decodeIfPresent(Int.self, forKey: .lift_score)
         confidence = try container.decodeIfPresent(Double.self, forKey: .confidence)
         overall_analysis = try container.decode(String.self, forKey: .overall_analysis)
         metrics_breakdown = try container.decode([String: MetricBreakdown].self, forKey: .metrics_breakdown)

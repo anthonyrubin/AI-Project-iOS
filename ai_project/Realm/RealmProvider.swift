@@ -4,7 +4,7 @@ import Foundation
 enum RealmProvider {
     static func config() -> Realm.Configuration {
         Realm.Configuration(
-            schemaVersion: 8,
+            schemaVersion: 9,
             migrationBlock: { migration, oldSchemaVersion in
                 if oldSchemaVersion < 5 {
                     // Migrate from GCS URLs to signed URLs

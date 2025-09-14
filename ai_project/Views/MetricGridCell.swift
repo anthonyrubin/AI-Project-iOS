@@ -15,6 +15,7 @@ class MetricGridCell: UICollectionViewCell {
     // MARK: - Initialization
     override init(frame: CGRect) {
         self.scoreRingView = ScoreRingView()
+        scoreRingView.font = .systemFont(ofSize: 18)
         super.init(frame: frame)
         setupUI()
     }
@@ -48,6 +49,8 @@ class MetricGridCell: UICollectionViewCell {
         descriptionLabel.numberOfLines = 3
         descriptionLabel.translatesAutoresizingMaskIntoConstraints = false
         
+        scoreRingView.translatesAutoresizingMaskIntoConstraints = false
+        
         // Add subviews
         contentView.addSubview(containerView)
         containerView.addSubview(scoreRingView)
@@ -65,6 +68,8 @@ class MetricGridCell: UICollectionViewCell {
             // Score ring view
             scoreRingView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
             scoreRingView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+            scoreRingView.widthAnchor.constraint(equalToConstant: 45),
+            scoreRingView.heightAnchor.constraint(equalToConstant: 45),
             
             // Title label
             titleLabel.topAnchor.constraint(equalTo: scoreRingView.bottomAnchor, constant: 8),

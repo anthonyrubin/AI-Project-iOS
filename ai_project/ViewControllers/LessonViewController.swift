@@ -114,6 +114,7 @@ final class LessonViewController: UIViewController {
     }
 
     // MARK: - Player Setup
+
     private func configurePlayer(with urlString: String) {
         guard let url = URL(string: urlString) else { return }
 
@@ -124,15 +125,15 @@ final class LessonViewController: UIViewController {
         let player = AVPlayer(playerItem: item)
         self.player = player
 
-        // Layer
+        // Player layer goes BEHIND controls
         playerLayer?.removeFromSuperlayer()
         let layer = AVPlayerLayer(player: player)
         layer.videoGravity = .resizeAspectFill
-        videoContainerView.layer.addSublayer(layer)
         layer.frame = videoContainerView.bounds
+        videoContainerView.layer.insertSublayer(layer, at: 0) // <- key line
         self.playerLayer = layer
 
-        // KVO: status + presentationSize (tokens auto-clean on deinit/assignment)
+        // KVO
         statusObs = item.observe(\.status, options: [.initial, .new]) { [weak self] item, _ in
             guard let self else { return }
             switch item.status {
@@ -152,6 +153,38 @@ final class LessonViewController: UIViewController {
         }
     }
 
+    private func updateVideoAspectRatio() {
+        guard
+            let size = player?.currentItem?.presentationSize,
+            size.width > 0, size.height > 0
+        else { return }
+
+        // Keep a SINGLE height constraint. Do NOT replace it.
+        let aspect = size.height / size.width
+        let width = videoContainerView.bounds.width
+        let targetHeight = width * aspect
+
+        // If you clamp for pan ratios, do it here using your helpers; otherwise just set it.
+        videoHeightConstraint?.constant = targetHeight
+
+        UIView.animate(withDuration: 0.25) { self.view.layoutIfNeeded() }
+    }
+
+//    private func updateVideoAspectRatio() {
+//        guard let size = player?.currentItem?.presentationSize,
+//              size.width > 0, size.height > 0 else { return }
+//        let aspect = size.height / size.width
+//
+//        videoHeightConstraint?.isActive = false
+//        videoHeightConstraint = videoContainerView.heightAnchor.constraint(
+//            equalTo: videoContainerView.widthAnchor,
+//            multiplier: aspect
+//        )
+//        videoHeightConstraint?.isActive = true
+//
+//        UIView.animate(withDuration: 0.25) { self.view.layoutIfNeeded() }
+//    }
+//    
     private func onReadyToPlay(_ item: AVPlayerItem) {
         // Duration may still be indefinite—guard it.
         if let dur = safeSeconds(item.duration) {
@@ -219,21 +252,6 @@ final class LessonViewController: UIViewController {
         timeLabel.text = "\(formatTime(current)) / \(formatTime(duration))"
     }
 
-    private func updateVideoAspectRatio() {
-        guard let size = player?.currentItem?.presentationSize,
-              size.width > 0, size.height > 0 else { return }
-        let aspect = size.height / size.width
-
-        videoHeightConstraint?.isActive = false
-        videoHeightConstraint = videoContainerView.heightAnchor.constraint(
-            equalTo: videoContainerView.widthAnchor,
-            multiplier: aspect
-        )
-        videoHeightConstraint?.isActive = true
-
-        UIView.animate(withDuration: 0.25) { self.view.layoutIfNeeded() }
-    }
-
     // MARK: - Actions
     @objc private func playButtonTapped() { togglePlayback() }
 
@@ -298,51 +316,19 @@ final class LessonViewController: UIViewController {
     private func setupUI() {
         view.backgroundColor = .systemBackground
         title = "Video Analysis"
-
-        // Scroll + content
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        contentView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(scrollView)
-        scrollView.addSubview(contentView)
-
-        NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
-            contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
-            contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
-            contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
-            contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor)
-        ])
-
-        // Video container
+        
+        // MARK: Video container
         videoContainerView.translatesAutoresizingMaskIntoConstraints = false
         videoContainerView.backgroundColor = .black
         videoContainerView.layer.cornerRadius = 12
         videoContainerView.clipsToBounds = true
-        contentView.addSubview(videoContainerView)
-
-        // Default height constraint - will be updated based on video aspect ratio
-        videoHeightConstraint = videoContainerView.heightAnchor.constraint(
-            equalTo: view.heightAnchor, multiplier: maxVideoHeightRatio
-        )
-
-        NSLayoutConstraint.activate([
-            videoContainerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
-            videoContainerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            videoContainerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            videoHeightConstraint!
-        ])
-
-        // Tap to toggle
-        let tap = UITapGestureRecognizer(target: self, action: #selector(videoTapped))
-        videoContainerView.addGestureRecognizer(tap)
-        videoContainerView.isUserInteractionEnabled = true
-
-        // Play button
+        view.addSubview(videoContainerView)
+        
+        // One and only resizable height constraint (updated by pan/aspect)
+        let initialVideoH = max(220, view.bounds.height * maxVideoHeightRatio * 0.9)
+        videoHeightConstraint = videoContainerView.heightAnchor.constraint(equalToConstant: initialVideoH)
+        
+        // MARK: Video controls
         playButton.translatesAutoresizingMaskIntoConstraints = false
         playButton.setImage(UIImage(systemName: "play.fill"), for: .normal)
         playButton.tintColor = .white
@@ -350,75 +336,87 @@ final class LessonViewController: UIViewController {
         playButton.layer.cornerRadius = 25
         playButton.alpha = 1.0
         playButton.addTarget(self, action: #selector(playButtonTapped), for: .touchUpInside)
-
-        // Slider
+        
         progressSlider.translatesAutoresizingMaskIntoConstraints = false
         progressSlider.minimumValue = 0
         progressSlider.maximumValue = 1
         progressSlider.value = 0
         progressSlider.addTarget(self, action: #selector(sliderValueChanged), for: .valueChanged)
-
-        // Time label
+        
         timeLabel.translatesAutoresizingMaskIntoConstraints = false
         timeLabel.textColor = .white
         timeLabel.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
         timeLabel.text = "00:00 / 00:00"
-
+        
         videoContainerView.addSubview(playButton)
         videoContainerView.addSubview(progressSlider)
         videoContainerView.addSubview(timeLabel)
-
-        NSLayoutConstraint.activate([
-            playButton.centerXAnchor.constraint(equalTo: videoContainerView.centerXAnchor),
-            playButton.centerYAnchor.constraint(equalTo: videoContainerView.centerYAnchor),
-            playButton.widthAnchor.constraint(equalToConstant: 50),
-            playButton.heightAnchor.constraint(equalToConstant: 50),
-
-            progressSlider.leadingAnchor.constraint(equalTo: videoContainerView.leadingAnchor, constant: 16),
-            progressSlider.trailingAnchor.constraint(equalTo: videoContainerView.trailingAnchor, constant: -16),
-            progressSlider.bottomAnchor.constraint(equalTo: videoContainerView.bottomAnchor, constant: -16),
-
-            timeLabel.trailingAnchor.constraint(equalTo: videoContainerView.trailingAnchor, constant: -16),
-            timeLabel.bottomAnchor.constraint(equalTo: progressSlider.topAnchor, constant: -8)
-        ])
-
-        // Metrics container
+        
+        // Tap-to-toggle on video
+        let tap = UITapGestureRecognizer(target: self, action: #selector(videoTapped))
+        videoContainerView.addGestureRecognizer(tap)
+        videoContainerView.isUserInteractionEnabled = true
+        
+        // MARK: Metrics container + collection view
         metricsContainerView.translatesAutoresizingMaskIntoConstraints = false
         metricsContainerView.backgroundColor = .systemBackground
-        contentView.addSubview(metricsContainerView)
+        view.addSubview(metricsContainerView)
         
-        // Collection view
+        // Pan-to-resize (we only change videoHeightConstraint.constant)
+        panGestureRecognizer.addTarget(self, action: #selector(handlePanGesture(_:)))
+        metricsContainerView.addGestureRecognizer(panGestureRecognizer)
+        
+        // Collection view config
+        if let flow = metricsCollectionView.collectionViewLayout as? UICollectionViewFlowLayout {
+            flow.scrollDirection = .vertical
+            flow.minimumInteritemSpacing = 12
+            flow.minimumLineSpacing = 12
+            flow.sectionInset = UIEdgeInsets(top: 16, left: 16, bottom: 0, right: 16) // no forced bottom gap
+        }
         metricsCollectionView.translatesAutoresizingMaskIntoConstraints = false
         metricsCollectionView.backgroundColor = .clear
         metricsCollectionView.delegate = self
         metricsCollectionView.dataSource = self
+        metricsCollectionView.alwaysBounceVertical = true
+        metricsCollectionView.keyboardDismissMode = .onDrag
         metricsCollectionView.register(MetricGridCell.self, forCellWithReuseIdentifier: "MetricGridCell")
         metricsContainerView.addSubview(metricsCollectionView)
         
-        // Pan gesture for resizing
-        panGestureRecognizer.addTarget(self, action: #selector(handlePanGesture(_:)))
-        metricsContainerView.addGestureRecognizer(panGestureRecognizer)
-        
-        // Initial height constraint
-        metricsContainerHeightConstraint = metricsContainerView.heightAnchor.constraint(
-            equalTo: view.heightAnchor, multiplier: 1.0 - maxVideoHeightRatio
-        )
-        
+        // MARK: Constraints
         NSLayoutConstraint.activate([
-            metricsContainerView.topAnchor.constraint(equalTo: videoContainerView.bottomAnchor, constant: 8),
-            metricsContainerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            metricsContainerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            metricsContainerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            metricsContainerHeightConstraint!,
+            // Video
+            videoContainerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
+            videoContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            videoContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            videoHeightConstraint!,
             
+            // Metrics fills remainder (no height constraint here)
+            metricsContainerView.topAnchor.constraint(equalTo: videoContainerView.bottomAnchor, constant: 8),
+            metricsContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            metricsContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            metricsContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
+            // Collection view fills metrics container
             metricsCollectionView.topAnchor.constraint(equalTo: metricsContainerView.topAnchor),
             metricsCollectionView.leadingAnchor.constraint(equalTo: metricsContainerView.leadingAnchor),
             metricsCollectionView.trailingAnchor.constraint(equalTo: metricsContainerView.trailingAnchor),
-            metricsCollectionView.bottomAnchor.constraint(equalTo: metricsContainerView.bottomAnchor)
+            metricsCollectionView.bottomAnchor.constraint(equalTo: metricsContainerView.bottomAnchor),
+            
+            // Video controls inside video container
+            playButton.centerXAnchor.constraint(equalTo: videoContainerView.centerXAnchor),
+            playButton.centerYAnchor.constraint(equalTo: videoContainerView.centerYAnchor),
+            playButton.widthAnchor.constraint(equalToConstant: 50),
+            playButton.heightAnchor.constraint(equalToConstant: 50),
+            
+            progressSlider.leadingAnchor.constraint(equalTo: videoContainerView.leadingAnchor, constant: 16),
+            progressSlider.trailingAnchor.constraint(equalTo: videoContainerView.trailingAnchor, constant: -16),
+            progressSlider.bottomAnchor.constraint(equalTo: videoContainerView.bottomAnchor, constant: -16),
+            
+            timeLabel.trailingAnchor.constraint(equalTo: videoContainerView.trailingAnchor, constant: -16),
+            timeLabel.bottomAnchor.constraint(equalTo: progressSlider.topAnchor, constant: -8)
         ])
-
-        // Metrics will be loaded automatically via collection view data source
     }
+
 
     
     // MARK: - Gesture Handling

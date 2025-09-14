@@ -9,7 +9,7 @@ class SessionViewModel: ObservableObject {
     @Published var currentUser: UserObject?
     @Published var userAnalyses: [VideoAnalysisObject] = []
     @Published var totalMinutesAnalyzed: Int = 0
-    @Published var averageScore: Double = 0.0
+    @Published var averageScore: Int = 0
     @Published var lastSession: VideoAnalysisObject?
     @Published var isLoading = false
     @Published var errorMessage: String?
@@ -108,9 +108,9 @@ class SessionViewModel: ObservableObject {
             .compactMap { $0.liftScore }
         
         if !scores.isEmpty {
-            averageScore = scores.reduce(0, +) / Double(scores.count)
+            averageScore = scores.reduce(0, +) / scores.count
         } else {
-            averageScore = 0.0
+            averageScore = 0
         }
         
         // Get the most recent analysis

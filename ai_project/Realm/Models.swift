@@ -83,7 +83,7 @@ final class VideoAnalysisObject: Object {
     @Persisted var userId: Int
     @Persisted var sport: String = ""
     @Persisted var sportCategory: String = ""
-    @Persisted var liftScore: Double?
+    @Persisted var liftScore: Int?
     @Persisted var confidence: Double?
     @Persisted var overallAnalysis: String = ""
     @Persisted var metricsBreakdown: String = "" // JSON string of metrics breakdown

@@ -13,7 +13,9 @@ class MetricViewController: UIViewController {
     private let titleLabel = UILabel()
     private let descriptionLabel = UILabel()
     private let analysisLabel = UILabel()
+    private let analysisTextView = UITextView()
     private let improvementLabel = UILabel()
+    private let improvementTextView = UITextView()
     
     // MARK: - Initialization
     init(metricName: String, metricBreakdown: MetricBreakdown) {
@@ -32,7 +34,6 @@ class MetricViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupConstraints()
-        populateContent()
     }
     
     // MARK: - Setup
@@ -54,7 +55,9 @@ class MetricViewController: UIViewController {
         contentView.addSubview(titleLabel)
         contentView.addSubview(descriptionLabel)
         contentView.addSubview(analysisLabel)
+        contentView.addSubview(analysisTextView)
         contentView.addSubview(improvementLabel)
+        contentView.addSubview(improvementTextView)
     }
     
     private func setupLabels() {
@@ -85,6 +88,24 @@ class MetricViewController: UIViewController {
         improvementLabel.font = .systemFont(ofSize: 20, weight: .semibold)
         improvementLabel.textColor = .label
         improvementLabel.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Analysis text view
+        analysisTextView.text = metricBreakdown.analysis_text
+        analysisTextView.font = .systemFont(ofSize: 16, weight: .regular)
+        analysisTextView.textColor = .label
+        analysisTextView.backgroundColor = .clear
+        analysisTextView.isEditable = false
+        analysisTextView.isScrollEnabled = false
+        analysisTextView.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Improvement text view
+        improvementTextView.text = metricBreakdown.how_to_improve
+        improvementTextView.font = .systemFont(ofSize: 16, weight: .regular)
+        improvementTextView.textColor = .label
+        improvementTextView.backgroundColor = .clear
+        improvementTextView.isEditable = false
+        improvementTextView.isScrollEnabled = false
+        improvementTextView.translatesAutoresizingMaskIntoConstraints = false
     }
     
     private func setupConstraints() {
@@ -121,29 +142,17 @@ class MetricViewController: UIViewController {
             analysisLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             analysisLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             
-            // Improvement label
-            improvementLabel.topAnchor.constraint(equalTo: analysisLabel.bottomAnchor, constant: 16),
-            improvementLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            improvementLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            improvementLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20)
-        ])
-    }
-    
-    private func populateContent() {
-        // Create analysis text view
-        let analysisTextView = createTextView(text: metricBreakdown.analysis_text)
-        contentView.addSubview(analysisTextView)
-        
-        // Create improvement text view
-        let improvementTextView = createTextView(text: metricBreakdown.how_to_improve)
-        contentView.addSubview(improvementTextView)
-        
-        // Update constraints
-        NSLayoutConstraint.activate([
+            // Analysis text view
             analysisTextView.topAnchor.constraint(equalTo: analysisLabel.bottomAnchor, constant: 8),
             analysisTextView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             analysisTextView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             
+            // Improvement label
+            improvementLabel.topAnchor.constraint(equalTo: analysisTextView.bottomAnchor, constant: 24),
+            improvementLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            improvementLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            
+            // Improvement text view
             improvementTextView.topAnchor.constraint(equalTo: improvementLabel.bottomAnchor, constant: 8),
             improvementTextView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             improvementTextView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
@@ -151,20 +160,4 @@ class MetricViewController: UIViewController {
         ])
     }
     
-    private func createTextView(text: String) -> UITextView {
-        let textView = UITextView()
-        textView.text = text
-        textView.font = .systemFont(ofSize: 16, weight: .regular)
-        textView.textColor = .label
-        textView.backgroundColor = .clear
-        textView.isEditable = false
-        textView.isScrollEnabled = false
-        textView.translatesAutoresizingMaskIntoConstraints = false
-        
-        // Calculate height based on content
-        let size = textView.sizeThatFits(CGSize(width: view.frame.width - 40, height: CGFloat.greatestFiniteMagnitude))
-        textView.heightAnchor.constraint(equalToConstant: size.height).isActive = true
-        
-        return textView
-    }
 }

@@ -244,7 +244,10 @@ extension SessionViewController: UITableViewDataSource {
 
             if row == currentRow {
                 let cell = tableView.dequeueReusableCell(withIdentifier: "SessionHistoryCell", for: indexPath) as! SessionHistoryCell
-                cell.configure(totalMinutes: sessionViewModel.totalMinutesAnalyzed, averageScore: sessionViewModel.averageScore)
+                cell.configure(
+                    totalMinutes: sessionViewModel.totalMinutesAnalyzed,
+                    averageScore: sessionViewModel.averageScore
+                )
                 return cell
             }
             currentRow += 1
@@ -304,8 +307,9 @@ extension SessionViewController: UITableViewDelegate {
         case .recentlyAnalyzedCell:
             if let last = sessionViewModel.lastSession {
                 let lesson = LessonViewController(analysis: last)
-                lesson.hidesBottomBarWhenPushed = true
-                navigationController?.pushViewController(lesson, animated: true)
+                let nav = UINavigationController(rootViewController: lesson)
+                //lesson.hidesBottomBarWhenPushed = true
+                self.present(nav, animated: true)
             }
         default: break
         }
