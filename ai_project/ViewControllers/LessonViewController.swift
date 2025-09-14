@@ -15,38 +15,46 @@ final class LessonViewController: UIViewController {
     private var sizeObs: NSKeyValueObservation?
     private var cancellables = Set<AnyCancellable>()
 
+    // MARK: - Split + UI constants
+    private let sideMargin: CGFloat = 20
+    private let topMargin: CGFloat = 16
+    private let interSectionSpacing: CGFloat = 8
+
+    // Ratios for draggable range
+    private let minVideoHeightRatio: CGFloat = 0.25 // 25%
+    private let maxVideoHeightRatio: CGFloat = 0.50 // 50%
+
     // MARK: - UI
-    private let scrollView = UIScrollView()
-    private let contentView = UIView()
     private let videoContainerView = UIView()
     private var videoHeightConstraint: NSLayoutConstraint?
-    private var metricsContainerHeightConstraint: NSLayoutConstraint?
+
+    private let handleContainer = UIView()
+    private let handlePill = UIView()
+    private var panOnHandle: UIPanGestureRecognizer!
+
+    private let metricsContainerView = UIView()
+    private let metricsCollectionView: UICollectionView
 
     private let playButton = UIButton(type: .system)
     private let progressSlider = UISlider()
     private let timeLabel = UILabel()
-    
-    // New metrics grid
-    private let metricsCollectionView: UICollectionView
-    private let metricsContainerView = UIView()
-    private let panGestureRecognizer = UIPanGestureRecognizer()
-    private var initialMetricsHeight: CGFloat = 0
-    private let minVideoHeightRatio: CGFloat = 0.25 // 25% of screen height
-    private let maxVideoHeightRatio: CGFloat = 0.5  // 50% of screen height
+
+    // MARK: - State
+    private var initialVideoHeightOnPan: CGFloat = 0
+    private var isDragEnabled: Bool = false
+    private var didApplyInitialSizing = false
 
     private lazy var errorModalManager = ErrorModalManager(viewController: self)
 
     // MARK: - Init
     init(analysis: VideoAnalysisObject) {
-        // Setup collection view layout
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
         layout.minimumInteritemSpacing = 12
         layout.minimumLineSpacing = 12
         layout.sectionInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
-        
         self.metricsCollectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        
+
         self.viewModel = LessonViewModel(
             analysis: analysis,
             repository: VideoAnalysisRepository(
@@ -55,12 +63,12 @@ final class LessonViewController: UIViewController {
         )
         super.init(nibName: nil, bundle: nil)
     }
-
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupCloseButton()
         setupUI()
         bindViewModel()
         setupNotifications()
@@ -72,9 +80,28 @@ final class LessonViewController: UIViewController {
         makeNavBarTransparent(for: self)
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        // After full-screen presentation, bounds/safe area finalize here.
+        if player?.currentItem?.status == .readyToPlay {
+            updateVideoSizingForCurrentAsset()
+        }
+    }
+
+    override func viewSafeAreaInsetsDidChange() {
+        super.viewSafeAreaInsetsDidChange()
+        if player?.currentItem?.status == .readyToPlay {
+            updateVideoSizingForCurrentAsset()
+        }
+    }
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         playerLayer?.frame = videoContainerView.bounds
+        // First time we know bounds, apply initial sizing if ready
+        if !didApplyInitialSizing, player?.currentItem?.status == .readyToPlay {
+            updateVideoSizingForCurrentAsset()
+        }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -114,26 +141,23 @@ final class LessonViewController: UIViewController {
     }
 
     // MARK: - Player Setup
-
     private func configurePlayer(with urlString: String) {
         guard let url = URL(string: urlString) else { return }
-
-        // Clean any old player first
         teardownPlayer()
 
         let item = AVPlayerItem(url: url)
         let player = AVPlayer(playerItem: item)
         self.player = player
 
-        // Player layer goes BEHIND controls
         playerLayer?.removeFromSuperlayer()
         let layer = AVPlayerLayer(player: player)
-        layer.videoGravity = .resizeAspectFill
+        layer.videoGravity = .resizeAspect // preserve aspect, no cropping
         layer.frame = videoContainerView.bounds
-        videoContainerView.layer.insertSublayer(layer, at: 0) // <- key line
+        videoContainerView.layer.insertSublayer(layer, at: 0)
         self.playerLayer = layer
 
-        // KVO
+        didApplyInitialSizing = false
+
         statusObs = item.observe(\.status, options: [.initial, .new]) { [weak self] item, _ in
             guard let self else { return }
             switch item.status {
@@ -143,50 +167,16 @@ final class LessonViewController: UIViewController {
                 print("❌ Player failed: \(item.error?.localizedDescription ?? "Unknown error")")
             case .unknown:
                 break
-            @unknown default:
-                break
+            @unknown default: break
             }
         }
 
         sizeObs = item.observe(\.presentationSize, options: [.new]) { [weak self] _, _ in
-            self?.updateVideoAspectRatio()
+            self?.updateVideoSizingForCurrentAsset()
         }
     }
 
-    private func updateVideoAspectRatio() {
-        guard
-            let size = player?.currentItem?.presentationSize,
-            size.width > 0, size.height > 0
-        else { return }
-
-        // Keep a SINGLE height constraint. Do NOT replace it.
-        let aspect = size.height / size.width
-        let width = videoContainerView.bounds.width
-        let targetHeight = width * aspect
-
-        // If you clamp for pan ratios, do it here using your helpers; otherwise just set it.
-        videoHeightConstraint?.constant = targetHeight
-
-        UIView.animate(withDuration: 0.25) { self.view.layoutIfNeeded() }
-    }
-
-//    private func updateVideoAspectRatio() {
-//        guard let size = player?.currentItem?.presentationSize,
-//              size.width > 0, size.height > 0 else { return }
-//        let aspect = size.height / size.width
-//
-//        videoHeightConstraint?.isActive = false
-//        videoHeightConstraint = videoContainerView.heightAnchor.constraint(
-//            equalTo: videoContainerView.widthAnchor,
-//            multiplier: aspect
-//        )
-//        videoHeightConstraint?.isActive = true
-//
-//        UIView.animate(withDuration: 0.25) { self.view.layoutIfNeeded() }
-//    }
-//    
     private func onReadyToPlay(_ item: AVPlayerItem) {
-        // Duration may still be indefinite—guard it.
         if let dur = safeSeconds(item.duration) {
             progressSlider.maximumValue = Float(dur)
             updateTimeLabel(current: .zero, duration: item.duration)
@@ -194,14 +184,12 @@ final class LessonViewController: UIViewController {
             progressSlider.maximumValue = 0
             timeLabel.text = "00:00 / --:--"
         }
-
-        updateVideoAspectRatio()
+        updateVideoSizingForCurrentAsset()
         addPeriodicTimeObserverIfNeeded()
     }
 
     private func addPeriodicTimeObserverIfNeeded() {
         guard timeObserver == nil, let player = player else { return }
-        // 600 is a common timescale for smooth UI updates
         let interval = CMTime(seconds: 0.5, preferredTimescale: 600)
         timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] t in
             self?.updatePlaybackUI(time: t)
@@ -213,10 +201,8 @@ final class LessonViewController: UIViewController {
             player.removeTimeObserver(timeObserver)
         }
         timeObserver = nil
-
         statusObs = nil
         sizeObs = nil
-
         player?.pause()
         playerLayer?.player = nil
         playerLayer?.removeFromSuperlayer()
@@ -240,9 +226,7 @@ final class LessonViewController: UIViewController {
 
     // MARK: - UI Updates
     private func updatePlaybackUI(time: CMTime) {
-        if let cur = safeSeconds(time) {
-            progressSlider.value = Float(cur)
-        }
+        if let cur = safeSeconds(time) { progressSlider.value = Float(cur) }
         if let duration = player?.currentItem?.duration {
             updateTimeLabel(current: time, duration: duration)
         }
@@ -259,9 +243,7 @@ final class LessonViewController: UIViewController {
         UIView.animate(withDuration: 0.1, animations: {
             self.videoContainerView.alpha = 0.8
         }) { _ in
-            UIView.animate(withDuration: 0.1) {
-                self.videoContainerView.alpha = 1.0
-            }
+            UIView.animate(withDuration: 0.1) { self.videoContainerView.alpha = 1.0 }
         }
         togglePlayback()
     }
@@ -271,9 +253,7 @@ final class LessonViewController: UIViewController {
         if player.rate == 0 {
             player.play()
             playButton.setImage(UIImage(systemName: "pause.fill"), for: .normal)
-            UIView.animate(withDuration: 0.3, delay: 1.0, options: []) {
-                self.playButton.alpha = 0.3
-            }
+            UIView.animate(withDuration: 0.3, delay: 1.0, options: []) { self.playButton.alpha = 0.3 }
         } else {
             player.pause()
             playButton.setImage(UIImage(systemName: "play.fill"), for: .normal)
@@ -283,12 +263,12 @@ final class LessonViewController: UIViewController {
 
     @objc private func sliderValueChanged() {
         guard let _ = player?.currentItem else { return }
-        guard progressSlider.maximumValue > 0 else { return } // ignore seeks until duration known
+        guard progressSlider.maximumValue > 0 else { return }
         let target = CMTime(seconds: Double(progressSlider.value), preferredTimescale: 600)
         player?.seek(to: target)
     }
 
-    // MARK: - Notifications (seeking to event timestamps)
+    // MARK: - Notifications
     private func setupNotifications() {
         NotificationCenter.default.addObserver(
             self,
@@ -316,62 +296,43 @@ final class LessonViewController: UIViewController {
     private func setupUI() {
         view.backgroundColor = .systemBackground
         title = "Video Analysis"
-        
-        // MARK: Video container
+
+        // Video container
         videoContainerView.translatesAutoresizingMaskIntoConstraints = false
         videoContainerView.backgroundColor = .black
         videoContainerView.layer.cornerRadius = 12
         videoContainerView.clipsToBounds = true
         view.addSubview(videoContainerView)
-        
-        // One and only resizable height constraint (updated by pan/aspect)
+
+        // Single adjustable height constraint for the video
         let initialVideoH = max(220, view.bounds.height * maxVideoHeightRatio * 0.9)
         videoHeightConstraint = videoContainerView.heightAnchor.constraint(equalToConstant: initialVideoH)
-        
-        // MARK: Video controls
-        playButton.translatesAutoresizingMaskIntoConstraints = false
-        playButton.setImage(UIImage(systemName: "play.fill"), for: .normal)
-        playButton.tintColor = .white
-        playButton.backgroundColor = UIColor.black.withAlphaComponent(0.7)
-        playButton.layer.cornerRadius = 25
-        playButton.alpha = 1.0
-        playButton.addTarget(self, action: #selector(playButtonTapped), for: .touchUpInside)
-        
-        progressSlider.translatesAutoresizingMaskIntoConstraints = false
-        progressSlider.minimumValue = 0
-        progressSlider.maximumValue = 1
-        progressSlider.value = 0
-        progressSlider.addTarget(self, action: #selector(sliderValueChanged), for: .valueChanged)
-        
-        timeLabel.translatesAutoresizingMaskIntoConstraints = false
-        timeLabel.textColor = .white
-        timeLabel.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
-        timeLabel.text = "00:00 / 00:00"
-        
-        videoContainerView.addSubview(playButton)
-        videoContainerView.addSubview(progressSlider)
-        videoContainerView.addSubview(timeLabel)
-        
-        // Tap-to-toggle on video
-        let tap = UITapGestureRecognizer(target: self, action: #selector(videoTapped))
-        videoContainerView.addGestureRecognizer(tap)
-        videoContainerView.isUserInteractionEnabled = true
-        
-        // MARK: Metrics container + collection view
+
+        // Handle between video and metrics (bigger hit area for presented controllers)
+        handleContainer.translatesAutoresizingMaskIntoConstraints = false
+        handleContainer.isUserInteractionEnabled = true
+        view.addSubview(handleContainer)
+
+        handlePill.translatesAutoresizingMaskIntoConstraints = false
+        handlePill.backgroundColor = UIColor.secondaryLabel.withAlphaComponent(0.5)
+        handlePill.layer.cornerRadius = 3
+        handleContainer.addSubview(handlePill)
+
+        // Pan recognizer configured for coexistence with scroll/nav
+        panOnHandle = UIPanGestureRecognizer(target: self, action: #selector(handlePanGesture(_:)))
+        panOnHandle.delegate = self
+        handleContainer.addGestureRecognizer(panOnHandle)
+
+        // Metrics container + collection view
         metricsContainerView.translatesAutoresizingMaskIntoConstraints = false
         metricsContainerView.backgroundColor = .systemBackground
         view.addSubview(metricsContainerView)
-        
-        // Pan-to-resize (we only change videoHeightConstraint.constant)
-        panGestureRecognizer.addTarget(self, action: #selector(handlePanGesture(_:)))
-        metricsContainerView.addGestureRecognizer(panGestureRecognizer)
-        
-        // Collection view config
+
         if let flow = metricsCollectionView.collectionViewLayout as? UICollectionViewFlowLayout {
             flow.scrollDirection = .vertical
             flow.minimumInteritemSpacing = 12
             flow.minimumLineSpacing = 12
-            flow.sectionInset = UIEdgeInsets(top: 16, left: 16, bottom: 0, right: 16) // no forced bottom gap
+            flow.sectionInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
         }
         metricsCollectionView.translatesAutoresizingMaskIntoConstraints = false
         metricsCollectionView.backgroundColor = .clear
@@ -381,96 +342,164 @@ final class LessonViewController: UIViewController {
         metricsCollectionView.keyboardDismissMode = .onDrag
         metricsCollectionView.register(MetricGridCell.self, forCellWithReuseIdentifier: "MetricGridCell")
         metricsContainerView.addSubview(metricsCollectionView)
-        
-        // MARK: Constraints
+
+        // Video controls
+        playButton.translatesAutoresizingMaskIntoConstraints = false
+        playButton.setImage(UIImage(systemName: "play.fill"), for: .normal)
+        playButton.tintColor = .white
+        playButton.backgroundColor = UIColor.black.withAlphaComponent(0.7)
+        playButton.layer.cornerRadius = 25
+        playButton.alpha = 1.0
+        playButton.addTarget(self, action: #selector(playButtonTapped), for: .touchUpInside)
+
+        progressSlider.translatesAutoresizingMaskIntoConstraints = false
+        progressSlider.minimumValue = 0
+        progressSlider.maximumValue = 1
+        progressSlider.value = 0
+        progressSlider.addTarget(self, action: #selector(sliderValueChanged), for: .valueChanged)
+
+        timeLabel.translatesAutoresizingMaskIntoConstraints = false
+        timeLabel.textColor = .white
+        timeLabel.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
+        timeLabel.text = "00:00 / 00:00"
+
+        videoContainerView.addSubview(playButton)
+        videoContainerView.addSubview(progressSlider)
+        videoContainerView.addSubview(timeLabel)
+
+        let tap = UITapGestureRecognizer(target: self, action: #selector(videoTapped))
+        videoContainerView.addGestureRecognizer(tap)
+        videoContainerView.isUserInteractionEnabled = true
+
+        // Constraints
         NSLayoutConstraint.activate([
-            // Video
-            videoContainerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
-            videoContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            videoContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            // Video box within 20 side margins
+            videoContainerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: topMargin),
+            videoContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: sideMargin),
+            videoContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -sideMargin),
             videoHeightConstraint!,
-            
-            // Metrics fills remainder (no height constraint here)
-            metricsContainerView.topAnchor.constraint(equalTo: videoContainerView.bottomAnchor, constant: 8),
+
+            // Handle just below video (make it a bit taller to ensure easy hit after presentation)
+            handleContainer.topAnchor.constraint(equalTo: videoContainerView.bottomAnchor, constant: interSectionSpacing),
+            handleContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            handleContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            handleContainer.heightAnchor.constraint(equalToConstant: 32),
+
+            // Centered pill in the handle
+            handlePill.centerXAnchor.constraint(equalTo: handleContainer.centerXAnchor),
+            handlePill.centerYAnchor.constraint(equalTo: handleContainer.centerYAnchor),
+            handlePill.widthAnchor.constraint(equalToConstant: 44),
+            handlePill.heightAnchor.constraint(equalToConstant: 6),
+
+            // Metrics fills the rest
+            metricsContainerView.topAnchor.constraint(equalTo: handleContainer.bottomAnchor, constant: interSectionSpacing),
             metricsContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             metricsContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             metricsContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            
+
             // Collection view fills metrics container
             metricsCollectionView.topAnchor.constraint(equalTo: metricsContainerView.topAnchor),
             metricsCollectionView.leadingAnchor.constraint(equalTo: metricsContainerView.leadingAnchor),
             metricsCollectionView.trailingAnchor.constraint(equalTo: metricsContainerView.trailingAnchor),
             metricsCollectionView.bottomAnchor.constraint(equalTo: metricsContainerView.bottomAnchor),
-            
+
             // Video controls inside video container
             playButton.centerXAnchor.constraint(equalTo: videoContainerView.centerXAnchor),
             playButton.centerYAnchor.constraint(equalTo: videoContainerView.centerYAnchor),
             playButton.widthAnchor.constraint(equalToConstant: 50),
             playButton.heightAnchor.constraint(equalToConstant: 50),
-            
+
             progressSlider.leadingAnchor.constraint(equalTo: videoContainerView.leadingAnchor, constant: 16),
             progressSlider.trailingAnchor.constraint(equalTo: videoContainerView.trailingAnchor, constant: -16),
             progressSlider.bottomAnchor.constraint(equalTo: videoContainerView.bottomAnchor, constant: -16),
-            
+
             timeLabel.trailingAnchor.constraint(equalTo: videoContainerView.trailingAnchor, constant: -16),
             timeLabel.bottomAnchor.constraint(equalTo: progressSlider.topAnchor, constant: -8)
         ])
+
+        // Make sure handle sits above everything after presentation
+        view.bringSubviewToFront(handleContainer)
     }
 
+    // MARK: - Aspect & Initial Layout Rules
+    private func updateVideoSizingForCurrentAsset() {
+        guard
+            let size = player?.currentItem?.presentationSize,
+            size.width > 0, size.height > 0
+        else { return }
 
-    
-    // MARK: - Gesture Handling
+        let availableWidth = view.bounds.width - (sideMargin * 2)
+        let naturalAspect = size.height / size.width // H/W
+        let naturalHeightAtMaxWidth = availableWidth * naturalAspect
+
+        let screenH = view.bounds.height
+        let maxInitialVideoH = screenH * maxVideoHeightRatio // 50%
+
+        // Portrait (tall) clips that would exceed 50% get capped at 50%.
+        // Landscape clips use their natural height at max width (which is < 50%).
+        let targetInitialH = min(naturalHeightAtMaxWidth, maxInitialVideoH)
+        videoHeightConstraint?.constant = targetInitialH
+        view.layoutIfNeeded()
+
+        // Drag enabled only when portrait is capped by 50%.
+        let portraitCappedBy50 = naturalHeightAtMaxWidth > maxInitialVideoH
+        isDragEnabled = portraitCappedBy50
+        handlePill.alpha = isDragEnabled ? 1.0 : 0.3
+        panOnHandle.isEnabled = true // keep enabled; we gate in handler
+
+        didApplyInitialSizing = true
+    }
+
+    // MARK: - Dragging
     @objc private func handlePanGesture(_ gesture: UIPanGestureRecognizer) {
-        let translation = gesture.translation(in: view)
-        
+        // If we haven’t measured yet, try now (presentation/safe area may have just finalized)
+        if player?.currentItem?.presentationSize == .zero || !didApplyInitialSizing {
+            updateVideoSizingForCurrentAsset()
+        }
+        guard isDragEnabled else { return } // locked for landscape clips
+
+        let screenH = view.bounds.height
+        let minVideoH = screenH * minVideoHeightRatio   // 25%
+        let maxVideoH = screenH * maxVideoHeightRatio   // 50%
+
         switch gesture.state {
         case .began:
-            initialMetricsHeight = metricsContainerView.frame.height
-            
+            initialVideoHeightOnPan = videoHeightConstraint?.constant ?? 0
+
         case .changed:
-            let newHeight = initialMetricsHeight - translation.y
-            let screenHeight = view.frame.height
-            let minHeight = screenHeight * minVideoHeightRatio
-            let maxHeight = screenHeight * (1.0 - minVideoHeightRatio)
-            
-            let clampedHeight = max(minHeight, min(maxHeight, newHeight))
-            let videoHeight = screenHeight - clampedHeight
-            
-            // Update constraints
-            videoHeightConstraint?.constant = videoHeight - view.safeAreaInsets.top - 16
-            metricsContainerHeightConstraint?.constant = clampedHeight
-            
-            // Update video aspect ratio if needed
-            if let playerLayer = playerLayer {
-                let videoSize = playerLayer.videoRect.size
-                if videoSize.width > 0 && videoSize.height > 0 {
-                    let aspectRatio = videoSize.height / videoSize.width
-                    let newVideoHeight = videoContainerView.frame.width * aspectRatio
-                    videoHeightConstraint?.constant = newVideoHeight
-                }
-            }
-            
+            let dy = gesture.translation(in: view).y
+            // Drag up (dy < 0) -> shrink video (smaller height) -> grow metrics
+            var newVideoH = initialVideoHeightOnPan + dy
+            newVideoH = max(minVideoH, min(maxVideoH, newVideoH))
+            videoHeightConstraint?.constant = newVideoH
+            view.layoutIfNeeded()
+
         case .ended, .cancelled:
-            // Snap to nearest ratio
-            let screenHeight = view.frame.height
-            let currentRatio = metricsContainerView.frame.height / screenHeight
-            
-            let targetRatio: CGFloat
-            if currentRatio < 0.4 {
-                targetRatio = minVideoHeightRatio
-            } else {
-                targetRatio = maxVideoHeightRatio
-            }
-            
-            UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0) {
-                self.metricsContainerHeightConstraint?.constant = screenHeight * (1.0 - targetRatio)
-                self.videoHeightConstraint?.constant = screenHeight * targetRatio - self.view.safeAreaInsets.top - 16
+            let currentH = videoHeightConstraint?.constant ?? 0
+            let snapTarget = (abs(currentH - minVideoH) < abs(currentH - maxVideoH)) ? minVideoH : maxVideoH
+            UIView.animate(withDuration: 0.25, delay: 0, usingSpringWithDamping: 0.9, initialSpringVelocity: 0.3) {
+                self.videoHeightConstraint?.constant = snapTarget
                 self.view.layoutIfNeeded()
             }
-            
-        default:
-            break
+
+        default: break
         }
+    }
+}
+
+// MARK: - UIGestureRecognizerDelegate
+extension LessonViewController: UIGestureRecognizerDelegate {
+    // Allow the handle pan to coexist with collection view scroll and nav gestures
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                           shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        return gestureRecognizer === panOnHandle
+    }
+    // Prefer vertical drags on the handle; don’t start if mostly horizontal
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard gestureRecognizer === panOnHandle,
+              let pan = gestureRecognizer as? UIPanGestureRecognizer else { return true }
+        let v = pan.velocity(in: view)
+        return abs(v.y) > abs(v.x)
     }
 }
 
@@ -479,10 +508,8 @@ extension LessonViewController: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return viewModel.analysis.metricsBreakdownDict?.count ?? 0
     }
-    
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "MetricGridCell", for: indexPath) as! MetricGridCell
-        
         if let metricsBreakdown = viewModel.analysis.metricsBreakdownDict {
             let metricNames = Array(metricsBreakdown.keys)
             if indexPath.item < metricNames.count {
@@ -491,7 +518,6 @@ extension LessonViewController: UICollectionViewDataSource {
                 cell.configure(with: metricName, metricBreakdown: metricData)
             }
         }
-        
         return cell
     }
 }
@@ -500,13 +526,11 @@ extension LessonViewController: UICollectionViewDataSource {
 extension LessonViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         collectionView.deselectItem(at: indexPath, animated: true)
-        
         if let metricsBreakdown = viewModel.analysis.metricsBreakdownDict {
             let metricNames = Array(metricsBreakdown.keys)
             if indexPath.item < metricNames.count {
                 let metricName = metricNames[indexPath.item]
                 let metricData = metricsBreakdown[metricName]!
-                
                 let metricVC = MetricViewController(metricName: metricName, metricBreakdown: metricData)
                 navigationController?.pushViewController(metricVC, animated: true)
             }
@@ -521,8 +545,8 @@ extension LessonViewController: UICollectionViewDelegateFlowLayout {
         let spacing: CGFloat = 12
         let availableWidth = collectionView.frame.width - (padding * 2) - spacing
         let cellWidth = availableWidth / 2
-        let cellHeight: CGFloat = 140 // Fixed height for consistency
-        
+        let cellHeight: CGFloat = 140
         return CGSize(width: cellWidth, height: cellHeight)
     }
 }
+

@@ -309,6 +309,7 @@ extension SessionViewController: UITableViewDelegate {
                 let lesson = LessonViewController(analysis: last)
                 let nav = UINavigationController(rootViewController: lesson)
                 //lesson.hidesBottomBarWhenPushed = true
+                nav.modalPresentationStyle = .fullScreen
                 self.present(nav, animated: true)
             }
         default: break

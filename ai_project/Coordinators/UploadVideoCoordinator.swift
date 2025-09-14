@@ -76,29 +76,29 @@ final class UploadVideoCoordinator: NSObject, UINavigationControllerDelegate, PH
 
     // MARK: - Left-side close chip
 
-    private func makeCloseBarItem() -> UIBarButtonItem {
-        let button = UIButton(type: .system)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.backgroundColor = .secondarySystemBackground
-        button.tintColor = .secondaryLabel
-        button.layer.cornerRadius = 16
-        button.layer.masksToBounds = true
-        button.contentEdgeInsets = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
-
-        let symbolConfig = UIImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
-        let image = UIImage(systemName: "xmark")?.applyingSymbolConfiguration(symbolConfig)
-        button.setImage(image, for: .normal)
-
-        NSLayoutConstraint.activate([
-            button.widthAnchor.constraint(equalToConstant: 32),
-            button.heightAnchor.constraint(equalToConstant: 32)
-        ])
-
-        button.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
-        button.applyTactileTap()
-
-        return UIBarButtonItem(customView: button)
-    }
+//    private func makeCloseBarItem() -> UIBarButtonItem {
+//        let button = UIButton(type: .system)
+//        button.translatesAutoresizingMaskIntoConstraints = false
+//        button.backgroundColor = .secondarySystemBackground
+//        button.tintColor = .secondaryLabel
+//        button.layer.cornerRadius = 16
+//        button.layer.masksToBounds = true
+//        button.contentEdgeInsets = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
+//
+//        let symbolConfig = UIImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
+//        let image = UIImage(systemName: "xmark")?.applyingSymbolConfiguration(symbolConfig)
+//        button.setImage(image, for: .normal)
+//
+//        NSLayoutConstraint.activate([
+//            button.widthAnchor.constraint(equalToConstant: 32),
+//            button.heightAnchor.constraint(equalToConstant: 32)
+//        ])
+//
+//        button.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
+//        button.applyTactileTap()
+//
+//        return UIBarButtonItem(customView: button)
+//    }
 
     // MARK: Navigation
 
@@ -109,7 +109,7 @@ final class UploadVideoCoordinator: NSObject, UINavigationControllerDelegate, PH
         vc.navigationItem.rightBarButtonItem = makeHeaderBarItem()
 
         if nav.viewControllers.first === vc {
-            vc.navigationItem.leftBarButtonItem = makeCloseBarItem()
+            vc.navigationItem.leftBarButtonItem = vc.makeCloseBarItem()
         } else {
             vc.navigationItem.leftBarButtonItem = nil
         }

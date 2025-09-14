@@ -1,5 +1,124 @@
 import UIKit
 import Foundation
+import ObjectiveC
+
+public enum CloseButtonPosition { case left, right }
+
+private final class _ClosureBox {
+    let handler: (() -> Void)?
+    init(_ handler: (() -> Void)?) { self.handler = handler }
+}
+
+private struct _AssocKeys {
+    static var closeAction = "vc_close_action_key"
+    static var floatingButton = "vc_close_floating_button_key"
+}
+
+public extension UIViewController {
+
+    /// Adds a circular "X" button to the nav bar.
+    /// - Parameters:
+    ///   - position: .left (default) or .right
+    ///   - action: optional custom action; if nil, uses smart dismiss/pop.
+    func setupCloseButton(position: CloseButtonPosition = .left,
+                          action: (() -> Void)? = nil) {
+        let item = makeCloseBarItem()
+        let box = _ClosureBox(action)
+        objc_setAssociatedObject(self, &_AssocKeys.closeAction, box, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+
+        switch position {
+        case .left:  navigationItem.leftBarButtonItem  = item
+        case .right: navigationItem.rightBarButtonItem = item
+        }
+    }
+
+    /// For screens with hidden nav bars, adds the same circular "X" as a floating button pinned to the safe area.
+    /// Returns the button so you can further customize if needed.
+    @discardableResult
+    func addFloatingCloseButton(topInset: CGFloat = 8,
+                                leadingInset: CGFloat = 8,
+                                action: (() -> Void)? = nil) -> UIButton {
+        // Remove existing (if any)
+        if let existing = objc_getAssociatedObject(self, &_AssocKeys.floatingButton) as? UIButton {
+            existing.removeFromSuperview()
+        }
+
+        let button = makeCloseButton()
+        button.addTarget(self, action: #selector(_closeTapped), for: .touchUpInside)
+
+        let box = _ClosureBox(action)
+        objc_setAssociatedObject(self, &_AssocKeys.closeAction, box, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        objc_setAssociatedObject(self, &_AssocKeys.floatingButton, button, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+
+        view.addSubview(button)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            button.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: topInset),
+            button.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: leadingInset),
+            button.widthAnchor.constraint(equalToConstant: 32),
+            button.heightAnchor.constraint(equalToConstant: 32)
+        ])
+
+        return button
+    }
+
+    /// Creates the UIBarButtonItem wrapping the circular "X" button.
+    func makeCloseBarItem() -> UIBarButtonItem {
+        let button = makeCloseButton()
+        button.addTarget(self, action: #selector(_closeTapped), for: .touchUpInside)
+
+        // Size constraints so the bar button sizes correctly
+        button.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            button.widthAnchor.constraint(equalToConstant: 32),
+            button.heightAnchor.constraint(equalToConstant: 32)
+        ])
+
+        return UIBarButtonItem(customView: button)
+    }
+
+    // MARK: - Internal helpers
+
+    @objc private func _closeTapped() {
+        // Use custom override if provided
+        if let box = objc_getAssociatedObject(self, &_AssocKeys.closeAction) as? _ClosureBox,
+           let handler = box.handler {
+            handler()
+            return
+        }
+        // Default: dismiss presented nav stack if we’re its root
+        if let nav = navigationController, nav.presentingViewController != nil, nav.viewControllers.first === self {
+            nav.dismiss(animated: true)
+            return
+        }
+        // If we’re in a nav stack, pop
+        if let nav = navigationController {
+            nav.popViewController(animated: true)
+            return
+        }
+        // Fallback
+        dismiss(animated: true)
+    }
+
+    private func makeCloseButton() -> UIButton {
+        let button = UIButton(type: .system)
+        button.backgroundColor = .secondarySystemBackground
+        button.tintColor = .secondaryLabel
+        button.layer.cornerRadius = 16
+        button.layer.masksToBounds = true
+        button.contentEdgeInsets = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
+
+        let symbolConfig = UIImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
+        let image = UIImage(systemName: "xmark")?.applyingSymbolConfiguration(symbolConfig)
+        button.setImage(image, for: .normal)
+
+        // If you have a haptic/tactile extension, call it here.
+        button.applyTactileTap()
+
+        return button
+    }
+}
+
 
 extension UIViewController {
     func hideNavBarHairline() {
