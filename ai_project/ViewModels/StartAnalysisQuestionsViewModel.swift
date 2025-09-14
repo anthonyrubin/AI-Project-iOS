@@ -13,9 +13,9 @@ class StartAnalysisQuestionsViewModel: ObservableObject {
     }
     
     func startVideoUpload(fileURL: URL, liftType: String, uploadStateManager: UploadStateManager?) {
-        print("🚀 Starting video upload...")
         
-        let liftType = Lift(rawValue: liftType)
+        let lift = Lift(rawValue: liftType)!.data().imagePrefix
+        print("🚀 Starting video upload...")
         
         Task { @MainActor in
             isUploadingVideo = true
@@ -23,7 +23,7 @@ class StartAnalysisQuestionsViewModel: ObservableObject {
             print("📊 Upload state set to: isUploadingVideo=\(isUploadingVideo)")
         }
         
-        repository.uploadVideo(fileURL: fileURL, liftType: liftType!.data().imagePrefix) { [weak self] result in
+        repository.uploadVideo(fileURL: fileURL, liftType: lift) { [weak self] result in
             Task { @MainActor in
                 print("✅ Upload completed, setting isUploadingVideo to false")
                 self?.isUploadingVideo = false

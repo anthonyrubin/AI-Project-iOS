@@ -9,57 +9,15 @@ struct VideoAnalysis: Codable {
     let icon: String
     let sport: String
     let sport_category: String
-    let professional_score: Double?
+    let lift_score: Double?
     let confidence: Double?
-    let clip_summary: String
+    let overall_analysis: String
+    let metrics_breakdown: [String: MetricBreakdown]
     let overall_tips: [String]
+    let progression_drills: [String]
     let metrics_catalog: [String]
     let created_at: String
     
-    // Computed properties to extract data from analysis_data
-    var events: [AnalysisEvent]? {
-        guard let eventsData = analysis_data["events"]?.value as? [[String: Any]] else {
-            return nil 
-        }
-        
-        let parsedEvents = eventsData.compactMap { (eventDict: [String: Any]) -> AnalysisEvent? in
-            
-            // Handle both Int and Double timestamps
-            let t: Double
-            if let timestampDouble = eventDict["t"] as? Double {
-                t = timestampDouble
-            } else if let timestampInt = eventDict["t"] as? Int {
-                t = Double(timestampInt)
-            } else {
-                return nil
-            }
-            
-            guard let label = eventDict["label"] as? String else {
-                return nil
-            }
-            
-            guard let feedback = eventDict["feedback"] as? String else {
-                return nil
-            }
-            
-            guard let metricsData = eventDict["metrics"] as? [[String: Any]] else {
-                return nil
-            }
-            
-            let metrics = metricsData.compactMap { (metricDict: [String: Any]) -> AnalysisMetric? in
-                guard let name = metricDict["name"] as? String,
-                      let value = metricDict["value"] as? String,
-                      let estimationMethod = metricDict["estimation_method"] as? String else { 
-                    return nil
-                }
-                return AnalysisMetric(name: name, value: value, estimation_method: estimationMethod)
-            }
-            
-            return AnalysisEvent(t: t, label: label, metrics: metrics, feedback: feedback)
-        }
-        
-        return parsedEvents
-    }
     
     // Custom decoding to handle potential issues
     init(from decoder: Decoder) throws {
@@ -70,10 +28,12 @@ struct VideoAnalysis: Codable {
         analysis_data = try container.decode([String: AnyCodable].self, forKey: .analysis_data)
         sport = try container.decode(String.self, forKey: .sport)
         sport_category = try container.decode(String.self, forKey: .sport_category)
-        professional_score = try container.decodeIfPresent(Double.self, forKey: .professional_score)
+        lift_score = try container.decodeIfPresent(Double.self, forKey: .lift_score)
         confidence = try container.decodeIfPresent(Double.self, forKey: .confidence)
-        clip_summary = try container.decode(String.self, forKey: .clip_summary)
+        overall_analysis = try container.decode(String.self, forKey: .overall_analysis)
+        metrics_breakdown = try container.decode([String: MetricBreakdown].self, forKey: .metrics_breakdown)
         overall_tips = try container.decode([String].self, forKey: .overall_tips)
+        progression_drills = try container.decode([String].self, forKey: .progression_drills)
         metrics_catalog = try container.decode([String].self, forKey: .metrics_catalog)
         created_at = try container.decode(String.self, forKey: .created_at)
         icon = try container.decode(String.self, forKey: .icon)
@@ -135,17 +95,15 @@ struct AnyCodable: Codable {
     }
 }
 
-struct AnalysisEvent: Codable {
-    let t: Double  // timestamp
-    let label: String
-    let metrics: [AnalysisMetric]
-    let feedback: String
-}
 
-struct AnalysisMetric: Codable {
-    let name: String
-    let value: String
-    let estimation_method: String
+// MARK: - New Metrics Breakdown Structure
+
+struct MetricBreakdown: Codable {
+    let human_readable_name: String
+    let description: String
+    let score_percent: Int
+    let analysis_text: String
+    let how_to_improve: String
 }
 
 struct Video: Codable {

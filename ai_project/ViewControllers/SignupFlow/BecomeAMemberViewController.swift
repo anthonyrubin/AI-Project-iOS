@@ -132,8 +132,8 @@ final class BecomeAMemberViewController: BaseSignupViewController {
         
         var aiScore = 0
         
-        if let _aiScore = viewModel.getLastUpload()?.professionalScore {
-            aiScore = Int(_aiScore * 10)
+        if let _aiScore = viewModel.getLastUpload()?.liftScore {
+            aiScore = Int(_aiScore)
         }
         scoreRingView.animate(to: aiScore, duration: 0.6)
         updateCardInsets()
@@ -150,7 +150,7 @@ final class BecomeAMemberViewController: BaseSignupViewController {
     private func buildUI() {
         view.backgroundColor = .systemBackground
 
-        summaryLabel.text = viewModel.getLastUpload()?.clipSummary
+        summaryLabel.text = viewModel.getLastUpload()?.overallAnalysis
         summaryLabel.setContentCompressionResistancePriority(.required, for: .vertical)
 
         // Scroll + content
@@ -299,16 +299,16 @@ final class BecomeAMemberViewController: BaseSignupViewController {
 
     // MARK: - Build event rows (your data)
     private func buildEventsRows() {
-        eventsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        for e in viewModel.getEvents() {
-            let row = EventElement()
-            row.configure(with: e)
-            eventsStack.addArrangedSubview(row)
-        }
-        if let last = eventsStack.arrangedSubviews.last {
-            // Helps the stack’s intrinsic height match the last row.
-            last.bottomAnchor.constraint(equalTo: eventsStack.bottomAnchor).isActive = true
-        }
+//        eventsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+//        for e in viewModel.getEvents() {
+//            let row = EventElement()
+//            row.configure(with: e)
+//            eventsStack.addArrangedSubview(row)
+//        }
+//        if let last = eventsStack.arrangedSubviews.last {
+//            // Helps the stack’s intrinsic height match the last row.
+//            last.bottomAnchor.constraint(equalTo: eventsStack.bottomAnchor).isActive = true
+//        }
     }
 
     // MARK: - Overlay placement (pixel cutoff)

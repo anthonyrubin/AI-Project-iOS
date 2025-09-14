@@ -303,25 +303,24 @@ final class VideoAnalysisCellNew1: UITableViewCell {
     func configure(with analysis: VideoAnalysisObject) {
         // Set sport
     
-        titleLabel.text = analysis.clipSummary
+        titleLabel.text = analysis.overallAnalysis
         sportLabel.text = analysis.sport.capitalized
         sportIconView.image = UIImage(systemName: "\(analysis.icon).circle.fill")
         
         // Set AI score
-        if let score = analysis.professionalScore {
-            let scoreOutOf100 = score * 10
-            scoreValueLabel.text = "\(Int(scoreOutOf100))"
+        if let score = analysis.liftScore {
+            scoreValueLabel.text = "\(Int(score))"
             
-            if scoreOutOf100 <= 20 {
+            if score <= 20 {
                 scoreIconView.image = UIImage(systemName: SFScoreIcon.zero.rawValue)
                 scoreIconView.tintColor = SFScoreIcon.zero.tintColor
-            } else if scoreOutOf100 <= 45 {
+            } else if score <= 45 {
                 scoreIconView.image = UIImage(systemName: SFScoreIcon.thirtyThree.rawValue)
                 scoreIconView.tintColor = SFScoreIcon.thirtyThree.tintColor
-            } else if scoreOutOf100 <= 55 {
+            } else if score <= 55 {
                 scoreIconView.image = UIImage(systemName: SFScoreIcon.fifty.rawValue)
                 scoreIconView.tintColor = SFScoreIcon.fifty.tintColor
-            } else if scoreOutOf100 <= 85 {
+            } else if score <= 85 {
                 scoreIconView.image = UIImage(systemName: SFScoreIcon.sixtySix.rawValue)
                 scoreIconView.tintColor = SFScoreIcon.sixtySix.tintColor
             } else {

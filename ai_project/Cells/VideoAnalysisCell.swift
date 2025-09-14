@@ -168,8 +168,8 @@ class VideoAnalysisCell: UITableViewCell {
         sportLabel.text = analysis.sport.isEmpty ? "Unknown Sport" : analysis.sport
         
         // Set AI score
-        if let score = analysis.professionalScore {
-            scoreLabel.text = String(format: "AI Score: %.0f", score * 10) // Convert to 0-100 scale
+        if let score = analysis.liftScore {
+            scoreLabel.text = String(format: "AI Score: %.0f", score) // Convert to 0-100 scale
         } else {
             scoreLabel.text = "AI Score: N/A"
         }

@@ -234,14 +234,13 @@ final class VideoAnalysisCellNew: UITableViewCell {
     func configure(with analysis: VideoAnalysisObject) {
         // Set sport
         
-        titleLabel.text = analysis.clipSummary
+        titleLabel.text = analysis.overallAnalysis
         sportLabel.text = analysis.sport.capitalized
         sportIconView.image = UIImage(systemName: analysis.icon)
         
         // Set AI score
-        if let score = analysis.professionalScore {
-            let scoreOutOf100 = score * 10
-            scoreValueLabel.text = "\(scoreOutOf100) / 100"
+        if let score = analysis.liftScore {
+            scoreValueLabel.text = "\(score) / 100"
         } else {
             
         }

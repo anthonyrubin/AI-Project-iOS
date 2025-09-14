@@ -20,16 +20,33 @@ final class LessonViewController: UIViewController {
     private let contentView = UIView()
     private let videoContainerView = UIView()
     private var videoHeightConstraint: NSLayoutConstraint?
+    private var metricsContainerHeightConstraint: NSLayoutConstraint?
 
     private let playButton = UIButton(type: .system)
     private let progressSlider = UISlider()
     private let timeLabel = UILabel()
-    private let eventsView = UIView()
+    
+    // New metrics grid
+    private let metricsCollectionView: UICollectionView
+    private let metricsContainerView = UIView()
+    private let panGestureRecognizer = UIPanGestureRecognizer()
+    private var initialMetricsHeight: CGFloat = 0
+    private let minVideoHeightRatio: CGFloat = 0.25 // 25% of screen height
+    private let maxVideoHeightRatio: CGFloat = 0.5  // 50% of screen height
 
     private lazy var errorModalManager = ErrorModalManager(viewController: self)
 
     // MARK: - Init
     init(analysis: VideoAnalysisObject) {
+        // Setup collection view layout
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .vertical
+        layout.minimumInteritemSpacing = 12
+        layout.minimumLineSpacing = 12
+        layout.sectionInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+        
+        self.metricsCollectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        
         self.viewModel = LessonViewModel(
             analysis: analysis,
             repository: VideoAnalysisRepository(
@@ -308,9 +325,9 @@ final class LessonViewController: UIViewController {
         videoContainerView.clipsToBounds = true
         contentView.addSubview(videoContainerView)
 
-        // default 16:9 height; will update when we know presentationSize
+        // Default height constraint - will be updated based on video aspect ratio
         videoHeightConstraint = videoContainerView.heightAnchor.constraint(
-            equalTo: videoContainerView.widthAnchor, multiplier: 9.0 / 16.0
+            equalTo: view.heightAnchor, multiplier: maxVideoHeightRatio
         )
 
         NSLayoutConstraint.activate([
@@ -365,126 +382,149 @@ final class LessonViewController: UIViewController {
             timeLabel.bottomAnchor.constraint(equalTo: progressSlider.topAnchor, constant: -8)
         ])
 
-        // Events list container
-        eventsView.layer.borderWidth = 1
-        eventsView.layer.cornerRadius = 12
-        eventsView.layer.borderColor = UIColor.systemGray.cgColor
-        eventsView.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(eventsView)
-
+        // Metrics container
+        metricsContainerView.translatesAutoresizingMaskIntoConstraints = false
+        metricsContainerView.backgroundColor = .systemBackground
+        contentView.addSubview(metricsContainerView)
+        
+        // Collection view
+        metricsCollectionView.translatesAutoresizingMaskIntoConstraints = false
+        metricsCollectionView.backgroundColor = .clear
+        metricsCollectionView.delegate = self
+        metricsCollectionView.dataSource = self
+        metricsCollectionView.register(MetricGridCell.self, forCellWithReuseIdentifier: "MetricGridCell")
+        metricsContainerView.addSubview(metricsCollectionView)
+        
+        // Pan gesture for resizing
+        panGestureRecognizer.addTarget(self, action: #selector(handlePanGesture(_:)))
+        metricsContainerView.addGestureRecognizer(panGestureRecognizer)
+        
+        // Initial height constraint
+        metricsContainerHeightConstraint = metricsContainerView.heightAnchor.constraint(
+            equalTo: view.heightAnchor, multiplier: 1.0 - maxVideoHeightRatio
+        )
+        
         NSLayoutConstraint.activate([
-            eventsView.topAnchor.constraint(equalTo: videoContainerView.bottomAnchor, constant: 20),
-            eventsView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            eventsView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            eventsView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20)
+            metricsContainerView.topAnchor.constraint(equalTo: videoContainerView.bottomAnchor, constant: 8),
+            metricsContainerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            metricsContainerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            metricsContainerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+            metricsContainerHeightConstraint!,
+            
+            metricsCollectionView.topAnchor.constraint(equalTo: metricsContainerView.topAnchor),
+            metricsCollectionView.leadingAnchor.constraint(equalTo: metricsContainerView.leadingAnchor),
+            metricsCollectionView.trailingAnchor.constraint(equalTo: metricsContainerView.trailingAnchor),
+            metricsCollectionView.bottomAnchor.constraint(equalTo: metricsContainerView.bottomAnchor)
         ])
 
-        // Build event rows if you already have them loaded
-        buildEvents()
+        // Metrics will be loaded automatically via collection view data source
     }
 
-    private func buildEvents() {
-        var previous: UIView?
-        for (idx, analysisEvent) in viewModel.analysisEvents.enumerated() {
-            let el = EventElement()
-            el.onTap = { [weak self] in
-                self?.viewModel.seekToTimestamp(analysisEvent.timestamp)
+    
+    // MARK: - Gesture Handling
+    @objc private func handlePanGesture(_ gesture: UIPanGestureRecognizer) {
+        let translation = gesture.translation(in: view)
+        
+        switch gesture.state {
+        case .began:
+            initialMetricsHeight = metricsContainerView.frame.height
+            
+        case .changed:
+            let newHeight = initialMetricsHeight - translation.y
+            let screenHeight = view.frame.height
+            let minHeight = screenHeight * minVideoHeightRatio
+            let maxHeight = screenHeight * (1.0 - minVideoHeightRatio)
+            
+            let clampedHeight = max(minHeight, min(maxHeight, newHeight))
+            let videoHeight = screenHeight - clampedHeight
+            
+            // Update constraints
+            videoHeightConstraint?.constant = videoHeight - view.safeAreaInsets.top - 16
+            metricsContainerHeightConstraint?.constant = clampedHeight
+            
+            // Update video aspect ratio if needed
+            if let playerLayer = playerLayer {
+                let videoSize = playerLayer.videoRect.size
+                if videoSize.width > 0 && videoSize.height > 0 {
+                    let aspectRatio = videoSize.height / videoSize.width
+                    let newVideoHeight = videoContainerView.frame.width * aspectRatio
+                    videoHeightConstraint?.constant = newVideoHeight
+                }
             }
-            el.configure(with: analysisEvent)
-
-            eventsView.addSubview(el)
-            el.translatesAutoresizingMaskIntoConstraints = false
-
-            NSLayoutConstraint.activate([
-                el.leadingAnchor.constraint(equalTo: eventsView.leadingAnchor),
-                el.trailingAnchor.constraint(equalTo: eventsView.trailingAnchor)
-            ])
-
-            if let prev = previous {
-                el.topAnchor.constraint(equalTo: prev.bottomAnchor, constant: 20).isActive = true
+            
+        case .ended, .cancelled:
+            // Snap to nearest ratio
+            let screenHeight = view.frame.height
+            let currentRatio = metricsContainerView.frame.height / screenHeight
+            
+            let targetRatio: CGFloat
+            if currentRatio < 0.4 {
+                targetRatio = minVideoHeightRatio
             } else {
-                el.topAnchor.constraint(equalTo: eventsView.topAnchor, constant: 20).isActive = true
+                targetRatio = maxVideoHeightRatio
             }
-
-            if idx == viewModel.analysisEvents.count - 1 {
-                el.bottomAnchor.constraint(equalTo: eventsView.bottomAnchor, constant: -20).isActive = true
+            
+            UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0) {
+                self.metricsContainerHeightConstraint?.constant = screenHeight * (1.0 - targetRatio)
+                self.videoHeightConstraint?.constant = screenHeight * targetRatio - self.view.safeAreaInsets.top - 16
+                self.view.layoutIfNeeded()
             }
-
-            previous = el
+            
+        default:
+            break
         }
     }
 }
 
-// MARK: - EventElement (unchanged API; safe to reuse)
-final class EventElement: UIView {
-    private let timestampLabel = UILabel()
-    private let eventLabel = UILabel()
-    private let feedbackLabel = UILabel()
-    var onTap: (() -> Void)?
-
-    override init(frame: CGRect) {
-        super.init(frame: frame); setupUI()
+// MARK: - UICollectionViewDataSource
+extension LessonViewController: UICollectionViewDataSource {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return viewModel.analysis.metricsBreakdownDict?.count ?? 0
     }
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
-    private func setupUI() {
-        backgroundColor = .clear
-
-        timestampLabel.translatesAutoresizingMaskIntoConstraints = false
-        timestampLabel.font = .monospacedDigitSystemFont(ofSize: 14, weight: .semibold)
-        timestampLabel.textColor = .systemBlue
-        timestampLabel.backgroundColor = UIColor.systemBlue.withAlphaComponent(0.1)
-        timestampLabel.layer.cornerRadius = 8
-        timestampLabel.clipsToBounds = true
-        timestampLabel.textAlignment = .center
-
-        eventLabel.translatesAutoresizingMaskIntoConstraints = false
-        eventLabel.font = .systemFont(ofSize: 16, weight: .medium)
-        eventLabel.textColor = .label
-        eventLabel.numberOfLines = 0
-
-        feedbackLabel.translatesAutoresizingMaskIntoConstraints = false
-        feedbackLabel.font = .systemFont(ofSize: 14)
-        feedbackLabel.textColor = .secondaryLabel
-        feedbackLabel.numberOfLines = 0
-
-        addSubview(timestampLabel)
-        addSubview(eventLabel)
-        addSubview(feedbackLabel)
-
-        NSLayoutConstraint.activate([
-            timestampLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            timestampLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
-            timestampLabel.widthAnchor.constraint(equalToConstant: 60),
-            timestampLabel.heightAnchor.constraint(equalToConstant: 30),
-
-            eventLabel.leadingAnchor.constraint(equalTo: timestampLabel.trailingAnchor, constant: 12),
-            eventLabel.topAnchor.constraint(equalTo: topAnchor),
-            eventLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-
-            feedbackLabel.leadingAnchor.constraint(equalTo: eventLabel.leadingAnchor),
-            feedbackLabel.topAnchor.constraint(equalTo: eventLabel.bottomAnchor, constant: 4),
-            feedbackLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            feedbackLabel.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor)
-        ])
-
-        timestampLabel.isUserInteractionEnabled = true
-        timestampLabel.addGestureRecognizer(
-            UITapGestureRecognizer(target: self, action: #selector(handleTimestampTap))
-        )
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "MetricGridCell", for: indexPath) as! MetricGridCell
+        
+        if let metricsBreakdown = viewModel.analysis.metricsBreakdownDict {
+            let metricNames = Array(metricsBreakdown.keys)
+            if indexPath.item < metricNames.count {
+                let metricName = metricNames[indexPath.item]
+                let metricData = metricsBreakdown[metricName]!
+                cell.configure(with: metricName, metricBreakdown: metricData)
+            }
+        }
+        
+        return cell
     }
+}
 
-    func configure(with event: AnalysisEventObject) {
-        timestampLabel.text = formatTimestamp(event.timestamp)
-        eventLabel.text = event.label.capitalized
-        feedbackLabel.text = event.feedback
+// MARK: - UICollectionViewDelegate
+extension LessonViewController: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        collectionView.deselectItem(at: indexPath, animated: true)
+        
+        if let metricsBreakdown = viewModel.analysis.metricsBreakdownDict {
+            let metricNames = Array(metricsBreakdown.keys)
+            if indexPath.item < metricNames.count {
+                let metricName = metricNames[indexPath.item]
+                let metricData = metricsBreakdown[metricName]!
+                
+                let metricVC = MetricViewController(metricName: metricName, metricBreakdown: metricData)
+                navigationController?.pushViewController(metricVC, animated: true)
+            }
+        }
     }
+}
 
-    @objc private func handleTimestampTap() { onTap?() }
-
-    private func formatTimestamp(_ t: Double) -> String {
-        let m = Int(t) / 60
-        let s = Int(t) % 60
-        return String(format: "%d:%02d", m, s)
+// MARK: - UICollectionViewDelegateFlowLayout
+extension LessonViewController: UICollectionViewDelegateFlowLayout {
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        let padding: CGFloat = 16
+        let spacing: CGFloat = 12
+        let availableWidth = collectionView.frame.width - (padding * 2) - spacing
+        let cellWidth = availableWidth / 2
+        let cellHeight: CGFloat = 140 // Fixed height for consistency
+        
+        return CGSize(width: cellWidth, height: cellHeight)
     }
 }

@@ -105,7 +105,7 @@ class SessionViewModel: ObservableObject {
         // Calculate average professional score
         let scores = userAnalyses
             .filter { $0.createdAt >= startOfMonth }
-            .compactMap { $0.professionalScore }
+            .compactMap { $0.liftScore }
         
         if !scores.isEmpty {
             averageScore = scores.reduce(0, +) / Double(scores.count)

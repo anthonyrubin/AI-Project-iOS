@@ -69,34 +69,6 @@ final class VideoObject: Object {
     }
 }
 
-// MARK: - Analysis Event
-final class AnalysisEventObject: Object {
-    @Persisted(primaryKey: true) var id: ObjectId = ObjectId.generate()
-    @Persisted var analysisServerId: Int
-    @Persisted var timestamp: Double = 0.0
-    @Persisted var label: String = ""
-    @Persisted var feedback: String = ""
-    @Persisted var metrics: List<AnalysisMetricObject> = List<AnalysisMetricObject>()
-    
-    convenience init(analysisServerId: Int, event: AnalysisEvent) {
-        self.init()
-        self.analysisServerId = analysisServerId
-        self.timestamp = event.t
-        self.label = event.label
-        self.feedback = event.feedback
-        
-        // Clear existing metrics and add new ones
-        self.metrics.removeAll()
-        for (index, metric) in event.metrics.enumerated() {
-            let metricObject = AnalysisMetricObject()
-            metricObject.name = metric.name
-            metricObject.value = metric.value
-            metricObject.estimationMethod = metric.estimation_method
-            self.metrics.append(metricObject)
-        }
-    }
-}
-
 // MARK: - Analysis Metric
 final class AnalysisMetricObject: EmbeddedObject {
     @Persisted var name: String = ""
@@ -111,13 +83,14 @@ final class VideoAnalysisObject: Object {
     @Persisted var userId: Int
     @Persisted var sport: String = ""
     @Persisted var sportCategory: String = ""
-    @Persisted var professionalScore: Double?
+    @Persisted var liftScore: Double?
     @Persisted var confidence: Double?
-    @Persisted var clipSummary: String = ""
+    @Persisted var overallAnalysis: String = ""
+    @Persisted var metricsBreakdown: String = "" // JSON string of metrics breakdown
     @Persisted var overallTips: List<String> = List<String>()
+    @Persisted var progressionDrills: List<String> = List<String>()
     @Persisted var metricsCatalog: List<String> = List<String>()
     @Persisted var createdAt: Date = Date()
-    @Persisted var events: List<AnalysisEventObject> = List<AnalysisEventObject>()
     @Persisted var analysisData: String = "" // JSON string of analysis data
     @Persisted var icon: String = ""
     
@@ -145,29 +118,24 @@ final class VideoAnalysisObject: Object {
         return nil
     }
     
+    // Computed property to get parsed metrics breakdown
+    var metricsBreakdownDict: [String: MetricBreakdown]? {
+        guard !metricsBreakdown.isEmpty else { return nil }
+        
+        do {
+            if let data = metricsBreakdown.data(using: .utf8) {
+                let decoder = JSONDecoder()
+                return try decoder.decode([String: MetricBreakdown].self, from: data)
+            }
+        } catch {
+            print("❌ Error parsing metrics breakdown: \(error)")
+        }
+        return nil
+    }
+    
 
     
     // MARK: - Helper Methods for UI
-    
-    /// Get all events sorted by timestamp
-    var sortedEvents: [AnalysisEventObject] {
-        return Array(events).sorted { $0.timestamp < $1.timestamp }
-    }
-    
-    /// Get events for a specific time range
-    func eventsInRange(start: Double, end: Double) -> [AnalysisEventObject] {
-        return Array(events).filter { $0.timestamp >= start && $0.timestamp <= end }
-    }
-    
-    /// Get the first event (earliest timestamp)
-    var firstEvent: AnalysisEventObject? {
-        return sortedEvents.first
-    }
-    
-    /// Get the last event (latest timestamp)
-    var lastEvent: AnalysisEventObject? {
-        return sortedEvents.last
-    }
     
     /// Get overall tips as array
     var overallTipsArray: [String] {
@@ -177,5 +145,10 @@ final class VideoAnalysisObject: Object {
     /// Get metrics catalog as array
     var metricsCatalogArray: [String] {
         return Array(metricsCatalog)
+    }
+    
+    /// Get progression drills as array
+    var progressionDrillsArray: [String] {
+        return Array(progressionDrills)
     }
 }

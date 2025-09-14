@@ -8,7 +8,6 @@ class LessonViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published var analysis: VideoAnalysisObject
     @Published var errorMessage: String?
-    @Published var analysisEvents: [AnalysisEventObject] = []
     @Published var videoUrl: String?
     @Published var isRefreshingUrl: Bool = false
 
@@ -19,7 +18,6 @@ class LessonViewModel: ObservableObject {
     init(analysis: VideoAnalysisObject, repository: VideoAnalysisRepository) {
         self.analysis = analysis
         self.repository = repository
-        processAnalysisData()
     }
     
     // MARK: - Public Methods
@@ -54,19 +52,6 @@ class LessonViewModel: ObservableObject {
     
     // MARK: - Table View Data Methods
     
-    func getEventsCount() -> Int {
-        return analysisEvents.count
-    }
-    
-    func getEvent(at index: Int) -> AnalysisEventObject? {
-        guard index >= 0 && index < analysisEvents.count else { return nil }
-        return analysisEvents[index]
-    }
-    
-    func getTableViewHeight() -> CGFloat {
-        return CGFloat(analysisEvents.count * 80) // 80 is the cell height
-    }
-    
     func getAnalysisDataKeys() -> [String] {
         guard let analysisDataDict = analysis.analysisDataDict else { return [] }
         return Array(analysisDataDict.keys)
@@ -97,12 +82,6 @@ class LessonViewModel: ObservableObject {
             object: nil,
             userInfo: ["timestamp": timeInterval]
         )
-    }
-    
-    private func processAnalysisData() {
-        // Process analysis events for display
-        let events = analysis.events
-        analysisEvents = Array(events).sorted { $0.timestamp < $1.timestamp }
     }
     
     private func refreshVideoUrl(for video: VideoObject, completion: @escaping (Bool) -> Void) {

@@ -105,9 +105,9 @@ class VideoAnalysisRepository {
                         analysisObject.userId = analysis.id // This should be the actual user ID
                         analysisObject.sport = analysis.sport
                         analysisObject.sportCategory = analysis.sport_category
-                        analysisObject.professionalScore = analysis.professional_score
+                        analysisObject.liftScore = analysis.lift_score
                         analysisObject.confidence = analysis.confidence
-                        analysisObject.clipSummary = analysis.clip_summary
+                        analysisObject.overallAnalysis = analysis.overall_analysis
                         analysisObject.icon = analysis.icon
                         
                         // Parse timestamp
@@ -148,12 +148,19 @@ class VideoAnalysisRepository {
                             analysisObject.metricsCatalog.append(metric)
                         }
                         
-                        // Add events if available
-                        if let events = analysis.events {
-                            for (index, event) in events.enumerated() {
-                                let eventObject = AnalysisEventObject(analysisServerId: analysis.id, event: event)
-                                analysisObject.events.append(eventObject)
-                            }
+                        // Add progression drills
+                        for drill in analysis.progression_drills {
+                            analysisObject.progressionDrills.append(drill)
+                        }
+                        
+                        // Store metrics breakdown as JSON string
+                        do {
+                            let encoder = JSONEncoder()
+                            let metricsBreakdownData = try encoder.encode(analysis.metrics_breakdown)
+                            analysisObject.metricsBreakdown = String(data: metricsBreakdownData, encoding: .utf8) ?? ""
+                        } catch {
+                            print("❌ Error encoding metrics breakdown: \(error)")
+                            analysisObject.metricsBreakdown = ""
                         }
                         
                         // Store analysis data as JSON string
