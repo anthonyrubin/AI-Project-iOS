@@ -35,6 +35,8 @@ class OverallPerformanceCardCell: UITableViewCell {
         analysisLabel.numberOfLines = 0
         analysisLabel.translatesAutoresizingMaskIntoConstraints = false
         
+        scoreRingView.translatesAutoresizingMaskIntoConstraints = false
+        
         // Add subviews
         contentView.addSubview(cardView)
         cardView.addSubview(scoreRingView)
@@ -43,10 +45,10 @@ class OverallPerformanceCardCell: UITableViewCell {
         // Setup constraints
         NSLayoutConstraint.activate([
             // Card view
-            cardView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
-            cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
-            cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
-            cardView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
+            cardView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            cardView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20),
             
             // Score ring view
             scoreRingView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 16),

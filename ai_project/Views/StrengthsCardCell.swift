@@ -4,7 +4,6 @@ class StrengthsCardCell: UITableViewCell {
     
     // MARK: - UI Components
     private let cardView = UIView()
-    private let titleLabel = UILabel()
     private let strengthsStackView = UIStackView()
     
     // MARK: - Initialization
@@ -30,12 +29,6 @@ class StrengthsCardCell: UITableViewCell {
         cardView.layer.shadowOpacity = 0.1
         cardView.translatesAutoresizingMaskIntoConstraints = false
         
-        // Title label
-        titleLabel.text = "Strengths"
-        titleLabel.font = .systemFont(ofSize: 20, weight: .semibold)
-        titleLabel.textColor = .label
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        
         // Stack view
         strengthsStackView.axis = .vertical
         strengthsStackView.spacing = 12
@@ -43,24 +36,18 @@ class StrengthsCardCell: UITableViewCell {
         
         // Add subviews
         contentView.addSubview(cardView)
-        cardView.addSubview(titleLabel)
         cardView.addSubview(strengthsStackView)
         
         // Setup constraints
         NSLayoutConstraint.activate([
             // Card view
-            cardView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
-            cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
-            cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
-            cardView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
-            
-            // Title label
-            titleLabel.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 16),
-            titleLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
-            titleLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -16),
+            cardView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            cardView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20),
             
             // Stack view
-            strengthsStackView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 12),
+            strengthsStackView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 16),
             strengthsStackView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
             strengthsStackView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -16),
             strengthsStackView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -16)

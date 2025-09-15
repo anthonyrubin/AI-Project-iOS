@@ -1,203 +1,196 @@
 import UIKit
 
-class AreasForImprovementCardCell: UITableViewCell {
-    
-    // MARK: - UI Components
+final class AreasForImprovementCardCell: UITableViewCell {
+
+    // MARK: - UI
     private let cardView = UIView()
-    private let titleLabel = UILabel()
     private let areasStackView = UIStackView()
-    
-    // MARK: - Initialization
+
+    // Keep track of expandable sections
+    private var expandables: [UIButton: UIStackView] = [:]
+
+    // MARK: - Init
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupUI()
     }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
     // MARK: - Setup
     private func setupUI() {
+        selectionStyle = .none
         backgroundColor = .clear
-        
-        // Card view
+        contentView.backgroundColor = .clear
+
+        // Card
+        cardView.translatesAutoresizingMaskIntoConstraints = false
         cardView.backgroundColor = .secondarySystemBackground
         cardView.layer.cornerRadius = 12
         cardView.layer.shadowColor = UIColor.black.cgColor
         cardView.layer.shadowOffset = CGSize(width: 0, height: 2)
         cardView.layer.shadowRadius = 4
         cardView.layer.shadowOpacity = 0.1
-        cardView.translatesAutoresizingMaskIntoConstraints = false
-        
-        // Title label
-        titleLabel.text = "Areas for Improvement"
-        titleLabel.font = .systemFont(ofSize: 20, weight: .semibold)
-        titleLabel.textColor = .label
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        
-        // Stack view
+        contentView.addSubview(cardView)
+
+        // Stack of areas
+        areasStackView.translatesAutoresizingMaskIntoConstraints = false
         areasStackView.axis = .vertical
         areasStackView.spacing = 16
-        areasStackView.translatesAutoresizingMaskIntoConstraints = false
-        
-        // Add subviews
-        contentView.addSubview(cardView)
-        cardView.addSubview(titleLabel)
         cardView.addSubview(areasStackView)
-        
-        // Setup constraints
+
+        // Constraints (pin stack INSIDE card)
         NSLayoutConstraint.activate([
-            // Card view
-            cardView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
-            cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
-            cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
-            cardView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
-            
-            // Title label
-            titleLabel.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 16),
-            titleLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
-            titleLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -16),
-            
-            // Stack view
-            areasStackView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 12),
+            cardView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            cardView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20),
+
+            areasStackView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 16),
             areasStackView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
             areasStackView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -16),
             areasStackView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -16)
         ])
     }
-    
-    // MARK: - Configuration
+
+    // MARK: - Public
     func configure(with areas: [AreaForImprovement]) {
-        // Clear existing views
+        // Clear old content & mapping
+        expandables.removeAll()
         areasStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        
-        // Add area views
+
+        // Build area blocks
         for area in areas {
-            let areaView = createAreaView(area: area)
-            areasStackView.addArrangedSubview(areaView)
+            areasStackView.addArrangedSubview(makeAreaBlock(for: area))
         }
     }
-    
-    private func createAreaView(area: AreaForImprovement) -> UIView {
-        let containerView = UIView()
-        containerView.translatesAutoresizingMaskIntoConstraints = false
-        
-        let titleLabel = UILabel()
-        titleLabel.text = area.title
-        titleLabel.font = .systemFont(ofSize: 16, weight: .semibold)
-        titleLabel.textColor = .label
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        
-        let analysisLabel = UILabel()
-        analysisLabel.text = area.analysis
-        analysisLabel.font = .systemFont(ofSize: 14, weight: .regular)
-        analysisLabel.textColor = .secondaryLabel
-        analysisLabel.numberOfLines = 0
-        analysisLabel.translatesAutoresizingMaskIntoConstraints = false
-        
-        // Expandable sections for tips and drills
-        let tipsSection = createExpandableSection(title: "Actionable Tips", items: area.actionable_tips)
-        let drillsSection = createExpandableSection(title: "Corrective Drills", items: area.corrective_drills)
-        
-        containerView.addSubview(titleLabel)
-        containerView.addSubview(analysisLabel)
-        containerView.addSubview(tipsSection)
-        containerView.addSubview(drillsSection)
-        
+
+    // MARK: - Builders
+    private func makeAreaBlock(for area: AreaForImprovement) -> UIView {
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+
+        let title = UILabel()
+        title.translatesAutoresizingMaskIntoConstraints = false
+        title.text = area.title
+        title.font = .systemFont(ofSize: 16, weight: .semibold)
+        title.textColor = .label
+        title.numberOfLines = 0
+
+        let analysis = UILabel()
+        analysis.translatesAutoresizingMaskIntoConstraints = false
+        analysis.text = area.analysis
+        analysis.font = .systemFont(ofSize: 14, weight: .regular)
+        analysis.textColor = .secondaryLabel
+        analysis.numberOfLines = 0
+
+        let tips = makeExpandableSection(title: "Actionable Tips", items: area.actionable_tips)
+        let drills = makeExpandableSection(title: "Corrective Drills", items: area.corrective_drills)
+
+        container.addSubview(title)
+        container.addSubview(analysis)
+        container.addSubview(tips.container)
+        container.addSubview(drills.container)
+
         NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: containerView.topAnchor),
-            titleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            titleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            
-            analysisLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
-            analysisLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            analysisLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            
-            tipsSection.topAnchor.constraint(equalTo: analysisLabel.bottomAnchor, constant: 8),
-            tipsSection.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            tipsSection.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            
-            drillsSection.topAnchor.constraint(equalTo: tipsSection.bottomAnchor, constant: 8),
-            drillsSection.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            drillsSection.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            drillsSection.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
+            title.topAnchor.constraint(equalTo: container.topAnchor),
+            title.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            title.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+
+            analysis.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 4),
+            analysis.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            analysis.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+
+            tips.container.topAnchor.constraint(equalTo: analysis.bottomAnchor, constant: 8),
+            tips.container.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            tips.container.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+
+            drills.container.topAnchor.constraint(equalTo: tips.container.bottomAnchor, constant: 8),
+            drills.container.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            drills.container.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            drills.container.bottomAnchor.constraint(equalTo: container.bottomAnchor)
         ])
-        
-        return containerView
+
+        // Track for toggling
+        expandables[tips.button] = tips.content
+        expandables[drills.button] = drills.content
+
+        return container
     }
-    
-    private func createExpandableSection(title: String, items: [String]) -> UIView {
-        let containerView = UIView()
-        containerView.translatesAutoresizingMaskIntoConstraints = false
-        
-        let headerButton = UIButton(type: .system)
-        headerButton.setTitle("\(title) (\(items.count))", for: .normal)
-        headerButton.setTitleColor(.systemBlue, for: .normal)
-        headerButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
-        headerButton.contentHorizontalAlignment = .left
-        headerButton.translatesAutoresizingMaskIntoConstraints = false
-        
-        let contentStackView = UIStackView()
-        contentStackView.axis = .vertical
-        contentStackView.spacing = 4
-        contentStackView.translatesAutoresizingMaskIntoConstraints = false
-        contentStackView.isHidden = true // Initially hidden
-        
-        // Add items to stack view
-        for (index, item) in items.enumerated() {
-            let itemLabel = UILabel()
-            itemLabel.text = "• \(item)"
-            itemLabel.font = .systemFont(ofSize: 13, weight: .regular)
-            itemLabel.textColor = .secondaryLabel
-            itemLabel.numberOfLines = 0
-            contentStackView.addArrangedSubview(itemLabel)
+
+    private func makeExpandableSection(title: String, items: [String]) -> (container: UIView, button: UIButton, content: UIStackView) {
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.contentHorizontalAlignment = .left
+        button.setTitle("\(title) (\(items.count))  ▼", for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
+        button.addTarget(self, action: #selector(didTapExpandable(_:)), for: .touchUpInside)
+
+        let content = UIStackView()
+        content.translatesAutoresizingMaskIntoConstraints = false
+        content.axis = .vertical
+        content.spacing = 4
+        content.isHidden = true // collapsed initially
+
+        for item in items {
+            let label = UILabel()
+            label.text = "• \(item)"
+            label.font = .systemFont(ofSize: 13, weight: .regular)
+            label.textColor = .secondaryLabel
+            label.numberOfLines = 0
+            content.addArrangedSubview(label)
         }
-        
-        // Add tap gesture to toggle visibility
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(toggleSection(_:)))
-        headerButton.addGestureRecognizer(tapGesture)
-        
-        containerView.addSubview(headerButton)
-        containerView.addSubview(contentStackView)
-        
+
+        container.addSubview(button)
+        container.addSubview(content)
+
         NSLayoutConstraint.activate([
-            headerButton.topAnchor.constraint(equalTo: containerView.topAnchor),
-            headerButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            headerButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            headerButton.heightAnchor.constraint(equalToConstant: 30),
-            
-            contentStackView.topAnchor.constraint(equalTo: headerButton.bottomAnchor, constant: 4),
-            contentStackView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 8),
-            contentStackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            contentStackView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
+            button.topAnchor.constraint(equalTo: container.topAnchor),
+            button.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            button.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            button.heightAnchor.constraint(equalToConstant: 30),
+
+            content.topAnchor.constraint(equalTo: button.bottomAnchor, constant: 4),
+            content.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 8),
+            content.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            content.bottomAnchor.constraint(equalTo: container.bottomAnchor)
         ])
-        
-        // Store references for toggling
-        headerButton.tag = contentStackView.hash
-        contentStackView.tag = headerButton.hash
-        
-        return containerView
+
+        return (container, button, content)
     }
-    
-    @objc private func toggleSection(_ gesture: UITapGestureRecognizer) {
-        guard let button = gesture.view as? UIButton,
-              let stackView = viewWithTag(button.tag) as? UIStackView else { return }
-        
-        let isHidden = stackView.isHidden
-        stackView.isHidden = !isHidden
-        
-        // Update button title to show expand/collapse state
-        let currentTitle = button.title(for: .normal) ?? ""
-        if isHidden {
-            button.setTitle(currentTitle.replacingOccurrences(of: "▼", with: "▲"), for: .normal)
+
+    // MARK: - Actions
+    @objc private func didTapExpandable(_ sender: UIButton) {
+        guard let content = expandables[sender] else { return }
+        let willShow = content.isHidden
+        content.isHidden.toggle()
+
+        // Update arrow
+        let base = (sender.titleLabel?.text ?? "").replacingOccurrences(of: "▲", with: "").replacingOccurrences(of: "▼", with: "").trimmingCharacters(in: .whitespaces)
+        sender.setTitle(willShow ? "\(base)  ▲" : "\(base)  ▼", for: .normal)
+
+        // Ask table to recompute cell height for smooth animation
+        if let table = enclosingTableView() {
+            UIView.animate(withDuration: 0.25) {
+                table.beginUpdates()
+                table.endUpdates()
+                self.layoutIfNeeded()
+            }
         } else {
-            button.setTitle(currentTitle.replacingOccurrences(of: "▲", with: "▼"), for: .normal)
+            // Fallback: just relayout the cell
+            setNeedsLayout()
+            layoutIfNeeded()
         }
-        
-        // Animate the change
-        UIView.animate(withDuration: 0.3) {
-            self.layoutIfNeeded()
+    }
+
+    private func enclosingTableView() -> UITableView? {
+        var v: UIView? = self
+        while let current = v {
+            if let tv = current as? UITableView { return tv }
+            v = current.superview
         }
+        return nil
     }
 }
