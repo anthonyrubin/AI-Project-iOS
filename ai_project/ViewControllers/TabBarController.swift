@@ -85,7 +85,7 @@ final class TabBarController: UITabBarController, UITabBarControllerDelegate {
         let sessionVC = SessionViewController()
         sessionVC.uploadStateManager = uploadStateManager
         let session = nav(sessionVC, title: "Progress", baseName: "ProgressTabIcon")
-        let profile = nav(ProfileViewController(), title: "Settings", baseName: "SettingsTabIcon")
+        let profile = nav(SettingsViewController(), title: "Settings", baseName: "SettingsTabIcon")
 
         // Placeholder tab to shift real tabs left (disabled & invisible)
         let spacer = UIViewController()

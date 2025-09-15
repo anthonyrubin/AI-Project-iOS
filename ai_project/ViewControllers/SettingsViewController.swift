@@ -3,7 +3,7 @@ import UIKit
 import Combine
 
 
-final class ProfileViewController: UIViewController {
+final class SettingsViewController: UIViewController {
     
     private var loadingOverlay = LoadingOverlay()
 
@@ -110,7 +110,7 @@ final class ProfileViewController: UIViewController {
     }
 }
 
-extension ProfileViewController: UITableViewDataSource, UITableViewDelegate {
+extension SettingsViewController: UITableViewDataSource, UITableViewDelegate {
     func numberOfSections(in tableView: UITableView) -> Int { sections.count + 1 }
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return section == 0 ? 1 : sections[section - 1].rows.count
