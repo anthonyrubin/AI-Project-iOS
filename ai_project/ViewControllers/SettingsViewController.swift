@@ -48,7 +48,9 @@ final class SettingsViewController: UIViewController {
     private func setupData() {
         sections = [
             Section(header: nil, rows: [
-                Row(icon: "person.text.rectangle", title: "Personal details", action: { print("details") }),
+                Row(icon: "person.text.rectangle", title: "Personal details", action: { [weak self] in
+                    self?.navigateToPersonalDetails()
+                }),
                 Row(icon: "translate", title: "Language", action: { }),
                 Row(icon: "crown.fill", title: "Membership", action: { [weak self] in
                     self?.navigateToMembership()
@@ -201,5 +203,11 @@ extension SettingsViewController: UITableViewDataSource, UITableViewDelegate {
     private func navigateToMembership() {
         let membershipVC = BecomeAMemberViewController()
         navigationController?.pushViewController(membershipVC, animated: true)
+    }
+    
+    private func navigateToPersonalDetails() {
+        let personalDetailsVC = PersonalDetailsViewController()
+        let navController = UINavigationController(rootViewController: personalDetailsVC)
+        present(navController, animated: true)
     }
 }
