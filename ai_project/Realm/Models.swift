@@ -10,6 +10,12 @@ final class UserObject: Object {
     @Persisted var firstName: String = ""
     @Persisted var lastName: String = ""
     @Persisted var birthday: Date?                      // optional
+    @Persisted var height: Double?                      // height in centimeters
+    @Persisted var weight: Double?                      // weight in kilograms
+    @Persisted var isMetric: Bool = false               // whether user prefers metric units
+    @Persisted var workoutDaysPerWeek: String = "" // workout days as string
+    @Persisted var experience: String = ""              // user's experience level
+    @Persisted var gender: String = ""
     @Persisted var createdAt: Date = Date()
     @Persisted var updatedAt: Date = Date()
 }

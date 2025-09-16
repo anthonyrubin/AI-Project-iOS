@@ -2,7 +2,6 @@ import UIKit
 import Foundation
 import ObjectiveC
 
-
 extension UIViewController {
     func hideNavBarHairline() {
         guard let nav = navigationController else { return }

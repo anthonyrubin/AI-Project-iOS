@@ -2,6 +2,7 @@ import UIKit
 import AVFoundation
 
 
+
 func generateThumbnail(for url: URL) -> UIImage? {
     let asset = AVAsset(url: url)
     let generator = AVAssetImageGenerator(asset: asset)
@@ -18,4 +19,11 @@ func generateThumbnail(for url: URL) -> UIImage? {
         print("Thumbnail generation failed:", error)
         return nil
     }
+}
+
+
+func formatDateMMDDYYYY(_ date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "MM/dd/yyyy"
+    return formatter.string(from: date)
 }

@@ -2,6 +2,10 @@ import UIKit
 
 final class PersonalDetailsViewController: UIViewController {
     
+    private let viewModel = PersonalDetailsViewModel(
+        userDataStore: RealmUserDataStore()
+    )
+    
     // MARK: - UI Components
     private let tableView = UITableView(frame: .zero, style: .plain)
     
@@ -11,17 +15,12 @@ final class PersonalDetailsViewController: UIViewController {
         let subtitle: String
     }
     
-    private let personalDetailRows: [PersonalDetailRow] = [
-        PersonalDetailRow(title: "Experience", subtitle: "test"),
-        PersonalDetailRow(title: "Consistency", subtitle: "Test"),
-        PersonalDetailRow(title: "Gender", subtitle: "Test"),
-        PersonalDetailRow(title: "Height & Weight", subtitle: "Test"),
-        PersonalDetailRow(title: "Birthday", subtitle: "Test")
-    ]
+    private var personalDetailRows: [PersonalDetailRow] = []
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        setData()
         setupCloseButton()
         setupUI()
     }
@@ -48,6 +47,18 @@ final class PersonalDetailsViewController: UIViewController {
     
     @objc private func closeButtonTapped() {
         dismiss(animated: true)
+    }
+    
+    private func setData() {
+
+        personalDetailRows = [
+            PersonalDetailRow(title: "Experience", subtitle: viewModel.getExperience()),
+            PersonalDetailRow(title: "Consistency", subtitle: viewModel.getWorkoutDaysPerWeek()),
+            PersonalDetailRow(title: "Gender", subtitle: viewModel.getGender()),
+            PersonalDetailRow(title: "Height", subtitle: viewModel.getHeight()),
+            PersonalDetailRow(title: "Weight", subtitle: viewModel.getWeight()),
+            PersonalDetailRow(title: "Birthday", subtitle: viewModel.getBirthday())
+        ]
     }
     
     private func setupUI() {

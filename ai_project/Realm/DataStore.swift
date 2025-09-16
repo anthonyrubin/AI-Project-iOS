@@ -9,6 +9,12 @@ struct UserDTO: Codable {
     let firstName: String?
     let lastName: String?
     let birthday: Date?
+    let height: Double?
+    let weight: Double?
+    let isMetric: Bool
+    let workoutDaysPerWeek: String?
+    let experience: String?
+    let gender: String?
 }
 
 protocol UserDataStore {
@@ -25,8 +31,10 @@ final class RealmUserDataStore: UserDataStore {
         
         var birthdayDate: Date? = nil
         if let birthdayString = user.birthday {
-            let dateFormatter = ISO8601DateFormatter()
-            birthdayDate = dateFormatter.date(from: birthdayString)
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            birthdayDate = formatter.date(from: birthdayString)
         }
         
         let userDTO = UserDTO(
@@ -36,7 +44,13 @@ final class RealmUserDataStore: UserDataStore {
             email: user.email,
             firstName: user.first_name,
             lastName: user.last_name,
-            birthday: birthdayDate
+            birthday: birthdayDate,
+            height: user.height,
+            weight: user.weight,
+            isMetric: user.is_metric,
+            workoutDaysPerWeek: user.workout_days_per_week,
+            experience: user.experience,
+            gender: user.gender
         )
         
         let realm = try RealmProvider.make()
@@ -48,6 +62,12 @@ final class RealmUserDataStore: UserDataStore {
             obj.firstName = userDTO.firstName ?? ""
             obj.lastName = userDTO.lastName ?? ""
             obj.birthday = userDTO.birthday
+            obj.height = userDTO.height
+            obj.weight = userDTO.weight
+            obj.isMetric = userDTO.isMetric
+            obj.workoutDaysPerWeek = userDTO.workoutDaysPerWeek ?? ""
+            obj.experience = userDTO.experience ?? ""
+            obj.gender = userDTO.gender ?? ""
             obj.updatedAt = Date()
         }
     }
@@ -57,11 +77,13 @@ final class RealmUserDataStore: UserDataStore {
         guard let obj = realm.object(ofType: UserObject.self, forPrimaryKey: userId) else { return }
         try realm.write { obj.firstName = first; obj.lastName = last; obj.updatedAt = Date() }
     }
+
     func setBirthday(userId: Int, date: Date) throws {
         let realm = try RealmProvider.make()
         guard let obj = realm.object(ofType: UserObject.self, forPrimaryKey: userId) else { return }
         try realm.write { obj.birthday = date; obj.updatedAt = Date() }
     }
+
     func load() -> UserObject? {
         guard let currentUserId = UserDefaults.standard.object(forKey: "currentUserId") as? Int else {
             // TODO: Log this

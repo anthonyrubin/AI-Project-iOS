@@ -120,3 +120,4 @@ final class PersonalDetailRowCell: UITableViewCell {
         ])
     }
 }
+
