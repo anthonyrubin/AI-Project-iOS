@@ -62,7 +62,14 @@ final class SettingsViewController: UIViewController {
                 Row(icon: "person.text.rectangle", title: "Personal details", action: { [weak self] in
                     self?.navigateToPersonalDetails()
                 }),
-                Row(icon: "translate", title: "Language", action: { }),
+                Row(icon: "translate", title: "Language", action: {
+                    let vc = LanguagePickerViewController(selectedCode: "en") { picked in
+                        print("Picked:", picked)
+                    }
+                    vc.modalPresentationStyle = .overFullScreen
+                    vc.modalTransitionStyle = .crossDissolve   // overlay fade; the sheet itself slides
+                    self.present(vc, animated: true)
+                }),
                 Row(icon: "crown.fill", title: "Membership", action: { [weak self] in
                     self?.navigateToMembership()
                 })

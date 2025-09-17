@@ -29,12 +29,15 @@ final class LanguagePickerViewController: UIViewController {
     // MARK: UI
     private let overlay = UIView()
     private let container = UIView()
+    private let rootStack = UIStackView()
+    private let header = UIView()
     private let titleLabel = UILabel()
     private let closeButton = UIButton(type: .system)
     private let scrollView = UIScrollView()
-    private let stack = UIStackView()
+    private let listStack = UIStackView()
 
-    private var centerYConstraint: NSLayoutConstraint?
+    private var centerYConstraint: NSLayoutConstraint!
+    private var hasAnimatedIn = false
 
     // MARK: Init
     init(selectedCode: String? = nil, onPick: @escaping (LanguageOption) -> Void) {
@@ -48,13 +51,27 @@ final class LanguagePickerViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         buildUI()
+        buildRows()
     }
 
+    // === Make it animate IDENTICAL to Alert: run the spring in viewDidLayoutSubviews ===
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        // run once
-        if centerYConstraint?.constant == 0 { return }
-        animateIn()
+        guard !hasAnimatedIn else { return }
+        hasAnimatedIn = true
+
+        // start above screen, then settle to center
+        centerYConstraint.constant = -view.bounds.height
+        view.layoutIfNeeded()
+        UIView.animate(withDuration: 0.50,
+                       delay: 0.01,
+                       usingSpringWithDamping: 0.8,
+                       initialSpringVelocity: 0.5,
+                       options: [.curveEaseInOut],
+                       animations: {
+            self.centerYConstraint.constant = 0
+            self.view.layoutIfNeeded()
+        })
     }
 
     // MARK: UI Build
@@ -71,10 +88,9 @@ final class LanguagePickerViewController: UIViewController {
             overlay.topAnchor.constraint(equalTo: view.topAnchor),
             overlay.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
-        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissFromBackground))
-        overlay.addGestureRecognizer(tap)
+        overlay.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(dismissFromBackground)))
 
-        // container (the white sheet)
+        // container
         container.translatesAutoresizingMaskIntoConstraints = false
         container.backgroundColor = .white
         container.layer.cornerRadius = 16
@@ -84,155 +100,138 @@ final class LanguagePickerViewController: UIViewController {
         let leading = container.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20)
         let trailing = container.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20)
         let centerX = container.centerXAnchor.constraint(equalTo: view.centerXAnchor)
-        let centerY = container.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-        self.centerYConstraint = centerY
-        NSLayoutConstraint.activate([leading, trailing, centerX, centerY])
+        centerYConstraint = container.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+
+        // min/max height so it doesn't collapse
+        let minH = container.heightAnchor.constraint(greaterThanOrEqualToConstant: 220)
+        let maxH = container.heightAnchor.constraint(lessThanOrEqualTo: view.heightAnchor, multiplier: 0.5)
+        NSLayoutConstraint.activate([leading, trailing, centerX, centerYConstraint, minH, maxH])
+
+        // root stack
+        rootStack.translatesAutoresizingMaskIntoConstraints = false
+        rootStack.axis = .vertical
+        rootStack.alignment = .fill
+        rootStack.spacing = 0
+        container.addSubview(rootStack)
+        NSLayoutConstraint.activate([
+            rootStack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            rootStack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            rootStack.topAnchor.constraint(equalTo: container.topAnchor),
+            rootStack.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
+
+        // header
+        header.translatesAutoresizingMaskIntoConstraints = false
+        header.heightAnchor.constraint(equalToConstant: 56).isActive = true
+        rootStack.addArrangedSubview(header)
 
         // title
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.text = "Select language"
         titleLabel.font = .systemFont(ofSize: 22, weight: .bold)
-        titleLabel.textColor = UIColor(named: "Label") ?? UIColor.black
-        titleLabel.textAlignment = .left
+        titleLabel.textColor = .label
+        header.addSubview(titleLabel)
 
-        // close (X)
-        var closeCfg = UIButton.Configuration.plain()
-        closeCfg.image = UIImage(systemName: "xmark")
-        closeCfg.baseForegroundColor = UIColor.secondaryLabel
-        closeCfg.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)
-        closeButton.configuration = closeCfg
-        closeButton.addTarget(self, action: #selector(dismissFromX), for: .touchUpInside)
-        closeButton.accessibilityIdentifier = "id_language_close"
+        // reuse the extension's circular X
+        let closeItem = makeCloseBarItem()
+        guard let x = closeItem.customView as? UIButton else { return }
 
-        // scroll content
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.alwaysBounceVertical = true
+        // remove default target; hook custom slide-down dismiss
+        x.removeTarget(nil, action: nil, for: .allEvents)
+        x.addTarget(self, action: #selector(dismissFromX), for: .touchUpInside)
 
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        stack.axis = .vertical
-        stack.alignment = .fill
-        stack.spacing = 12
-        stack.isLayoutMarginsRelativeArrangement = true
-        stack.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 16, leading: 16, bottom: 24, trailing: 16)
-
-        // add subviews
-        container.addSubview(titleLabel)
-        container.addSubview(closeButton)
-        container.addSubview(scrollView)
-        scrollView.addSubview(stack)
+        // place X in header (top-right)
+        x.translatesAutoresizingMaskIntoConstraints = false
+        header.addSubview(x)
 
         NSLayoutConstraint.activate([
-            titleLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 20),
-            titleLabel.topAnchor.constraint(equalTo: container.topAnchor, constant: 20),
+            titleLabel.leadingAnchor.constraint(equalTo: header.leadingAnchor, constant: 20),
+            titleLabel.centerYAnchor.constraint(equalTo: header.centerYAnchor),
 
-            closeButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
-            closeButton.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -14),
-
-            scrollView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            scrollView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 12),
-            scrollView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-
-            stack.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: scrollView.topAnchor),
-            stack.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            stack.widthAnchor.constraint(equalTo: scrollView.widthAnchor)
+            x.trailingAnchor.constraint(equalTo: header.trailingAnchor, constant: -12),
+            x.centerYAnchor.constraint(equalTo: header.centerYAnchor)
         ])
 
-        buildLanguageRows()
+        // scroll area
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.alwaysBounceVertical = true
+        rootStack.addArrangedSubview(scrollView)
+
+        // list stack
+        listStack.translatesAutoresizingMaskIntoConstraints = false
+        listStack.axis = .vertical
+        listStack.alignment = .fill
+        listStack.spacing = 12
+        listStack.isLayoutMarginsRelativeArrangement = true
+        listStack.directionalLayoutMargins = .init(top: 16, leading: 16, bottom: 24, trailing: 16)
+        scrollView.addSubview(listStack)
+
+        NSLayoutConstraint.activate([
+            listStack.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+            listStack.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+            listStack.topAnchor.constraint(equalTo: scrollView.topAnchor),
+            listStack.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            listStack.widthAnchor.constraint(equalTo: scrollView.widthAnchor)
+        ])
     }
 
-    // MARK: Rows
-    private func buildLanguageRows() {
+
+    private func buildRows() {
         options.forEach { opt in
-            let button = makeRowButton(for: opt)
-            stack.addArrangedSubview(button)
+            let b = UIButton(type: .system)
+            b.translatesAutoresizingMaskIntoConstraints = false
+            b.heightAnchor.constraint(greaterThanOrEqualToConstant: 52).isActive = true
+            b.layer.cornerRadius = 14
+            b.layer.masksToBounds = true
+            b.backgroundColor = .secondarySystemBackground
+            b.accessibilityIdentifier = "id_language_\(opt.code)"
+
+            var cfg = UIButton.Configuration.plain()
+            cfg.title = "\(opt.display) \(opt.flag)"     // plain title == source of truth
+            cfg.contentInsets = .init(top: 14, leading: 18, bottom: 14, trailing: 18)
+            cfg.titleAlignment = .leading
+            b.configuration = cfg
+
+            b.addAction(UIAction { [weak self] _ in
+                guard let self = self else { return }
+                self.selected = opt
+                self.updateSelectionUI(animated: true)
+                self.dismissWithSlideDown { self.onPick(opt) }
+            }, for: .touchUpInside)
+
+            listStack.addArrangedSubview(b)
         }
-        // initial highlight
         updateSelectionUI(animated: false)
-    }
-
-    private func makeRowButton(for option: LanguageOption) -> UIButton {
-        let b = UIButton(type: .system)
-        b.translatesAutoresizingMaskIntoConstraints = false
-        b.heightAnchor.constraint(greaterThanOrEqualToConstant: 52).isActive = true
-        b.layer.cornerRadius = 14
-        b.layer.masksToBounds = true
-        b.backgroundColor = UIColor.secondarySystemBackground
-
-        // content
-        var cfg = UIButton.Configuration.plain()
-        cfg.contentInsets = .init(top: 14, leading: 18, bottom: 14, trailing: 18)
-        cfg.attributedTitle = AttributedString("\(option.display) \(option.flag)", attributes: AttributeContainer([
-            .font: UIFont.systemFont(ofSize: 18, weight: .semibold),
-            .foregroundColor: UIColor.label
-        ]))
-        cfg.titleAlignment = .leading
-        b.configuration = cfg
-
-        b.addAction(UIAction { [weak self] _ in
-            guard let self = self else { return }
-            self.selected = option
-            self.updateSelectionUI(animated: true)
-            self.dismissWithSlideDown {
-                self.onPick(option)
-            }
-        }, for: .touchUpInside)
-
-        b.accessibilityIdentifier = "id_language_\(option.code)"
-        return b
     }
 
     private func updateSelectionUI(animated: Bool) {
         guard let selected = selected else { return }
-        for case let b as UIButton in stack.arrangedSubviews {
-            // crude parse: last path component of identifier is code
-            let code = b.accessibilityIdentifier?.replacingOccurrences(of: "id_language_", with: "") ?? ""
-            let isSelected = code == selected.code
-            let changes = {
-                if isSelected {
-                    b.backgroundColor = UIColor.black // dark pill like screenshot
-                    var cfg = b.configuration!
-                    cfg.attributedTitle = AttributedString(cfg.attributedTitle?.string ?? "", attributes: AttributeContainer([
+        let apply = { [weak self] in
+            guard let self = self else { return }
+            for case let b as UIButton in self.listStack.arrangedSubviews {
+                let code = (b.accessibilityIdentifier ?? "").replacingOccurrences(of: "id_language_", with: "")
+                let isSel = code == selected.code
+                b.backgroundColor = isSel ? .black : .secondarySystemBackground
+
+                guard var cfg = b.configuration else { continue }
+                let title = cfg.title ?? (b.titleLabel?.text ?? "")
+                let color: UIColor = isSel ? .white : .label
+                cfg.attributedTitle = AttributedString(
+                    title,
+                    attributes: AttributeContainer([
                         .font: UIFont.systemFont(ofSize: 18, weight: .semibold),
-                        .foregroundColor: UIColor.white
-                    ]))
-                    b.configuration = cfg
-                } else {
-                    b.backgroundColor = UIColor.secondarySystemBackground
-                    var cfg = b.configuration!
-                    cfg.attributedTitle = AttributedString(cfg.attributedTitle?.string ?? "", attributes: AttributeContainer([
-                        .font: UIFont.systemFont(ofSize: 18, weight: .semibold),
-                        .foregroundColor: UIColor.label
-                    ]))
-                    b.configuration = cfg
-                }
+                        .foregroundColor: color
+                    ])
+                )
+                b.configuration = cfg
             }
-            animated ? UIView.animate(withDuration: 0.15, animations: changes) : changes()
         }
+        animated ? UIView.animate(withDuration: 0.15, animations: apply) : apply()
     }
 
-    // MARK: Animations (match Alert)
-    private func animateIn() {
-        view.layoutIfNeeded()
-        guard let centerY = centerYConstraint else { return }
-        centerY.constant = -view.bounds.height
-        view.layoutIfNeeded()
-        UIView.animate(withDuration: 0.50,
-                       delay: 0.01,
-                       usingSpringWithDamping: 0.8,
-                       initialSpringVelocity: 0.5,
-                       options: [.curveEaseInOut],
-                       animations: {
-            centerY.constant = 0
-            self.view.layoutIfNeeded()
-        })
-    }
-
+    // MARK: Dismiss (same pattern as Alert)
     private func dismissWithSlideDown(completion: (() -> Void)? = nil) {
-        guard let centerY = centerYConstraint else { return }
-        centerY.constant = view.bounds.height
+        centerYConstraint.constant = view.bounds.height
         UIView.animate(withDuration: 0.30,
                        delay: 0,
                        usingSpringWithDamping: 0.85,
@@ -244,12 +243,6 @@ final class LanguagePickerViewController: UIViewController {
         })
     }
 
-    // MARK: Actions
-    @objc private func dismissFromX() {
-        dismissWithSlideDown()
-    }
-
-    @objc private func dismissFromBackground() {
-        dismissWithSlideDown()
-    }
+    @objc private func dismissFromX() { dismissWithSlideDown() }
+    @objc private func dismissFromBackground() { dismissWithSlideDown() }
 }
