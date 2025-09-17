@@ -9,6 +9,8 @@ final class PersonalDetailsViewController: UIViewController {
     private var personalDetailRows: [PersonalDetailRow] = []
 
     // ---- Section outline overlay ----
+    private let sectionShadowView = SectionShadowView()
+
     private let sectionOutlineView = SectionOutlineView()
     private let outlinedSection = 0        // details is now the ONLY section
     private let cardInset: CGFloat = 16
@@ -29,6 +31,15 @@ final class PersonalDetailsViewController: UIViewController {
         sectionOutlineView.strokeColor = .separator
         sectionOutlineView.layer.zPosition = 9_999
         sectionOutlineView.isHidden = true
+        
+        tableView.addSubview(sectionShadowView)
+        // in viewDidLoad, after you add sectionShadowView
+        sectionShadowView.corner = corner
+        sectionShadowView.shadowOpacity = 0.18
+        sectionShadowView.shadowRadius  = 8
+        sectionShadowView.shadowOffset  = .zero   // <- even outline; use (0,4) for drop
+        sectionShadowView.spread        = max(12, sectionShadowView.shadowRadius * 2)
+
         
         tableView.reloadData()
         tableView.layoutIfNeeded()
@@ -61,30 +72,60 @@ final class PersonalDetailsViewController: UIViewController {
 
     private func setData() {
         personalDetailRows = [
-            PersonalDetailRow(title: "Experience",  subtitle: viewModel.getExperience()) { [weak self] in
-                let vc = LiftingExperienceViewController(); vc.hidesProgressBar = true
-                self?.navigationController?.pushViewController(vc, animated: true)
-            },
-            PersonalDetailRow(title: "Consistency", subtitle: viewModel.getWorkoutDaysPerWeek()) { [weak self] in
-                let vc = WorkoutDaysPerWeekViewController(); vc.hidesProgressBar = true
-                self?.navigationController?.pushViewController(vc, animated: true)
-            },
-            PersonalDetailRow(title: "Gender",      subtitle: viewModel.getGender()) { [weak self] in
-                let vc = ChooseGenderViewController(); vc.hidesProgressBar = true
-                self?.navigationController?.pushViewController(vc, animated: true)
-            },
-            PersonalDetailRow(title: "Height",      subtitle: viewModel.getHeight()) { [weak self] in
-                let vc = HeightAndWeightViewController(); vc.hidesProgressBar = true
-                self?.navigationController?.pushViewController(vc, animated: true)
-            },
-            PersonalDetailRow(title: "Weight",      subtitle: viewModel.getWeight()) { [weak self] in
-                let vc = HeightAndWeightViewController(); vc.hidesProgressBar = true
-                self?.navigationController?.pushViewController(vc, animated: true)
-            },
-            PersonalDetailRow(title: "Birthday",    subtitle: viewModel.getBirthday()) { [weak self] in
-                let vc = BirthdayViewController(); vc.hidesProgressBar = true
-                self?.navigationController?.pushViewController(vc, animated: true)
-            }
+            PersonalDetailRow(
+                title: "Experience",
+                subtitle: viewModel.getExperience(),
+                action: { [weak self] in
+                    let vc = LiftingExperienceViewController()
+                    vc.hidesProgressBar = true
+                    self?.navigationController?.pushViewController(vc, animated: true)
+                }
+            ),
+            PersonalDetailRow(
+                title: "Consistency",
+                subtitle: viewModel.getWorkoutDaysPerWeek(),
+                action: { [weak self] in
+                    let vc = WorkoutDaysPerWeekViewController()
+                    vc.hidesProgressBar = true
+                    self?.navigationController?.pushViewController(vc, animated: true)
+                }
+            ),
+            PersonalDetailRow(
+                title: "Gender",
+                subtitle: viewModel.getGender(),
+                action: {[weak self] in
+                    let vc = ChooseGenderViewController()
+                    vc.hidesProgressBar = true
+                    self?.navigationController?.pushViewController(vc, animated: true)
+                }
+            ),
+            PersonalDetailRow(
+                title: "Height",
+                subtitle: viewModel.getHeight(),
+                action: {[weak self] in
+                    let vc = ChooseGenderViewController()
+                    vc.hidesProgressBar = true
+                    self?.navigationController?.pushViewController(vc, animated: true)
+                }
+            ),
+            PersonalDetailRow(
+                title: "Weight",
+                subtitle: viewModel.getWeight(),
+                action: { [weak self] in
+                    let vc = HeightAndWeightViewController()
+                    vc.hidesProgressBar = true
+                    self?.navigationController?.pushViewController(vc, animated: true)
+                }
+            ),
+            PersonalDetailRow(
+                title: "Birthday",
+                subtitle: viewModel.getBirthday(),
+                action: { [weak self] in
+                    let vc = BirthdayViewController()
+                    vc.hidesProgressBar = true
+                    self?.navigationController?.pushViewController(vc, animated: true)
+                }
+            )
         ]
     }
 
@@ -118,11 +159,11 @@ final class PersonalDetailsViewController: UIViewController {
     func scrollViewDidScroll(_ scrollView: UIScrollView) { refreshSectionOutline() }
     
     private func refreshSectionOutline() {
-        guard tableView.numberOfSections > outlinedSection else { sectionOutlineView.isHidden = true; return }
+        guard tableView.numberOfSections > outlinedSection else { sectionOutlineView.isHidden = true; sectionShadowView.isHidden = true; return }
         let rows = tableView.numberOfRows(inSection: outlinedSection)
-        guard rows > 0 else { sectionOutlineView.isHidden = true; return }
+        guard rows > 0 else { sectionOutlineView.isHidden = true; sectionShadowView.isHidden = true; return }
 
-        tableView.layoutIfNeeded()  // <- safety: table has measured its rows
+        tableView.layoutIfNeeded()
 
         let first = tableView.rectForRow(at: IndexPath(row: 0, section: outlinedSection))
         let last  = tableView.rectForRow(at: IndexPath(row: rows - 1, section: outlinedSection))
@@ -131,14 +172,25 @@ final class PersonalDetailsViewController: UIViewController {
         frame.size.width -= cardInset * 2
         frame = frame.integral
 
+        let spread = sectionShadowView.spread
+
         CATransaction.begin()
         CATransaction.setDisableActions(true)
+
+        // Shadow: bigger frame so outer blur is visible; inside is masked out
+        sectionShadowView.frame = frame.insetBy(dx: -spread, dy: -spread)
+        sectionShadowView.isHidden = false
+
+        // Outline: exact section frame
         sectionOutlineView.frame = frame
         sectionOutlineView.isHidden = false
+
         CATransaction.commit()
 
         tableView.bringSubviewToFront(sectionOutlineView)
     }
+
+
 }
 
 // MARK: - DataSource
@@ -164,7 +216,6 @@ extension PersonalDetailsViewController: UITableViewDataSource {
 
 // MARK: - Delegate
 extension PersonalDetailsViewController: UITableViewDelegate {
-    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat { .leastNormalMagnitude }
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat { 20 }
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? { UIView() }
 
@@ -178,10 +229,18 @@ extension PersonalDetailsViewController: UITableViewDelegate {
         c.apply(position: pos)
         refreshSectionOutline()
     }
+
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        return section == outlinedSection ? 16 : .leastNormalMagnitude
+    }
+
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        return section == outlinedSection ? UIView() : UIView()
+    }
 }
 
 // ---- SectionOutlineView (same as you have) ----
-private final class SectionOutlineView: UIView {
+final class SectionOutlineView: UIView {
     var corner: CGFloat = 16    { didSet { setNeedsLayout() } }
     var lineWidth: CGFloat = 1  { didSet { shape.lineWidth = lineWidth; setNeedsLayout() } }
     var strokeColor: UIColor = .separator { didSet { shape.strokeColor = strokeColor.cgColor } }
@@ -211,5 +270,63 @@ private final class SectionOutlineView: UIView {
         shape.strokeColor = strokeColor.resolvedColor(with: traitCollection).cgColor
         shape.path = path.cgPath
     }
+    
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool { false }
 }
 
+
+final class SectionShadowView: UIView {
+    var corner: CGFloat = 16     { didSet { setNeedsLayout() } }
+    /// How far the shadow view expands beyond the section on each edge.
+    /// This must be >= shadowRadius * 2 for a clean blur.
+    var spread: CGFloat = 12     { didSet { setNeedsLayout() } }
+
+    var shadowColor: UIColor = .black { didSet { layer.shadowColor = shadowColor.cgColor } }
+    var shadowOpacity: Float = 0.18    { didSet { layer.shadowOpacity = shadowOpacity } }
+    var shadowRadius: CGFloat = 4     { didSet { layer.shadowRadius = shadowRadius } }
+    /// Use .zero for an even “outline”; use (0,4) for a drop look.
+    var shadowOffset: CGSize = .zero   { didSet { layer.shadowOffset = shadowOffset } }
+
+    private let maskLayer = CAShapeLayer()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isUserInteractionEnabled = false
+        backgroundColor = .clear
+
+        // Shadow config
+        layer.masksToBounds = false
+        layer.shadowColor = shadowColor.cgColor
+        layer.shadowOpacity = shadowOpacity
+        layer.shadowRadius = shadowRadius
+        layer.shadowOffset = shadowOffset
+        layer.shouldRasterize = true
+        layer.rasterizationScale = UIScreen.main.scale
+
+        // Mask that punches out the inside so only outer halo remains
+        maskLayer.fillRule = .evenOdd
+        maskLayer.fillColor = UIColor.black.cgColor
+        layer.mask = maskLayer
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+
+        // Inner rect is the section frame inside this expanded shadow view
+        let inner = bounds.insetBy(dx: spread, dy: spread)
+
+        // Cast shadow from the section’s rounded rect (the “border” path)
+        let rounded = UIBezierPath(roundedRect: inner, cornerRadius: corner).cgPath
+        layer.shadowPath = rounded
+
+        // Mask out the inside so you don’t see any haze over the content
+        let outer = UIBezierPath(rect: bounds)
+        outer.append(UIBezierPath(roundedRect: inner, cornerRadius: corner))
+        maskLayer.frame = bounds
+        maskLayer.path  = outer.cgPath
+    }
+    
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool { false }
+}
