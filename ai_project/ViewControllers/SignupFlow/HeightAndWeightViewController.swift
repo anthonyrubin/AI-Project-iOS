@@ -1,5 +1,11 @@
 import UIKit
 
+struct PreSelectedHeightAndWeightData {
+    let heightCm: Double
+    let weightKg: Double
+    let isMetric: Bool
+}
+
 final class HeightAndWeightViewController: BaseSignupViewController, UIPickerViewDataSource, UIPickerViewDelegate {
 
     var onContinue: ((_ height: Double, _ weight: Double, _ isMetric: Bool) -> Void)?
@@ -7,7 +13,12 @@ final class HeightAndWeightViewController: BaseSignupViewController, UIPickerVie
     // MARK: - Source of truth (store in metric for precision)
     private var height: Measurement<UnitLength> = .init(value: 178, unit: .centimeters) // ~5'10"
     private var weight: Measurement<UnitMass>   = .init(value: 79,  unit: .kilograms)   // ~175 lb
-    private var isMetric = false { didSet { updateUnitUI(fromToggle: true) } }          // off = Imperial
+    private var isMetric = false {
+        didSet {
+            updateUnitUI(fromToggle: true)
+            updateContinueState() // NEW: reflect unit changes in the settings-mode gating
+        }
+    } // off = Imperial
 
     // MARK: - Ranges
     private let feetRange = Array(3...7)               // 3–7 ft
@@ -32,6 +43,14 @@ final class HeightAndWeightViewController: BaseSignupViewController, UIPickerVie
     private let cols = UIStackView()
     private let leftCol = UIStackView()
     private let rightCol = UIStackView()
+    
+    // SETTINGS MODE: inject this when opening from Settings
+    var preSelectedData: PreSelectedHeightAndWeightData? = nil
+
+    // Track original values for change detection (settings mode only)
+    private var originalHeightCm: Double?
+    private var originalWeightKg: Double?
+    private var originalIsMetric: Bool?
 
     private let titleLabel: UILabel = {
         let l = UILabel()
@@ -65,8 +84,27 @@ final class HeightAndWeightViewController: BaseSignupViewController, UIPickerVie
 
         setProgress(0.45, animated: false)
 
+        // Apply preselected values if provided (settings mode)
+        if let data = preSelectedData {
+            // Store originals for comparison
+            originalHeightCm = data.heightCm
+            originalWeightKg = data.weightKg
+            originalIsMetric = data.isMetric
+
+            // Set current state from provided cm/kg + unit
+            height = .init(value: data.heightCm, unit: .centimeters)
+            weight = .init(value: data.weightKg, unit: .kilograms)
+            isMetric = data.isMetric
+            unitSwitch.isOn = data.isMetric
+            continueButton.setTitle("Save", for: .normal)
+        } else {
+            // Signup flow defaults (existing behavior)
+            unitSwitch.isOn = false
+        }
+
         wire()
         updateUnitUI(fromToggle: false) // reflects initial values in wheels
+        updateContinueState()           // NEW: gate Continue in settings mode
     }
 
     // MARK: - Build UI
@@ -298,16 +336,71 @@ final class HeightAndWeightViewController: BaseSignupViewController, UIPickerVie
                 weight = .init(value: Double(lb), unit: .pounds).converted(to: .kilograms)
             }
         }
+        updateContinueState() // NEW: react to wheel changes
     }
+
+    // MARK: - Continue gating (settings mode)
+    // MARK: - Continue gating (settings mode)
+    private func updateContinueState() {
+        guard let oHcm = originalHeightCm,
+              let oWkg = originalWeightKg,
+              let oMetric = originalIsMetric else {
+            // Signup flow: original behavior (button enabled)
+            continueButton.isEnabled = true
+            continueButton.alpha = 1.0
+            return
+        }
+
+        let curMetric = isMetric
+
+        var changed = (curMetric != oMetric) // flipping the unit is a change
+
+        if curMetric {
+            // Compare in metric (cm / kg), rounded to picker granularity (ints)
+            let curHcm = Int(round(height.converted(to: .centimeters).value))
+            let curWkg = Int(round(weight.converted(to: .kilograms).value))
+            let origHcm = Int(round(oHcm))
+            let origWkg = Int(round(oWkg))
+            if curHcm != origHcm || curWkg != origWkg { changed = true }
+        } else {
+            // Compare in imperial (total inches / pounds), rounded to picker granularity (ints)
+            let curInches = Int(round(height.converted(to: .inches).value))
+            let curLbs    = Int(round(weight.converted(to: .pounds).value))
+
+            let origInches = Int(
+                round(Measurement(value: oHcm, unit: UnitLength.centimeters).converted(to: .inches).value)
+            )
+            let origLbs = Int(
+                round(Measurement(value: oWkg, unit: UnitMass.kilograms).converted(to: .pounds).value)
+            )
+
+            if curInches != origInches || curLbs != origLbs { changed = true }
+        }
+
+        continueButton.isEnabled = changed
+        continueButton.alpha = changed ? 1.0 : 0.4
+    }
+
 
     // MARK: - Continue
     override func didTapContinue() {
+        // Settings flow branch: only when we had preselected values and user changed something
+        if originalHeightCm != nil, originalWeightKg != nil, originalIsMetric != nil {
+            // If button is enabled we already detected a change; run settings stub and exit
+            if continueButton.isEnabled {
+                let heightCm = height.converted(to: .centimeters).value
+                let weightKg = weight.converted(to: .kilograms).value
+                print("Settings flow: update height=\(Int(round(heightCm)))cm, weight=\(Int(round(weightKg)))kg, isMetric=\(isMetric)")
+                return
+            } else {
+                return // no change
+            }
+        }
+
+        // Default signup behavior (unchanged)
         super.didTapContinue()
-        
-        // Save height and weight to UserDefaults
         let heightCm = height.converted(to: .centimeters).value
         let weightKg = weight.converted(to: .kilograms).value
-        
         onContinue?(heightCm, weightKg, isMetric)
     }
 }

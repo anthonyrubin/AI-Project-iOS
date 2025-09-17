@@ -63,7 +63,7 @@ class PersonalDetailsViewModel {
     }
     
     // Function 1: Convert height from UserDTO to display string
-    func getHeight() -> String {
+    func getFormattedHeight() -> String {
         
         guard let personalDetailsData = personalDetailsData,
               let height = personalDetailsData.height,
@@ -82,10 +82,10 @@ class PersonalDetailsViewModel {
     }
 
     // Function 2: Convert weight from UserDTO to display string
-    func getWeight() -> String {
+    func getFormattedWeight() -> String {
         
         guard let personalDetailsData = personalDetailsData,
-              let weight = personalDetailsData.height,
+              let weight = personalDetailsData.weight,
               let isMetric = personalDetailsData.isMetric else { return "Not set" }
 
         if isMetric {
@@ -96,5 +96,24 @@ class PersonalDetailsViewModel {
             let pounds = weight * 2.20462
             return "\(Int(pounds)) lbs"
         }
+    }
+    
+    func getRawHeight() -> Double {
+        guard let personalDetailsData = personalDetailsData,
+              let height = personalDetailsData.height,
+              let isMetric = personalDetailsData.isMetric else { return 177 }
+        return height
+    }
+    
+    func getRawWeight() -> Double {
+        guard let personalDetailsData = personalDetailsData,
+              let weight = personalDetailsData.weight else { return 79 }
+        return weight
+    }
+    
+    func getIsMetric() -> Bool {
+        guard let personalDetailsData = personalDetailsData,
+              let isMetric = personalDetailsData.isMetric else { return false }
+        return isMetric
     }
 }

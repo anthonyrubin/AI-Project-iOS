@@ -77,15 +77,17 @@ final class PersonalDetailsViewController: UIViewController {
                 subtitle: viewModel.getExperience(),
                 action: { [weak self] in
                     let vc = LiftingExperienceViewController()
+                    vc.preSelectedItem = self?.viewModel.getExperience()
                     vc.hidesProgressBar = true
                     self?.navigationController?.pushViewController(vc, animated: true)
                 }
             ),
             PersonalDetailRow(
-                title: "Consistency",
+                title: "Workouts per week",
                 subtitle: viewModel.getWorkoutDaysPerWeek(),
                 action: { [weak self] in
                     let vc = WorkoutDaysPerWeekViewController()
+                    vc.preSelectedItem = self?.viewModel.getWorkoutDaysPerWeek()
                     vc.hidesProgressBar = true
                     self?.navigationController?.pushViewController(vc, animated: true)
                 }
@@ -95,24 +97,21 @@ final class PersonalDetailsViewController: UIViewController {
                 subtitle: viewModel.getGender(),
                 action: {[weak self] in
                     let vc = ChooseGenderViewController()
+                    vc.preSelectedItem = self?.viewModel.getGender()
                     vc.hidesProgressBar = true
                     self?.navigationController?.pushViewController(vc, animated: true)
                 }
             ),
             PersonalDetailRow(
-                title: "Height",
-                subtitle: viewModel.getHeight(),
+                title: "Metrics",
+                subtitle: "\(viewModel.getFormattedHeight()) \(viewModel.getFormattedWeight())",
                 action: {[weak self] in
-                    let vc = ChooseGenderViewController()
-                    vc.hidesProgressBar = true
-                    self?.navigationController?.pushViewController(vc, animated: true)
-                }
-            ),
-            PersonalDetailRow(
-                title: "Weight",
-                subtitle: viewModel.getWeight(),
-                action: { [weak self] in
                     let vc = HeightAndWeightViewController()
+                    vc.preSelectedData = PreSelectedHeightAndWeightData(
+                        heightCm: self!.viewModel.getRawHeight(),
+                        weightKg: self!.viewModel.getRawWeight(),
+                        isMetric: self!.viewModel.getIsMetric()
+                    )
                     vc.hidesProgressBar = true
                     self?.navigationController?.pushViewController(vc, animated: true)
                 }
@@ -122,6 +121,7 @@ final class PersonalDetailsViewController: UIViewController {
                 subtitle: viewModel.getBirthday(),
                 action: { [weak self] in
                     let vc = BirthdayViewController()
+                    vc.preSelectedItem = self?.viewModel.getBirthday()
                     vc.hidesProgressBar = true
                     self?.navigationController?.pushViewController(vc, animated: true)
                 }

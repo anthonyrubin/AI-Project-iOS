@@ -1,11 +1,16 @@
 import UIKit
 
+// TODO: Change this from workout days per week to WORKOUTS PER WEEK
 // MARK: - ViewController
 final class WorkoutDaysPerWeekViewController: BaseSignupTableViewController {
     
     var onContinue: (() -> Void)?
     var onSelectedWorkoutDaysPerWeek: ((String) -> Void)?
     
+    // SETTINGS MODE: pass this when opening from Settings
+    var preSelectedItem: String? = nil
+    private var originalItem: LeftSFIconCellData?
+
     private let items: [LeftSFIconCellData] = [
         .init(title: "1-2 (Casual)", iconName: "leaf"),
         .init(title: "3-4 (Regular)", iconName: "wind"),
@@ -17,6 +22,14 @@ final class WorkoutDaysPerWeekViewController: BaseSignupTableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setProgress(0.18, animated: false)
+
+        // If provided from Settings, preselect and remember the original
+        if let pre = preSelectedItem,
+           let match = items.first(where: { $0.title == pre }) {
+            originalItem = match
+            selected = match
+        }
+
         updateContinueState()
     }
     
@@ -35,16 +48,30 @@ final class WorkoutDaysPerWeekViewController: BaseSignupTableViewController {
         tableView.cascadeShouldAnimateCell = { $0 is LeftSFIconCell }
         tableView.register(StandardTitleCell.self, forCellReuseIdentifier: "StandardTitleCell")
         tableView.register(LeftSFIconCell.self, forCellReuseIdentifier: LeftSFIconCell.reuseID)
-        tableView.allowsMultipleSelection = true
+        tableView.allowsMultipleSelection = true // leave as-is (your original)
     }
 
     private func updateContinueState() {
-        let enabled = (selected != nil)
-        continueButton.isEnabled = enabled
-        continueButton.alpha = enabled ? 1.0 : 0.4
+        if let originalItem {
+            let changed = (selected != nil && selected != originalItem)
+            continueButton.isEnabled = changed
+            continueButton.alpha = changed ? 1.0 : 0.4
+        } else {
+            let enabled = (selected != nil)
+            continueButton.isEnabled = enabled
+            continueButton.alpha = enabled ? 1.0 : 0.4
+        }
     }
     
     override func didTapContinue() {
+        // Settings flow: only when there was a preselected value and user changed it
+        if let originalItem, let selected, selected != originalItem {
+            // Stub for settings update action — replace with your save/pop/notify
+            print("Settings flow: update workout days per week to \(selected.title)")
+            return
+        }
+
+        // Default signup behavior (unchanged)
         super.didTapContinue()
         onContinue?()
     }
@@ -98,8 +125,8 @@ extension WorkoutDaysPerWeekViewController: UITableViewDataSource, UITableViewDe
                 }
             }
             // select new
-            selected = items[indexPath.row]
-            onSelectedWorkoutDaysPerWeek?(selected!.title)
+            selected = tapped
+            onSelectedWorkoutDaysPerWeek?(tapped.title)
             if let cell = tableView.cellForRow(at: indexPath) as? LeftSFIconCell {
                 cell.setSelectedAppearance(true, animated: true)
             }

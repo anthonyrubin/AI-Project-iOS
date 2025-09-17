@@ -6,11 +6,17 @@ final class BirthdayViewController: BaseSignupViewController {
     
     private lazy var errorModalManager = ErrorModalManager(viewController: self)
 
+    // SETTINGS MODE: incoming preselected date as "MM/DD/YYYY"
+    var preSelectedItem: String? = nil
+    private var originalDate: Date?   // parsed from preSelectedItem for comparison
+
     // MARK: - State
     private(set) var birthdate: Date = {
-        // default to 18 years ago so the wheel lands somewhere sensible
-        let cal = Calendar.current
-        return cal.date(byAdding: .year, value: -18, to: Date()) ?? Date()
+        // default to 18 years ago at LOCAL NOON so the wheel lands somewhere sensible
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = .current
+        let base = cal.date(byAdding: .year, value: -18, to: Date()) ?? Date()
+        return cal.date(bySettingHour: 12, minute: 0, second: 0, of: base) ?? base
     }()
 
     // MARK: - UI
@@ -46,6 +52,15 @@ final class BirthdayViewController: BaseSignupViewController {
 
         setProgress(0.55, animated: false)
 
+        // Apply preselected value if provided (settings mode)
+        if let pre = preSelectedItem,
+           let parsed = Self.parseDate(from: pre) {
+            originalDate = parsed
+            birthdate = parsed
+            datePicker.date = parsed
+            continueButton.setTitle("Save", for: .normal)
+        }
+
         wire()
         updateFromState()
     }
@@ -61,10 +76,9 @@ final class BirthdayViewController: BaseSignupViewController {
         // Date picker (wheels)
         datePicker.translatesAutoresizingMaskIntoConstraints = false
         datePicker.datePickerMode = .date
-        if #available(iOS 13.4, *) {
-            datePicker.preferredDatePickerStyle = .wheels
-        }
-        datePicker.maximumDate = Date()                           // no future birthdays
+        datePicker.preferredDatePickerStyle = .wheels
+        datePicker.timeZone = .current                 // iOS 16+: force local timezone
+        datePicker.maximumDate = Date()                // no future birthdays
         datePicker.minimumDate = Calendar.current.date(from: DateComponents(year: 1900, month: 1, day: 1))
 
         dateContainer.addSubview(datePicker)
@@ -106,13 +120,30 @@ final class BirthdayViewController: BaseSignupViewController {
 
     private func updateFromState() {
         datePicker.date = birthdate
-        // If you want to gate continue by age (e.g., >= 13), add logic here.
-        continueButton.isEnabled = true
-        continueButton.alpha = 1.0
+        updateContinueState()
+    }
+
+    // Enable Continue only when needed (settings mode),
+    // otherwise preserve original signup behavior.
+    private func updateContinueState() {
+        if let originalDate {
+            // settings mode: enable only if changed
+            let changed = !Calendar.current.isDate(birthdate, inSameDayAs: originalDate)
+            continueButton.isEnabled = changed
+            continueButton.alpha = changed ? 1.0 : 0.4
+        } else {
+            // signup flow: original behavior (button enabled)
+            continueButton.isEnabled = true
+            continueButton.alpha = 1.0
+        }
     }
 
     @objc private func didChangeDate() {
-        birthdate = datePicker.date
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = .current
+        // Normalize to local noon to avoid off-by-one due to DST/UTC
+        birthdate = cal.date(bySettingHour: 12, minute: 0, second: 0, of: datePicker.date) ?? datePicker.date
+        updateContinueState()
     }
     
     private func isAtLeast(_ years: Int, from date: Date) -> Bool {
@@ -121,14 +152,55 @@ final class BirthdayViewController: BaseSignupViewController {
 
     // MARK: - Continue
     override func didTapContinue() {
-        
+        // Settings flow branch: only when preselected existed and user changed it
+        if let originalDate,
+           !Calendar.current.isDate(birthdate, inSameDayAs: originalDate) {
+            // Stub for settings update action — replace with Realm save / delegate / pop
+            let out = Self.formatDate(birthdate)
+            print("Settings flow: update birthday to \(out)")
+            return
+        }
+
+        // Default signup behavior (unchanged)
         if !isAtLeast(13, from: birthdate) {
             errorModalManager.showError("You must be at least 13 years old")
             return
         }
         
         super.didTapContinue()
-        
         onContinue?(birthdate)
     }
+
+    // MARK: - Helpers
+    private static func parseDate(from string: String) -> Date? {
+        // Expecting "MM/DD/YYYY" — construct a local date at NOON to avoid timezone drift
+        let parts = string.split(separator: "/")
+        guard parts.count == 3,
+              let m = Int(parts[0]),
+              let d = Int(parts[1]),
+              let y = Int(parts[2]) else { return nil }
+
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = .current
+        var comps = DateComponents()
+        comps.calendar = cal
+        comps.timeZone = .current
+        comps.year = y
+        comps.month = m
+        comps.day = d
+        comps.hour = 12
+        comps.minute = 0
+        comps.second = 0
+        return cal.date(from: comps)
+    }
+
+    private static func formatDate(_ date: Date) -> String {
+        let df = DateFormatter()
+        df.calendar = Calendar(identifier: .gregorian)
+        df.locale = Locale(identifier: "en_US_POSIX")
+        df.timeZone = .current
+        df.dateFormat = "MM/dd/yyyy"
+        return df.string(from: date)
+    }
 }
+

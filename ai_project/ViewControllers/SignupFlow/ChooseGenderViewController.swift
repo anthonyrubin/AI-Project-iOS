@@ -4,6 +4,9 @@ final class ChooseGenderViewController: BaseSignupTableViewController {
     
     var onContinue: (() -> Void)?
     var onSelectedGender: ((String) -> Void)?
+    
+    // Used to set the value in GenderViewController from settings
+    var preSelectedItem: String? = nil
 
     private let items: [LeftSFIconCellData] = [
         .init(title: "Male",                 iconName: "figure.stand"),
@@ -13,9 +16,21 @@ final class ChooseGenderViewController: BaseSignupTableViewController {
 
     private var selectedItem: LeftSFIconCellData?   // ← single selection
 
+    // Track the preselected/original value to compare changes (only when preSelectedItem != nil)
+    private var originalItem: LeftSFIconCellData?
+
     override func viewDidLoad() {
         super.viewDidLoad()
         setProgress(0.36, animated: false)
+
+        // If provided from Settings, preselect and remember the original
+        if let pre = preSelectedItem,
+           let match = items.first(where: { $0.title == pre }) {
+            originalItem = match
+            selectedItem = match
+            continueButton.setTitle("Save", for: .normal)
+        }
+
         updateContinueState()
     }
     
@@ -38,12 +53,29 @@ final class ChooseGenderViewController: BaseSignupTableViewController {
     }
 
     private func updateContinueState() {
-        let enabled = (selectedItem != nil)
-        continueButton.isEnabled = enabled
-        continueButton.alpha = enabled ? 1.0 : 0.4
+        if let originalItem {
+            // Settings mode: enable only if the selection changed to a different value
+            let changed = (selectedItem != nil && selectedItem != originalItem)
+            continueButton.isEnabled = changed
+            continueButton.alpha = changed ? 1.0 : 0.4
+        } else {
+            // Signup flow: original behavior
+            let enabled = (selectedItem != nil)
+            continueButton.isEnabled = enabled
+            continueButton.alpha = enabled ? 1.0 : 0.4
+        }
     }
 
     override func didTapContinue() {
+        // If coming from Settings (preSelectedItem provided), take a different action and do NOT call super/onContinue.
+        if let originalItem, let selectedItem, selectedItem != originalItem {
+            // Stub for settings update action:
+            // e.g., save to Realm, pop controller, notify delegate, etc.
+            print("Settings flow: update gender to \(selectedItem.title)")
+            return
+        }
+
+        // Default signup behavior (unchanged)
         super.didTapContinue()
         onContinue?()
     }
