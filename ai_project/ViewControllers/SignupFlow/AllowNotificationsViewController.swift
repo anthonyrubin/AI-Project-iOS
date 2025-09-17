@@ -2,6 +2,8 @@ import UIKit
 import UserNotifications
 
 final class AllowNotificationsViewController: BaseSignupViewController {
+    
+    var onContinue: (() -> Void)?
 
     private let titleLabel: UILabel = {
         let l = UILabel()
@@ -224,8 +226,6 @@ final class AllowNotificationsViewController: BaseSignupViewController {
     // MARK: - Continue
     override func didTapContinue() {
         super.didTapContinue()
-        
-        let vc = StartAnalysisViewController()
-        navigationController?.pushViewController(vc, animated: true)
+        onContinue?()
     }
 }

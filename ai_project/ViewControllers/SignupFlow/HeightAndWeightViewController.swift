@@ -2,6 +2,8 @@ import UIKit
 
 final class HeightAndWeightViewController: BaseSignupViewController, UIPickerViewDataSource, UIPickerViewDelegate {
 
+    var onContinue: ((_ height: Double, _ weight: Double, _ isMetric: Bool) -> Void)?
+
     // MARK: - Source of truth (store in metric for precision)
     private var height: Measurement<UnitLength> = .init(value: 178, unit: .centimeters) // ~5'10"
     private var weight: Measurement<UnitMass>   = .init(value: 79,  unit: .kilograms)   // ~175 lb
@@ -306,14 +308,7 @@ final class HeightAndWeightViewController: BaseSignupViewController, UIPickerVie
         let heightCm = height.converted(to: .centimeters).value
         let weightKg = weight.converted(to: .kilograms).value
         
-        UserDefaultsManager.shared.updatePhysicalInfo(
-            height: heightCm,
-            weight: weightKg,
-            isMetric: isMetric
-        )
-        
-        let vc = BirthdayViewController()
-        navigationController?.pushViewController(vc, animated: true)
+        onContinue?(heightCm, weightKg, isMetric)
     }
 }
 

@@ -1,6 +1,9 @@
 import UIKit
 
 final class ChooseGenderViewController: BaseSignupTableViewController {
+    
+    var onContinue: (() -> Void)?
+    var onSelectedGender: ((String) -> Void)?
 
     private let items: [LeftSFIconCellData] = [
         .init(title: "Male",                 iconName: "figure.stand"),
@@ -42,14 +45,7 @@ final class ChooseGenderViewController: BaseSignupTableViewController {
 
     override func didTapContinue() {
         super.didTapContinue()
-        
-        // Save gender to UserDefaults
-        if let selectedItem = selectedItem {
-            UserDefaultsManager.shared.updateBasicInfo(gender: selectedItem.title)
-        }
-        
-        let vc = HeightAndWeightViewController()
-        navigationController?.pushViewController(vc, animated: true)
+        onContinue?()
     }
 }
 
@@ -101,6 +97,7 @@ extension ChooseGenderViewController: UITableViewDataSource, UITableViewDelegate
             }
             // select new
             selectedItem = tappedItem
+            onSelectedGender?(selectedItem!.title)
             if let cell = tableView.cellForRow(at: indexPath) as? LeftSFIconCell {
                 cell.setSelectedAppearance(true, animated: true)
             }

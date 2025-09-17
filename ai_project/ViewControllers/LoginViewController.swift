@@ -2,6 +2,8 @@ import UIKit
 
 class LoginViewController: BaseViewController {
     
+    private lazy var coordinator: SignupCoordinator? = nil
+    
     private let videoArea: UIView = {
         let v = UIView()
         v.translatesAutoresizingMaskIntoConstraints = false
@@ -82,6 +84,7 @@ class LoginViewController: BaseViewController {
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
+        coordinator = SignupCoordinator(startingAt: self, nav: self.navigationController!)
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         setupUI()
@@ -136,8 +139,6 @@ class LoginViewController: BaseViewController {
     }
     
     @objc private func navigateNext() {
-        let selectSportsVC = LiftingExperienceViewController()
-         
-        pushWithFade(selectSportsVC)
+        coordinator!.start()
     }
 }

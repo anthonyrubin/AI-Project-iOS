@@ -2,9 +2,8 @@ import Foundation
 import UIKit
 import Combine
 
-
 final class SettingsViewController: UIViewController {
-    
+
     private var loadingOverlay = LoadingOverlay()
 
     private let tableView = UITableView(frame: .zero, style: .plain)
@@ -16,7 +15,6 @@ final class SettingsViewController: UIViewController {
         )
     )
 
-    // Example data
     private struct Section {
         let header: String?
         let rows: [Row]
@@ -26,23 +24,37 @@ final class SettingsViewController: UIViewController {
     private var sections: [Section] = []
     private var cancellables = Set<AnyCancellable>()
 
+    // --- Outline chrome per section (skip title section 0) ---
+    private var outlineViews: [Int: SectionOutlineView] = [:]
+    private let cardInset: CGFloat = 16
+    private let corner: CGFloat = 16
 
     override func viewDidLoad() {
         super.viewDidLoad()
         setupBindings()
         setupData()
         setupTable()
+
+        tableView.reloadData()
+        tableView.layoutIfNeeded()
+        installOutlines()
+        refreshSectionOutlines()
     }
-    
-    
+
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         makeNavBarTransparent(for: self)
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        refreshSectionOutlines()
+    }
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        setBackgroundGradient()
+        refreshSectionOutlines()
     }
 
     private func setupData() {
@@ -59,18 +71,16 @@ final class SettingsViewController: UIViewController {
             Section(header: nil, rows: [
                 Row(icon: "text.document", title: "Terms and Conditions", action: { }),
                 Row(icon: "shield.pattern.checkered", title: "Privacy Policy", action: { }),
-                Row(icon: "book.closed", title: "Attribution & Licenses", action: {
+                Row(icon: "book.closed", title: "Attribution & Licenses", action: { [weak self] in
                     let vc = AttributionsViewController()
-
                     vc.modalPresentationStyle = .pageSheet
                     if let sheet = vc.sheetPresentationController {
                         sheet.detents = [.large()]
                         sheet.prefersGrabberVisible = false
                     }
-                    self.present(vc, animated: true)
+                    self?.present(vc, animated: true)
                 }),
             ]),
-            
             Section(header: nil, rows: [
                 Row(icon: "rectangle.portrait.and.arrow.right", title: "Logout", action: { [weak self] in
                     self?.logoutButtonTapped()
@@ -78,7 +88,7 @@ final class SettingsViewController: UIViewController {
             ])
         ]
     }
-    
+
     private func setupBindings() {
         viewModel.$isLoading
             .receive(on: DispatchQueue.main)
@@ -110,26 +120,72 @@ final class SettingsViewController: UIViewController {
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
+
+    // Keep outlines positioned while scrolling/layout
+    func scrollViewDidScroll(_ scrollView: UIScrollView) { refreshSectionOutlines() }
+
+    private func installOutlines() {
+        // create (or reuse) outlines only for existing non-title sections
+        for section in 1..<tableView.numberOfSections {
+            if outlineViews[section] == nil {
+                let v = SectionOutlineView()
+                v.corner = corner
+                v.lineWidth = 1 / UIScreen.main.scale
+                v.strokeColor = .separator
+                v.isHidden = true
+                v.layer.zPosition = 10_000
+                tableView.addSubview(v)
+                outlineViews[section] = v
+            }
+        }
+    }
+
+    private func refreshSectionOutlines() {
+        tableView.layoutIfNeeded()
+
+        // hide/remove stale outlines
+        for (sec, v) in outlineViews where sec >= tableView.numberOfSections {
+            v.isHidden = true
+        }
+
+        for section in 1..<tableView.numberOfSections {
+            guard let v = outlineViews[section] else { continue }
+            let count = tableView.numberOfRows(inSection: section)
+            guard count > 0 else { v.isHidden = true; continue }
+
+            let first = tableView.rectForRow(at: IndexPath(row: 0, section: section))
+            let last  = tableView.rectForRow(at: IndexPath(row: count - 1, section: section))
+            var frame = first.union(last)
+            frame.origin.x += cardInset
+            frame.size.width -= cardInset * 2
+            frame = frame.integral
+
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            v.frame = frame
+            v.isHidden = false
+            CATransaction.commit()
+
+            tableView.bringSubviewToFront(v)
+        }
+    }
+
 }
 
 extension SettingsViewController: UITableViewDataSource, UITableViewDelegate {
     func numberOfSections(in tableView: UITableView) -> Int { sections.count + 1 }
+
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return section == 0 ? 1 : sections[section - 1].rows.count
+        section == 0 ? 1 : sections[section - 1].rows.count
     }
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        if section == 0 { return nil }
         guard let title = sections[section - 1].header else {
-            // spacer above the first card group
-            let spacer = UIView()
-            spacer.backgroundColor = .clear
-            return spacer
+            let spacer = UIView(); spacer.backgroundColor = .clear; return spacer
         }
-        let c = UIView()
-        c.backgroundColor = .clear
-        let l = UILabel()
-        l.text = title
-        l.font = .systemFont(ofSize: 20, weight: .bold)
+        let c = UIView(); c.backgroundColor = .clear
+        let l = UILabel(); l.text = title; l.font = .systemFont(ofSize: 20, weight: .bold)
         l.translatesAutoresizingMaskIntoConstraints = false
         c.addSubview(l)
         NSLayoutConstraint.activate([
@@ -146,7 +202,7 @@ extension SettingsViewController: UITableViewDataSource, UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
         return section == 0 ? 16 : 20
-    } // space between cards
+    }
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? { UIView() }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -157,57 +213,82 @@ extension SettingsViewController: UITableViewDataSource, UITableViewDelegate {
             return cell
         }
 
-        // Shift the row index for section 0 because of the extra title row
-        let dataRowIndex = indexPath.row - (indexPath.section == 0 ? 1 : 0)
-        let row = sections[indexPath.section - 1].rows[dataRowIndex]
-
+        let row = sections[indexPath.section - 1].rows[indexPath.row]
         let cell = tableView.dequeueReusableCell(withIdentifier: "RoundCardCell", for: indexPath) as! RoundCardCell
         cell.configure(icon: UIImage(systemName: row.icon), title: row.title)
         return cell
     }
 
-    // Round per position to get a single “card” per section
+    // Round per position to get a single “card” per (non-title) section
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        guard let card = cell as? RoundCardCell else { return }
-
-        // Compute “visible” index/count excluding the title row in section 0
-        let offset = (indexPath.section == 0 ? 1 : 0)
-        let visibleIndex = indexPath.row - offset
-        let visibleCount = tableView.numberOfRows(inSection: indexPath.section) - offset
-
+        guard indexPath.section != 0, let card = cell as? RoundCardCell else { return }
+        let count = tableView.numberOfRows(inSection: indexPath.section)
         let pos: RoundCardCell.Position =
-            visibleCount <= 1 ? .single :
-            visibleIndex == 0 ? .first :
-            visibleIndex == visibleCount - 1 ? .last : .middle
-
+            (count <= 1) ? .single :
+            (indexPath.row == 0) ? .first :
+            (indexPath.row == count - 1) ? .last : .middle
         card.apply(position: pos)
+        refreshSectionOutlines()
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        sections[indexPath.section - 1].rows[indexPath.row].action()
+        if indexPath.section != 0 {
+            sections[indexPath.section - 1].rows[indexPath.row].action()
+        }
         tableView.deselectRow(at: indexPath, animated: true)
     }
-    
+
     @objc func logoutButtonTapped() {
         Alert(self).danger(
             titleText: "Logout",
             bodyText: "Are you sure you want to logout?",
             buttonText: "Logout",
             canCancel: true,
-            completion: {  [weak self] in
-                self?.viewModel.logout()
-            }
+            completion: {  [weak self] in self?.viewModel.logout() }
         )
     }
-    
+
     private func navigateToMembership() {
         let membershipVC = BecomeAMemberViewController()
         navigationController?.pushViewController(membershipVC, animated: true)
     }
-    
+
     private func navigateToPersonalDetails() {
         let personalDetailsVC = PersonalDetailsViewController()
         let navController = UINavigationController(rootViewController: personalDetailsVC)
         present(navController, animated: true)
+    }
+}
+
+// ---- SectionOutlineView (same as used in your other VC) ----
+private final class SectionOutlineView: UIView {
+    var corner: CGFloat = 16    { didSet { setNeedsLayout() } }
+    var lineWidth: CGFloat = 1  { didSet { shape.lineWidth = lineWidth; setNeedsLayout() } }
+    var strokeColor: UIColor = .separator { didSet { shape.strokeColor = strokeColor.cgColor } }
+
+    private var shape: CAShapeLayer { layer as! CAShapeLayer }
+    override class var layerClass: AnyClass { CAShapeLayer.self }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isUserInteractionEnabled = false
+        backgroundColor = .clear
+        let s = shape
+        s.fillColor = UIColor.clear.cgColor
+        s.strokeColor = strokeColor.cgColor
+        s.lineWidth = lineWidth
+        s.lineJoin = .miter
+        s.lineCap  = .butt
+        s.contentsScale = UIScreen.main.scale
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let inset = lineWidth / 2
+        let b = bounds.insetBy(dx: inset, dy: inset)
+        let r = max(0, corner - inset)
+        shape.strokeColor = strokeColor.resolvedColor(with: traitCollection).cgColor
+        shape.path = UIBezierPath(roundedRect: b, cornerRadius: r).cgPath
     }
 }

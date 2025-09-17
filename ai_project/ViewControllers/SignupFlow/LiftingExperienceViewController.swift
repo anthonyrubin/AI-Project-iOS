@@ -2,6 +2,9 @@ import UIKit
 
 // MARK: - ViewController
 final class LiftingExperienceViewController: BaseSignupTableViewController {
+    
+    var onContinue: (() -> Void)?
+    var onSelectedExperience: ((String) -> Void)?
 
     private var items: [LeftSFIconCellData] = [
         LeftSFIconCellData(title: "Beginner (0–6 months)", iconName: "sparkles"),
@@ -44,9 +47,7 @@ final class LiftingExperienceViewController: BaseSignupTableViewController {
     
     override func didTapContinue() {
         super.didTapContinue()
-        UserDefaultsManager.shared.updateGoals(experience: selectedItem!.title)
-        let vc = WorkoutDaysPerWeekViewController()
-        navigationController?.pushViewController(vc, animated: true)
+        onContinue?()
     }
 }
 
@@ -99,6 +100,8 @@ extension LiftingExperienceViewController: UITableViewDataSource, UITableViewDel
             }
             // select new
             selectedItem = items[indexPath.row]
+            
+            onSelectedExperience?(selectedItem!.title)
             if let cell = tableView.cellForRow(at: indexPath) as? LeftSFIconCell {
                 cell.setSelectedAppearance(true, animated: true)
             }

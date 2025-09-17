@@ -2,6 +2,8 @@ import UIKit
 
 final class GreatPotentialViewController: BaseSignupViewController {
     
+    var onContinue: (() -> Void)?
+    
     private let titleLabel: UILabel = {
         let l = UILabel()
         l.text = "Coach Cam makes your form perfect."
@@ -29,8 +31,7 @@ final class GreatPotentialViewController: BaseSignupViewController {
     
     override func didTapContinue() {
         super.didTapContinue()
-        let vc = ChooseGenderViewController()
-        navigationController?.pushViewController(vc, animated: true)
+        onContinue?()
     }
 }
 

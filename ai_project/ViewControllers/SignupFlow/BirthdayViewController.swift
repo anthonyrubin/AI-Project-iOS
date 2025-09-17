@@ -2,6 +2,8 @@ import UIKit
 
 final class BirthdayViewController: BaseSignupViewController {
     
+    var onContinue: ((_ birthday: Date) -> Void)?
+    
     private lazy var errorModalManager = ErrorModalManager(viewController: self)
 
     // MARK: - State
@@ -125,11 +127,8 @@ final class BirthdayViewController: BaseSignupViewController {
             return
         }
         
-        UserDefaultsManager.shared.updateBasicInfo(birthday: birthdate)
-        
         super.didTapContinue()
         
-        let vc = ThanksForTrustingUsViewController()
-        navigationController?.pushViewController(vc, animated: true)
+        onContinue?(birthdate)
     }
 }

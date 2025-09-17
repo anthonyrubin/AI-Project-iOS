@@ -139,6 +139,8 @@ final class PrivacyBadgeCardView: UIView {
 // MARK: - Screen
 final class ThanksForTrustingUsViewController: BaseSignupViewController {
     
+    var onContinue: (() -> Void)?
+    
     private let titleLabel: UILabel = {
         let l = UILabel()
         l.text = "Thank you for trusting us"
@@ -215,9 +217,7 @@ final class ThanksForTrustingUsViewController: BaseSignupViewController {
 
     override func didTapContinue() {
         super.didTapContinue()
-        
-        let vc = AllowNotificationsViewController()
-        navigationController?.pushViewController(vc, animated: true)
+        onContinue?()
     }
 }
 

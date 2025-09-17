@@ -1,3 +1,5 @@
+// RoundCardCell (drop-in) — matches the other cell’s height and has ONLY the inset bottom separator.
+
 import UIKit
 
 final class RoundCardCell: UITableViewCell {
@@ -11,22 +13,22 @@ final class RoundCardCell: UITableViewCell {
     }
 
     func apply(position: Position) {
-        // Corner rounding per row position
         switch position {
         case .single:
-            container.layer.cornerRadius = 16
+            container.layer.cornerRadius = corner
             container.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner,
                                              .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
             separator.isHidden = true
         case .first:
-            container.layer.cornerRadius = 16
+            container.layer.cornerRadius = corner
             container.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
             separator.isHidden = false
         case .middle:
             container.layer.cornerRadius = 0
+            container.layer.maskedCorners = []
             separator.isHidden = false
         case .last:
-            container.layer.cornerRadius = 16
+            container.layer.cornerRadius = corner
             container.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
             separator.isHidden = true
         }
@@ -37,6 +39,11 @@ final class RoundCardCell: UITableViewCell {
     private let iconView = UIImageView()
     private let titleLabel = UILabel()
     private let separator = UIView()
+
+    // MARK: - Tunables
+    private let corner: CGFloat = 16
+    private let hairline: CGFloat = 1 / UIScreen.main.scale
+    private let minRowHeight: CGFloat = 56
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -51,9 +58,7 @@ final class RoundCardCell: UITableViewCell {
 
         container.backgroundColor = .white
         container.layer.cornerCurve = .continuous
-        container.layer.masksToBounds = true     // keep corners crisp
-        container.layer.borderColor = UIColor.separator.withAlphaComponent(0.3).cgColor
-        container.layer.borderWidth = 1 / UIScreen.main.scale
+        container.layer.masksToBounds = true
         container.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(container)
 
@@ -63,6 +68,7 @@ final class RoundCardCell: UITableViewCell {
         iconView.translatesAutoresizingMaskIntoConstraints = false
 
         titleLabel.font = .systemFont(ofSize: 17)
+        titleLabel.textColor = .label
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
 
         let h = UIStackView(arrangedSubviews: [iconView, titleLabel])
@@ -77,11 +83,14 @@ final class RoundCardCell: UITableViewCell {
         container.addSubview(separator)
 
         NSLayoutConstraint.activate([
-            // “Card” insets from table edges
+            // Card inset
             container.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             container.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             container.topAnchor.constraint(equalTo: contentView.topAnchor),
             container.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+
+            // Min height to match other cell
+            container.heightAnchor.constraint(greaterThanOrEqualToConstant: minRowHeight),
 
             // Row content
             h.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
@@ -92,11 +101,12 @@ final class RoundCardCell: UITableViewCell {
             iconView.widthAnchor.constraint(equalToConstant: 22),
             iconView.heightAnchor.constraint(equalToConstant: 22),
 
-            // Inner separator (shown for .first/.middle)
-            separator.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale),
+            // Inset bottom separator (shown for .first/.middle)
+            separator.heightAnchor.constraint(equalToConstant: hairline),
             separator.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
             separator.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
-            separator.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+            separator.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
     }
 }
+

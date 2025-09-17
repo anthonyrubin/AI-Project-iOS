@@ -3,6 +3,9 @@ import UIKit
 // MARK: - ViewController
 final class WorkoutDaysPerWeekViewController: BaseSignupTableViewController {
     
+    var onContinue: (() -> Void)?
+    var onSelectedWorkoutDaysPerWeek: ((String) -> Void)?
+    
     private let items: [LeftSFIconCellData] = [
         .init(title: "1-2 (Casual)", iconName: "leaf"),
         .init(title: "3-4 (Regular)", iconName: "wind"),
@@ -43,14 +46,7 @@ final class WorkoutDaysPerWeekViewController: BaseSignupTableViewController {
     
     override func didTapContinue() {
         super.didTapContinue()
-        
-        // Save goals to UserDefaults
-        UserDefaultsManager.shared.updateGoals(
-            workoutDaysPerWeek: selected?.title
-        )
-        
-        let vc = GreatPotentialViewController()
-        navigationController?.pushViewController(vc, animated: true)
+        onContinue?()
     }
 }
 
@@ -103,6 +99,7 @@ extension WorkoutDaysPerWeekViewController: UITableViewDataSource, UITableViewDe
             }
             // select new
             selected = items[indexPath.row]
+            onSelectedWorkoutDaysPerWeek?(selected!.title)
             if let cell = tableView.cellForRow(at: indexPath) as? LeftSFIconCell {
                 cell.setSelectedAppearance(true, animated: true)
             }
