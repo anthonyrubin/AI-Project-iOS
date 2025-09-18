@@ -1,4 +1,5 @@
 import UIKit
+import Combine
 
 struct PreSelectedHeightAndWeightData {
     let heightCm: Double
@@ -7,6 +8,16 @@ struct PreSelectedHeightAndWeightData {
 }
 
 final class HeightAndWeightViewController: BaseSignupViewController, UIPickerViewDataSource, UIPickerViewDelegate {
+    
+    var viewModel = HeightAndWeightViewModel(
+        settingsRepository: SettingsRepositoryImpl(
+            settingsAPI: NetworkManager(tokenManager: TokenManager()),
+            userDataStore: RealmUserDataStore()
+        )
+    )
+    private var cancellables = Set<AnyCancellable>()
+    private var loader = LoadingOverlay()
+    private lazy var alert = Alert(self)
 
     var onContinue: ((_ height: Double, _ weight: Double, _ isMetric: Bool) -> Void)?
 
@@ -25,7 +36,7 @@ final class HeightAndWeightViewController: BaseSignupViewController, UIPickerVie
     private let inchesRange = Array(0...11)            // 0–11 in
     private let poundsRange = Array(70...350)          // 70–350 lb
     private let centimetersRange = Array(100...230)    // 100–230 cm
-    private let kilogramsRange   = Array(30...180)     // 30–180 kg
+    private let kilogramsRange = Array(30...180)     // 30–180 kg
 
     // MARK: - UI
     private let metricContainer = UIView()
@@ -79,6 +90,7 @@ final class HeightAndWeightViewController: BaseSignupViewController, UIPickerVie
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
+        setupViewModelBindings()
         buildUI()
         super.viewDidLoad()
 
@@ -105,6 +117,45 @@ final class HeightAndWeightViewController: BaseSignupViewController, UIPickerVie
         wire()
         updateUnitUI(fromToggle: false) // reflects initial values in wheels
         updateContinueState()           // NEW: gate Continue in settings mode
+    }
+    
+    private func setupViewModelBindings() {
+        // Bind loading state
+        viewModel.$isLoading
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading in
+                if isLoading {
+                    self?.loader.show(in: self!.view)
+                } else {
+                    self?.loader.hide()
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Bind error messages
+        viewModel.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] errorMessage in
+                if let errorMessage = errorMessage {
+                    self?.alert.danger(
+                        titleText: "Uh-oh",
+                        bodyText: errorMessage,
+                        buttonText: "Okay"
+                    )
+                    self?.viewModel.clearError()
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Bind name set success
+        viewModel.$isHeightAndWeightSet
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isHeightAndWeightSet in
+                if isHeightAndWeightSet {
+                    self?.navigationController?.popViewController(animated: true)
+                }
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Build UI
@@ -391,6 +442,9 @@ final class HeightAndWeightViewController: BaseSignupViewController, UIPickerVie
                 let heightCm = height.converted(to: .centimeters).value
                 let weightKg = weight.converted(to: .kilograms).value
                 print("Settings flow: update height=\(Int(round(heightCm)))cm, weight=\(Int(round(weightKg)))kg, isMetric=\(isMetric)")
+                
+                viewModel.setBodyMetrics(height: heightCm, weight: weightKg, isMetric: isMetric)
+                
                 return
             } else {
                 return // no change

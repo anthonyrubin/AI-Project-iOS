@@ -1,10 +1,23 @@
 import UIKit
+import Combine
 
 final class BirthdayViewController: BaseSignupViewController {
     
     var onContinue: ((_ birthday: Date) -> Void)?
     
-    private lazy var errorModalManager = ErrorModalManager(viewController: self)
+    var viewModel = BirthdayViewModel(
+        settingsRepository: SettingsRepositoryImpl(
+            settingsAPI: NetworkManager(tokenManager: TokenManager()),
+            userDataStore: RealmUserDataStore()
+        )
+    )
+    
+    private var loader = LoadingOverlay()
+    
+    private var cancellables = Set<AnyCancellable>()
+    
+    private lazy var alert = Alert(self)
+    //private lazy var errorModalManager = ErrorModalManager(viewController: self)
 
     // SETTINGS MODE: incoming preselected date as "MM/DD/YYYY"
     var preSelectedItem: String? = nil
@@ -47,6 +60,7 @@ final class BirthdayViewController: BaseSignupViewController {
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
+        setupViewModelBindings()
         buildUI()                 // add subviews BEFORE calling super (base calls layout())
         super.viewDidLoad()
 
@@ -63,6 +77,45 @@ final class BirthdayViewController: BaseSignupViewController {
 
         wire()
         updateFromState()
+    }
+    
+    private func setupViewModelBindings() {
+        // Bind loading state
+        viewModel.$isLoading
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading in
+                if isLoading {
+                    self?.loader.show(in: self!.view)
+                } else {
+                    self?.loader.hide()
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Bind error messages
+        viewModel.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] errorMessage in
+                if let errorMessage = errorMessage {
+                    self?.alert.danger(
+                        titleText: "Uh-oh",
+                        bodyText: errorMessage,
+                        buttonText: "Okay"
+                    )
+                    self?.viewModel.clearError()
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Bind name set success
+        viewModel.$isBirthdaySet
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isBirthdaySet in
+                if isBirthdaySet {
+                    self?.navigationController?.popViewController(animated: true)
+                }
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Build
@@ -155,15 +208,13 @@ final class BirthdayViewController: BaseSignupViewController {
         // Settings flow branch: only when preselected existed and user changed it
         if let originalDate,
            !Calendar.current.isDate(birthdate, inSameDayAs: originalDate) {
-            // Stub for settings update action — replace with Realm save / delegate / pop
-            let out = Self.formatDate(birthdate)
-            print("Settings flow: update birthday to \(out)")
+            viewModel.setBirthday(birthday: birthdate)
             return
         }
 
         // Default signup behavior (unchanged)
         if !isAtLeast(13, from: birthdate) {
-            errorModalManager.showError("You must be at least 13 years old")
+            alert.danger(titleText: "Uh-oh", bodyText: "You must be at least 13 years old", buttonText: "Okay")
             return
         }
         

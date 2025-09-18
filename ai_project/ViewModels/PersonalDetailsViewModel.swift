@@ -20,6 +20,10 @@ class PersonalDetailsViewModel {
         self.personalDetailsData = loadUserData()
     }
     
+    func refresh() {
+        personalDetailsData = loadUserData() 
+    }
+    
     func loadUserData() -> PersonalDetailsData {
         let user = userDataStore.load()
         

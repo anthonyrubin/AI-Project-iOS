@@ -36,10 +36,9 @@ final class PersonalDetailsViewController: UIViewController {
         // in viewDidLoad, after you add sectionShadowView
         sectionShadowView.corner = corner
         sectionShadowView.shadowOpacity = 0.18
-        sectionShadowView.shadowRadius  = 8
-        sectionShadowView.shadowOffset  = .zero   // <- even outline; use (0,4) for drop
-        sectionShadowView.spread        = max(12, sectionShadowView.shadowRadius * 2)
-
+        sectionShadowView.shadowRadius = 8
+        sectionShadowView.shadowOffset = .zero   // <- even outline; use (0,4) for drop
+        sectionShadowView.spread = max(12, sectionShadowView.shadowRadius * 2)
         
         tableView.reloadData()
         tableView.layoutIfNeeded()
@@ -55,6 +54,11 @@ final class PersonalDetailsViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         makeNavBarTransparent(for: self)
+        viewModel.refresh()
+        setData()
+        tableView.reloadData()
+        tableView.layoutIfNeeded()
+        refreshSectionOutline()
     }
 
     override func viewDidLayoutSubviews() {

@@ -428,7 +428,7 @@ class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI, MembershipAPI, SettingsAP
     }
     
     func setBodyMetrics(height: Double, weight: Double, isMetric: Bool, completion: @escaping (Result<Void, NetworkError>) -> Void) {
-        let url = "\(baseURL)/set-metrics/"
+        let url = "\(baseURL)/set-body-metrics/"
         let params: [String: Any] = ["height": height, "weight": weight, "is_metric": isMetric]
         
         performAuthenticatedRequest(

@@ -1,6 +1,18 @@
 import UIKit
+import Combine
 
 final class ChooseGenderViewController: BaseSignupTableViewController {
+
+    var viewModel = ChooseGenderViewModel(
+        settingsRepository: SettingsRepositoryImpl(
+            settingsAPI: NetworkManager(tokenManager: TokenManager()),
+            userDataStore: RealmUserDataStore()
+        )
+    )
+    private var cancellables = Set<AnyCancellable>()
+    
+    private var loader = LoadingOverlay()
+    private lazy var alert = Alert(self)
     
     var onContinue: (() -> Void)?
     var onSelectedGender: ((String) -> Void)?
@@ -20,6 +32,7 @@ final class ChooseGenderViewController: BaseSignupTableViewController {
     private var originalItem: LeftSFIconCellData?
 
     override func viewDidLoad() {
+        setupViewModelBindings()
         super.viewDidLoad()
         setProgress(0.36, animated: false)
 
@@ -51,6 +64,45 @@ final class ChooseGenderViewController: BaseSignupTableViewController {
         tableView.register(LeftSFIconCell.self, forCellReuseIdentifier: LeftSFIconCell.reuseID)
         tableView.allowsMultipleSelection = false                     // ← single select
     }
+    
+    private func setupViewModelBindings() {
+        // Bind loading state
+        viewModel.$isLoading
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading in
+                if isLoading {
+                    self?.loader.show(in: self!.view)
+                } else {
+                    self?.loader.hide()
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Bind error messages
+        viewModel.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] errorMessage in
+                if let errorMessage = errorMessage {
+                    self?.alert.danger(
+                        titleText: "Uh-oh",
+                        bodyText: errorMessage,
+                        buttonText: "Okay"
+                    )
+                    self?.viewModel.clearError()
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Bind name set success
+        viewModel.$isGenderSet
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isGenderSet in
+                if isGenderSet {
+                    self?.navigationController?.popViewController(animated: true)
+                }
+            }
+            .store(in: &cancellables)
+    }
 
     private func updateContinueState() {
         if let originalItem {
@@ -72,6 +124,7 @@ final class ChooseGenderViewController: BaseSignupTableViewController {
             // Stub for settings update action:
             // e.g., save to Realm, pop controller, notify delegate, etc.
             print("Settings flow: update gender to \(selectedItem.title)")
+            viewModel.setGender(gender: selectedItem.title)
             return
         }
 

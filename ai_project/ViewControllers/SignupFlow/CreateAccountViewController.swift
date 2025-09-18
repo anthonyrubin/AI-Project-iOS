@@ -190,7 +190,7 @@ final class CreateAccountViewController: BaseSignupViewController {
     }
     
     private func navigateToBirthday() {
-        let vc = SetBirthdayViewController()
+        let vc = BirthdayViewController()
         navigationController?.pushViewController(vc, animated: true)
     }
     

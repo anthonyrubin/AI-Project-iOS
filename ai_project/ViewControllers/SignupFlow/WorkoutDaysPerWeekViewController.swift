@@ -1,8 +1,20 @@
 import UIKit
+import Combine
 
 // TODO: Change this from workout days per week to WORKOUTS PER WEEK
 // MARK: - ViewController
 final class WorkoutDaysPerWeekViewController: BaseSignupTableViewController {
+
+    var viewModel = WorkoutDaysPerWeekViewModel(
+        settingsRepository: SettingsRepositoryImpl(
+            settingsAPI: NetworkManager(tokenManager: TokenManager()),
+            userDataStore: RealmUserDataStore()
+        )
+    )
+    private var cancellables = Set<AnyCancellable>()
+    
+    private var loader = LoadingOverlay()
+    private lazy var alert = Alert(self)
     
     var onContinue: (() -> Void)?
     var onSelectedWorkoutDaysPerWeek: ((String) -> Void)?
@@ -20,6 +32,7 @@ final class WorkoutDaysPerWeekViewController: BaseSignupTableViewController {
     private var selected: LeftSFIconCellData? = nil
 
     override func viewDidLoad() {
+        setupViewModelBindings()
         super.viewDidLoad()
         setProgress(0.18, animated: false)
 
@@ -50,6 +63,45 @@ final class WorkoutDaysPerWeekViewController: BaseSignupTableViewController {
         tableView.register(LeftSFIconCell.self, forCellReuseIdentifier: LeftSFIconCell.reuseID)
         tableView.allowsMultipleSelection = true // leave as-is (your original)
     }
+    
+    private func setupViewModelBindings() {
+        // Bind loading state
+        viewModel.$isLoading
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading in
+                if isLoading {
+                    self?.loader.show(in: self!.view)
+                } else {
+                    self?.loader.hide()
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Bind error messages
+        viewModel.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] errorMessage in
+                if let errorMessage = errorMessage {
+                    self?.alert.danger(
+                        titleText: "Uh-oh",
+                        bodyText: errorMessage,
+                        buttonText: "Okay"
+                    )
+                    self?.viewModel.clearError()
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Bind name set success
+        viewModel.$isWorkoutDaysPerWeekSet
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isWorkoutDaysPerWeekSet in
+                if isWorkoutDaysPerWeekSet {
+                    self?.navigationController?.popViewController(animated: true)
+                }
+            }
+            .store(in: &cancellables)
+    }
 
     private func updateContinueState() {
         if let originalItem {
@@ -68,6 +120,7 @@ final class WorkoutDaysPerWeekViewController: BaseSignupTableViewController {
         if let originalItem, let selected, selected != originalItem {
             // Stub for settings update action — replace with your save/pop/notify
             print("Settings flow: update workout days per week to \(selected.title)")
+            viewModel.setWorkoutDaysPerWeek(workoutDaysPerWeek: selected.title)
             return
         }
 

@@ -462,9 +462,25 @@
             filePath = "ai_project/ViewModels/PersonalDetailsViewModel.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "91"
-            endingLineNumber = "91"
-            landmarkName = "getWeight()"
+            startingLineNumber = "95"
+            endingLineNumber = "95"
+            landmarkName = "getFormattedWeight()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "5FD09F39-AFDE-4688-A7D9-240BE98A502C"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "ai_project/ViewModels/BirthdayViewModel.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "23"
+            endingLineNumber = "23"
+            landmarkName = "setBirthday(birthday:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

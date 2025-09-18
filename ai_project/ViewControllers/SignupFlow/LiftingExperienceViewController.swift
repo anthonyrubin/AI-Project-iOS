@@ -1,8 +1,20 @@
 import UIKit
+import Combine
 
 // MARK: - ViewController
 final class LiftingExperienceViewController: BaseSignupTableViewController {
     
+    var viewModel = LiftingExperienceViewModel(
+        settingsRepository: SettingsRepositoryImpl(
+            settingsAPI: NetworkManager(tokenManager: TokenManager()),
+            userDataStore: RealmUserDataStore()
+        )
+    )
+    
+    private var cancellables = Set<AnyCancellable>()
+    
+    private var loader = LoadingOverlay()
+    private lazy var alert = Alert(self)
     var onContinue: (() -> Void)?
     var onSelectedExperience: ((String) -> Void)?
 
@@ -20,6 +32,7 @@ final class LiftingExperienceViewController: BaseSignupTableViewController {
     private var selectedItem: LeftSFIconCellData?   // ← single selection
 
     override func viewDidLoad() {
+        setupViewModelBindings()
         super.viewDidLoad()
         setProgress(0.09, animated: false)
 
@@ -50,6 +63,45 @@ final class LiftingExperienceViewController: BaseSignupTableViewController {
         tableView.register(LeftSFIconCell.self, forCellReuseIdentifier: LeftSFIconCell.reuseID)
         tableView.allowsMultipleSelection = false
     }
+    
+    private func setupViewModelBindings() {
+        // Bind loading state
+        viewModel.$isLoading
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading in
+                if isLoading {
+                    self?.loader.show(in: self!.view)
+                } else {
+                    self?.loader.hide()
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Bind error messages
+        viewModel.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] errorMessage in
+                if let errorMessage = errorMessage {
+                    self?.alert.danger(
+                        titleText: "Uh-oh",
+                        bodyText: errorMessage,
+                        buttonText: "Okay"
+                    )
+                    self?.viewModel.clearError()
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Bind name set success
+        viewModel.$isExperienceSet
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isExperienceSet in
+                if isExperienceSet {
+                    self?.navigationController?.popViewController(animated: true)
+                }
+            }
+            .store(in: &cancellables)
+    }
 
     private func updateContinueState() {
         if let originalItem {
@@ -66,9 +118,7 @@ final class LiftingExperienceViewController: BaseSignupTableViewController {
     override func didTapContinue() {
         // Settings flow: only when there was a preselected value and user changed it
         if let originalItem, let selectedItem, selectedItem != originalItem {
-            // Stub for settings update action — replace with your save/pop/notify
-            print("Settings flow: update lifting experience to \(selectedItem.title)")
-            return
+            viewModel.setExperience(experience: selectedItem.title)
         }
 
         // Default signup behavior (unchanged)

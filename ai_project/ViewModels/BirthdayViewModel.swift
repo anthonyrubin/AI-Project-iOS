@@ -2,7 +2,7 @@ import Foundation
 import Combine
 
 @MainActor
-class SetBirthdayViewModel: ObservableObject {
+class BirthdayViewModel: ObservableObject {
     
     // MARK: - Published Properties
     @Published var isLoading = false
@@ -10,11 +10,11 @@ class SetBirthdayViewModel: ObservableObject {
     @Published var isBirthdaySet = false
     
     // MARK: - Dependencies
-    private let signupRepository: SignupRepository
+    private let settingsRepository: SettingsRepository
     
     // MARK: - Initialization
-    init(signupRepository: SignupRepository) {
-        self.signupRepository = signupRepository
+    init(settingsRepository: SettingsRepository) {
+        self.settingsRepository = settingsRepository
     }
     
     // MARK: - Public Methods
@@ -24,7 +24,7 @@ class SetBirthdayViewModel: ObservableObject {
         errorMessage = nil
         isBirthdaySet = false
         
-        signupRepository.setBirthday(
+        settingsRepository.setBirthday(
             birthday: birthday
         ) { [weak self] result in
             Task { @MainActor in
