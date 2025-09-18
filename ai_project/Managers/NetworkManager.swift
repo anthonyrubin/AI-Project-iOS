@@ -36,8 +36,14 @@ protocol SignupAPI {
         lastName: String,
         completion: @escaping (Result<Void, NetworkError>) -> Void
     )
+}
 
+protocol SettingsAPI {
     func setBirthday(birthday: Date, completion: @escaping (Result<Void, NetworkError>) -> Void)
+    func setExperience(experience: String, completion: @escaping (Result<Void, NetworkError>) -> Void)
+    func setWorkoutDaysPerWeek(workoutDaysPerWeek: String, completion: @escaping (Result<Void, NetworkError>) -> Void)
+    func setGender(gender: String, completion: @escaping (Result<Void, NetworkError>) -> Void)
+    func setBodyMetrics(height: Double, weight: Double, isMetric: Bool, completion: @escaping (Result<Void, NetworkError>) -> Void)
 }
 
 protocol AnalysisAPI {
@@ -62,7 +68,7 @@ protocol MembershipAPI {
     )
 }
 
-class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI, MembershipAPI {
+class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI, MembershipAPI, SettingsAPI {
 
     init(
         tokenManager: TokenManager
@@ -349,6 +355,82 @@ class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI, MembershipAPI {
         fmt.dateFormat = "yyyy-MM-dd"
         let params = ["birthday": fmt.string(from: birthday)]
 
+        performAuthenticatedRequest(
+            url: url,
+            method: .post,
+            parameters: params,
+            responseType: EmptyResponse.self
+        ) { result in
+            switch result {
+            case .success:
+                completion(.success(()))
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    func setExperience(experience: String, completion: @escaping (Result<Void, NetworkError>) -> Void) {
+        let url = "\(baseURL)/set-experience/"
+        let params = ["experience": experience]
+        
+        performAuthenticatedRequest(
+            url: url,
+            method: .post,
+            parameters: params,
+            responseType: EmptyResponse.self
+        ) { result in
+            switch result {
+            case .success:
+                completion(.success(()))
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    func setWorkoutDaysPerWeek(workoutDaysPerWeek: String, completion: @escaping (Result<Void, NetworkError>) -> Void) {
+        let url = "\(baseURL)/set-workout-days-per-week/"
+        let params = ["workout_days_per_week": workoutDaysPerWeek]
+        
+        performAuthenticatedRequest(
+            url: url,
+            method: .post,
+            parameters: params,
+            responseType: EmptyResponse.self
+        ) { result in
+            switch result {
+            case .success:
+                completion(.success(()))
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    func setGender(gender: String, completion: @escaping (Result<Void, NetworkError>) -> Void) {
+        let url = "\(baseURL)/set-gender/"
+        let params = ["gender": gender]
+        
+        performAuthenticatedRequest(
+            url: url,
+            method: .post,
+            parameters: params,
+            responseType: EmptyResponse.self
+        ) { result in
+            switch result {
+            case .success:
+                completion(.success(()))
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    func setBodyMetrics(height: Double, weight: Double, isMetric: Bool, completion: @escaping (Result<Void, NetworkError>) -> Void) {
+        let url = "\(baseURL)/set-metrics/"
+        let params: [String: Any] = ["height": height, "weight": weight, "is_metric": isMetric]
+        
         performAuthenticatedRequest(
             url: url,
             method: .post,

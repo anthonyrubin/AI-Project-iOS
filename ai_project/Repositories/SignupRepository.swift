@@ -14,8 +14,6 @@ protocol SignupRepository {
         lastName: String,
         completion: @escaping (Result<Void, NetworkError>) -> Void
     )
-
-    func setBirthday(birthday: Date, completion: @escaping (Result<Void, NetworkError>) -> Void)
 }
 
 class SignupRepositoryImpl: SignupRepository {
@@ -78,32 +76,6 @@ class SignupRepositoryImpl: SignupRepository {
                     case .failure(let err):
                         completion(.failure(err))
                     }
-            }
-        )
-    }
-    
-    func setBirthday(
-        birthday: Date,
-        completion: @escaping (Result<Void, NetworkError>) -> Void
-    ) {
-        signupAPI.setBirthday(
-            birthday: birthday,
-            completion: { [weak self] result in
-                switch result {
-                case .success:
-                    completion(.success(()))
-                    if let currentUserId = UserDefaults.standard.object(forKey: "currentUserId") as? Int {
-                        do {
-                            try self?.userDataStore.setBirthday(userId: currentUserId, date: birthday)
-                        } catch {
-                            // TODO: Log here, caching should not fail, but this should fail silently if it does
-                        }
-                    } else {
-                        // TODO: Log here, we should always have a useID at this point
-                    }
-                case .failure(let err):
-                    completion(.failure(err))
-                }
             }
         )
     }

@@ -21,6 +21,11 @@ protocol UserDataStore {
     func upsert(user: User) throws
     func setName(userId: Int, first: String, last: String) throws
     func setBirthday(userId: Int, date: Date) throws
+    func setExperience(userId: Int, experience: String) throws
+    func setWorkoutDaysPerWeek(userId: Int, workoutDaysPerWeek: String) throws
+    func setGender(userId: Int, gender: String) throws
+    func setBodyMetrics(userId: Int, height: Double, weight: Double, isMetric: Bool) throws
+    
     func load() -> UserObject?
     func clearAllData() throws
 }
@@ -82,6 +87,30 @@ final class RealmUserDataStore: UserDataStore {
         let realm = try RealmProvider.make()
         guard let obj = realm.object(ofType: UserObject.self, forPrimaryKey: userId) else { return }
         try realm.write { obj.birthday = date; obj.updatedAt = Date() }
+    }
+    
+    func setExperience(userId: Int, experience: String) throws {
+        let realm = try RealmProvider.make()
+        guard let obj = realm.object(ofType: UserObject.self, forPrimaryKey: userId) else { return }
+        try realm.write { obj.experience = experience; obj.updatedAt = Date() }
+    }
+    
+    func setWorkoutDaysPerWeek(userId: Int, workoutDaysPerWeek: String) throws {
+        let realm = try RealmProvider.make()
+        guard let obj = realm.object(ofType: UserObject.self, forPrimaryKey: userId) else { return }
+        try realm.write { obj.workoutDaysPerWeek = workoutDaysPerWeek; obj.updatedAt = Date() }
+    }
+    
+    func setGender(userId: Int, gender: String) throws {
+        let realm = try RealmProvider.make()
+        guard let obj = realm.object(ofType: UserObject.self, forPrimaryKey: userId) else { return }
+        try realm.write { obj.gender = gender; obj.updatedAt = Date() }
+    }
+    
+    func setBodyMetrics(userId: Int, height: Double, weight: Double, isMetric: Bool) throws {
+        let realm = try RealmProvider.make()
+        guard let obj = realm.object(ofType: UserObject.self, forPrimaryKey: userId) else { return }
+        try realm.write { obj.height = height; obj.weight = weight; obj.isMetric = isMetric; obj.updatedAt = Date() }
     }
 
     func load() -> UserObject? {
