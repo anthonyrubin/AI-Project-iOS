@@ -5,7 +5,12 @@ protocol SettingsRepository {
     func setExperience(experience: String, completion: @escaping (Result<Void, NetworkError>) -> Void)
     func setWorkoutDaysPerWeek(workoutDaysPerWeek: String, completion: @escaping (Result<Void, NetworkError>) -> Void)
     func setGender(gender: String, completion: @escaping (Result<Void, NetworkError>) -> Void)
-    func setBodyMetrics(gender: String, completion: @escaping (Result<Void, NetworkError>) -> Void)
+    func setBodyMetrics(
+        height: Double,
+        weight: Double,
+        isMetric: Bool,
+        completion: @escaping (Result<Void, NetworkError>) -> Void
+    )
 }
 
 class SettingsRepositoryImpl: SettingsRepository {
