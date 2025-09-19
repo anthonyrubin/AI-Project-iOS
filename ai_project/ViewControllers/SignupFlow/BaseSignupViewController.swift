@@ -67,48 +67,71 @@ class BaseSignupViewController: UIViewController {
         progressView?.setProgress(progress, animated: animated)
     }
     
-    /// Mounts the progress bar ON the UINavigationBar (keeps old name for call sites).
+    
+    // Tweak these once to match your UI.
+    private enum SignupNavFixed {
+        static let backLeading: CGFloat   = 16   // space from left edge to start of back button
+        static let backWidth: CGFloat     = 32   // your circular back = 32x32
+        static let gapAfterBack: CGFloat  = 12   // gap from back to bar
+
+        static let pillTrailing: CGFloat  = 15   // you said trailing == 15
+        static let pillWidth: CGFloat     = 64   // <-- SET THIS to your pill's width (flag+EN)
+        static let gapBeforePill: CGFloat = 12   // gap from bar to pill
+
+        static let barHeight: CGFloat     = 3
+        static let minWidth: CGFloat      = 140  // never look like a toothpick
+    }
+
     private func attachProgressInTitleView() {
         guard let navBar = navigationController?.navigationBar else { return }
-        
-        // Reuse if present
-        if let existing = navBar.viewWithTag(Self.progressTag) as? UIProgressView {
-            progressView = existing
-            return
+        navBar.layoutIfNeeded()
+
+        // remove old one (cheap way to re-apply constraints cleanly)
+        if let old = navBar.viewWithTag(Self.progressTag) as? UIProgressView { old.removeFromSuperview() }
+
+        let pv: UIProgressView = {
+            let v = UIProgressView(progressViewStyle: .bar)
+            v.tag = Self.progressTag
+            v.trackTintColor = .quaternaryLabel
+            v.progressTintColor = .label
+            v.layer.cornerRadius = 2
+            v.clipsToBounds = true
+            v.translatesAutoresizingMaskIntoConstraints = false
+            return v
+        }()
+
+        // Hard-coded edges (points from left/right of nav bar)
+        let leftEdge  = SignupNavFixed.backLeading + SignupNavFixed.backWidth + SignupNavFixed.gapAfterBack
+        let rightEdge = SignupNavFixed.pillTrailing + SignupNavFixed.pillWidth + SignupNavFixed.gapBeforePill
+
+        // If the math makes the region too small, relax the right side so we keep >= minWidth.
+        let available = navBar.bounds.width - (leftEdge + rightEdge)
+        let needExtra = max(0, SignupNavFixed.minWidth - available)
+        let relaxedRightEdge = max(0, rightEdge - needExtra) // pull away from the right side if cramped
+
+        UIView.performWithoutAnimation {
+            navBar.addSubview(pv)
+            pv.setProgress(progress, animated: false)
+
+            // Pin exactly between the fixed edges
+            let lead = pv.leadingAnchor.constraint(equalTo: navBar.leadingAnchor, constant: leftEdge)
+            let trail = pv.trailingAnchor.constraint(equalTo: navBar.trailingAnchor, constant: -relaxedRightEdge)
+            // Keep a minimum width safety (just in case of rotations, etc.)
+            let minW = pv.widthAnchor.constraint(greaterThanOrEqualToConstant: SignupNavFixed.minWidth)
+            minW.priority = .required
+
+            NSLayoutConstraint.activate([
+                pv.centerYAnchor.constraint(equalTo: navBar.centerYAnchor),
+                pv.heightAnchor.constraint(equalToConstant: SignupNavFixed.barHeight),
+                lead, trail, minW
+            ])
+
+            navBar.layoutIfNeeded()
         }
-        
-        let pv = UIProgressView(progressViewStyle: .bar)
-        pv.tag = Self.progressTag
-        pv.translatesAutoresizingMaskIntoConstraints = false
-        pv.trackTintColor = .quaternaryLabel
-        pv.progressTintColor = .label
-        pv.layer.cornerRadius = 2
-        pv.clipsToBounds = true
-        
-        navBar.addSubview(pv)
-        
-        // Fixed fraction width to avoid collapsing; perfectly centered vertically in the nav bar.
-        let widthMultiplier: CGFloat = 0.66
-        var cs: [NSLayoutConstraint] = [
-            pv.centerYAnchor.constraint(equalTo: navBar.centerYAnchor),                 // vertical center
-            pv.centerXAnchor.constraint(equalTo: navBar.centerXAnchor),                 // horizontal center
-            pv.widthAnchor.constraint(equalTo: navBar.widthAnchor, multiplier: widthMultiplier),
-            pv.heightAnchor.constraint(equalToConstant: 3),
-            pv.leadingAnchor.constraint(greaterThanOrEqualTo: navBar.layoutMarginsGuide.leadingAnchor),
-            pv.trailingAnchor.constraint(lessThanOrEqualTo: navBar.layoutMarginsGuide.trailingAnchor)
-        ]
-        
-        // Leave space for the circular back button if present
-        if let backBtn = backButton, backBtn.superview != nil {
-            cs.append(pv.leadingAnchor.constraint(greaterThanOrEqualTo: backBtn.trailingAnchor, constant: 12))
-        } else {
-            // Fallback clearance for default back chevron
-            cs.append(pv.leadingAnchor.constraint(greaterThanOrEqualTo: navBar.layoutMarginsGuide.leadingAnchor, constant: 56))
-        }
-        
-        NSLayoutConstraint.activate(cs)
+
         progressView = pv
     }
+
     
     // MARK: - Nav helpers
     @objc func didTapBack() {

@@ -469,3 +469,104 @@ public extension UIViewController {
         return arr
     }
 }
+
+private enum _LangNavAssoc {
+    static var buttonKey: UInt8 = 0
+    static var codeKey:   UInt8 = 1
+    static var onPickedKey: UInt8 = 2
+}
+
+public extension UINavigationController {
+
+    /// Install a single pill that persists across pushes in the signup flow.
+    /// Call this ONCE (e.g., when you create/present the flow).
+    func installLanguagePillForSignupFlow(code: String,
+                                          trailingInset: CGFloat = 15,
+                                          onPicked: ((String) -> Void)? = nil) {
+        let upper = code.uppercased()
+        let pill: UIButton
+
+        if let existing = objc_getAssociatedObject(self, &_LangNavAssoc.buttonKey) as? UIButton {
+            pill = existing
+        } else {
+            pill = UIButton(type: .system)
+            pill.translatesAutoresizingMaskIntoConstraints = false
+            pill.heightAnchor.constraint(equalToConstant: 28).isActive = true
+            pill.widthAnchor.constraint(greaterThanOrEqualToConstant: 48).isActive = true
+            pill.layer.cornerRadius = 14
+            pill.layer.masksToBounds = true
+            pill.setContentHuggingPriority(.required, for: .horizontal)
+            pill.setContentCompressionResistancePriority(.required, for: .horizontal)
+            pill.addTarget(self, action: #selector(_langNav_pillTapped), for: .touchUpInside)
+
+            navigationBar.addSubview(pill)
+            NSLayoutConstraint.activate([
+                pill.trailingAnchor.constraint(equalTo: navigationBar.layoutMarginsGuide.trailingAnchor,
+                                               constant: -trailingInset),
+                pill.centerYAnchor.constraint(equalTo: navigationBar.layoutMarginsGuide.centerYAnchor)
+            ])
+
+            objc_setAssociatedObject(self, &_LangNavAssoc.buttonKey, pill, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+
+        objc_setAssociatedObject(self, &_LangNavAssoc.codeKey, upper, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        objc_setAssociatedObject(self, &_LangNavAssoc.onPickedKey, onPicked, .OBJC_ASSOCIATION_COPY_NONATOMIC)
+        _langNav_applyTitle(pill, code: upper)
+    }
+
+    /// Update the persistent pill’s code+flag.
+    func updateSignupFlowLanguagePill(code: String) {
+        guard let pill = objc_getAssociatedObject(self, &_LangNavAssoc.buttonKey) as? UIButton else { return }
+        let upper = code.uppercased()
+        objc_setAssociatedObject(self, &_LangNavAssoc.codeKey, upper, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        _langNav_applyTitle(pill, code: upper)
+    }
+
+    /// Access the pill if you need its view (for constraints/lookups).
+    var signupFlowLanguagePillButton: UIButton? {
+        objc_getAssociatedObject(self, &_LangNavAssoc.buttonKey) as? UIButton
+    }
+
+    @objc private func _langNav_pillTapped() {
+        let upper = (objc_getAssociatedObject(self, &_LangNavAssoc.codeKey) as? String) ?? "EN"
+        let selectedLower = upper.lowercased()
+
+        // Present your existing picker from the top VC.
+        let picker = LanguagePickerViewController(selectedCode: selectedLower) { [weak self] picked in
+            guard let self = self else { return }
+            let newCode = picked.code.uppercased()
+            self.updateSignupFlowLanguagePill(code: newCode)
+            if let cb = objc_getAssociatedObject(self, &_LangNavAssoc.onPickedKey) as? ((String)->Void) {
+                cb(newCode)
+            }
+        }
+        picker.modalPresentationStyle = .overFullScreen
+        picker.modalTransitionStyle = .crossDissolve
+        (topViewController ?? self).present(picker, animated: true)
+    }
+
+    private func _langNav_applyTitle(_ button: UIButton, code: String) {
+        let flag: String
+        switch code {
+        case "EN": flag = "🇺🇸"; case "ZH": flag = "🇨🇳"; case "HI": flag = "🇮🇳"
+        case "ES": flag = "🇪🇸"; case "FR": flag = "🇫🇷"; case "DE": flag = "🇩🇪"
+        case "RU": flag = "🇷🇺"; case "PT": flag = "🇵🇹"; case "IT": flag = "🇮🇹"
+        case "RO": flag = "🇷🇴"; case "AZ": flag = "🇦🇿"; case "NL": flag = "🇳🇱"
+        default:   flag = "🏳️"
+        }
+
+        var cfg = UIButton.Configuration.plain()
+        cfg.contentInsets = .init(top: 4, leading: 10, bottom: 4, trailing: 10)
+        cfg.attributedTitle = AttributedString(
+            "\(flag) \(code)",
+            attributes: AttributeContainer([
+                .font: UIFont.systemFont(ofSize: 13, weight: .semibold),
+                .foregroundColor: UIColor.label
+            ])
+        )
+        cfg.background.backgroundColor = .secondarySystemBackground
+        cfg.background.cornerRadius = 14
+        button.configuration = cfg
+    }
+}
+

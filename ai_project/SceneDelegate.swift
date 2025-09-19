@@ -48,7 +48,11 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     // MARK: - Builders
     private func makeAuthFlow() -> UIViewController {
         let login = LoginViewController()
-        return UINavigationController(rootViewController: login)
+        let nav = UINavigationController(rootViewController: login)
+        nav.installLanguagePillForSignupFlow(code: "EN") { newCode in
+            // optional: update app language store
+        }
+        return nav
     }
 
     // MARK: - Appearance (only NavBar here)
