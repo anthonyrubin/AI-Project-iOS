@@ -98,6 +98,15 @@ final class VideoAnalysisCellNew1: UITableViewCell {
         return l
     }()
     
+    private let scoreRingView: ScoreRingView = {
+        let _scoreRingView = ScoreRingView()
+        _scoreRingView.ringWidth = 3
+        _scoreRingView.font = .systemFont(ofSize: 12)
+        _scoreRingView.textColor = .secondaryLabel
+        _scoreRingView.innerDiskColor = .white
+        return _scoreRingView
+    }()
+    
     private let scoreIconView: UIImageView = {
         let iv = UIImageView()
         iv.contentMode = .scaleAspectFit
@@ -172,17 +181,12 @@ final class VideoAnalysisCellNew1: UITableViewCell {
         titleAndChevron.spacing = 8
 
         // Meta row: sport + score
-        let sportRow = UIStackView(arrangedSubviews: [sportLabel, sportIconView])
+        let sportRow = UIStackView(arrangedSubviews: [sportLabel, sportIconView, scoreRingView])
         sportRow.axis = .horizontal
         sportRow.alignment = .center
         sportRow.spacing = 6
         
-        let scoreRow = UIStackView(arrangedSubviews: [scoreCaptionLabel, scoreIconView])
-        scoreRow.axis = .horizontal
-        scoreRow.alignment = .center
-        scoreRow.spacing = 8
-        
-        let metaRow = UIStackView(arrangedSubviews: [sportRow, scoreRow, UIView()])
+        let metaRow = UIStackView(arrangedSubviews: [sportRow, UIView()])
         metaRow.axis = .horizontal
         metaRow.alignment = .center
         metaRow.spacing = 12
@@ -210,18 +214,11 @@ final class VideoAnalysisCellNew1: UITableViewCell {
         cardView.addSubview(thumbView)
         
         NSLayoutConstraint.activate([
-            
-//            scoreValueLabel.centerXAnchor.constraint(equalTo: scoreBubble.centerXAnchor),
-//            scoreValueLabel.centerYAnchor.constraint(equalTo: scoreBubble.centerYAnchor),
-            
-//            scoreBubble.widthAnchor.constraint(equalToConstant: 32),
-//            scoreBubble.heightAnchor.constraint(equalTo: scoreBubble.widthAnchor),
-            
             sportIconView.heightAnchor.constraint(equalToConstant: 32),
             sportIconView.widthAnchor.constraint(equalToConstant: 32),
             
-            scoreIconView.heightAnchor.constraint(equalToConstant: 32),
-            scoreIconView.widthAnchor.constraint(equalToConstant: 32),
+            scoreRingView.heightAnchor.constraint(equalToConstant: 32),
+            scoreRingView.widthAnchor.constraint(equalToConstant: 32),
             
             thumbView.widthAnchor.constraint(equalTo: cardView.widthAnchor, multiplier: 0.3),
             thumbView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
@@ -310,23 +307,24 @@ final class VideoAnalysisCellNew1: UITableViewCell {
         // Set AI score
         if let score = analysis.liftScore {
             scoreValueLabel.text = "\(Int(score))"
+            scoreRingView.setScore(score)
             
-            if score <= 20 {
-                scoreIconView.image = UIImage(systemName: SFScoreIcon.zero.rawValue)
-                scoreIconView.tintColor = SFScoreIcon.zero.tintColor
-            } else if score <= 45 {
-                scoreIconView.image = UIImage(systemName: SFScoreIcon.thirtyThree.rawValue)
-                scoreIconView.tintColor = SFScoreIcon.thirtyThree.tintColor
-            } else if score <= 55 {
-                scoreIconView.image = UIImage(systemName: SFScoreIcon.fifty.rawValue)
-                scoreIconView.tintColor = SFScoreIcon.fifty.tintColor
-            } else if score <= 85 {
-                scoreIconView.image = UIImage(systemName: SFScoreIcon.sixtySix.rawValue)
-                scoreIconView.tintColor = SFScoreIcon.sixtySix.tintColor
-            } else {
-                scoreIconView.image = UIImage(systemName: SFScoreIcon.oneHundred.rawValue)
-                scoreIconView.tintColor = SFScoreIcon.oneHundred.tintColor
-            }
+//            if score <= 20 {
+//                scoreIconView.image = UIImage(systemName: SFScoreIcon.zero.rawValue)
+//                scoreIconView.tintColor = SFScoreIcon.zero.tintColor
+//            } else if score <= 45 {
+//                scoreIconView.image = UIImage(systemName: SFScoreIcon.thirtyThree.rawValue)
+//                scoreIconView.tintColor = SFScoreIcon.thirtyThree.tintColor
+//            } else if score <= 55 {
+//                scoreIconView.image = UIImage(systemName: SFScoreIcon.fifty.rawValue)
+//                scoreIconView.tintColor = SFScoreIcon.fifty.tintColor
+//            } else if score <= 85 {
+//                scoreIconView.image = UIImage(systemName: SFScoreIcon.sixtySix.rawValue)
+//                scoreIconView.tintColor = SFScoreIcon.sixtySix.tintColor
+//            } else {
+//                scoreIconView.image = UIImage(systemName: SFScoreIcon.oneHundred.rawValue)
+//                scoreIconView.tintColor = SFScoreIcon.oneHundred.tintColor
+//            }
         } else {
             scoreValueLabel.backgroundColor = .clear
             scoreValueLabel.text = ""
