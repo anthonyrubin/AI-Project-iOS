@@ -330,6 +330,11 @@ public extension UIViewController {
         b.addTarget(self, action: #selector(_closeTapped), for: .touchUpInside)
         return UIBarButtonItem(customView: b)
     }
+    
+    func makeBackBarItem() -> UIBarButtonItem {
+        let b = makeCircularBackButton()
+        return UIBarButtonItem(customView: b)
+    }
 
     // ===== Three-dot overflow menu in the nav bar =====
 
@@ -381,6 +386,10 @@ public extension UIViewController {
         }
         dismiss(animated: true) // fallback
     }
+    
+    @objc private func _backTapped() {
+        navigationController?.popViewController(animated: true)
+    }
 
     // ===== UI builders =====
 
@@ -395,6 +404,21 @@ public extension UIViewController {
         let cfg = UIImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
         let img = UIImage(systemName: "xmark")?.applyingSymbolConfiguration(cfg)
         b.setImage(img, for: .normal)
+        return b
+    }
+    
+    private func makeCircularBackButton() -> UIButton {
+        let b = UIButton(type: .system)
+        b.translatesAutoresizingMaskIntoConstraints = false
+        b.setImage(UIImage(systemName: "chevron.left"), for: .normal)
+        b.tintColor = .label
+        b.backgroundColor = UIColor.systemGray5
+        b.layer.cornerRadius = 16
+        b.addTarget(self, action: #selector(_backTapped), for: .touchUpInside)
+        NSLayoutConstraint.activate([
+            b.widthAnchor.constraint(equalToConstant: 32),
+            b.heightAnchor.constraint(equalToConstant: 32)
+        ])
         return b
     }
 

@@ -16,11 +16,11 @@ enum Lift: String, CaseIterable {
     case pushUp = "push up"
     case dip
     case tBarRow = "t-bar row"
-
-    // Olympic lifts & close variants
     case cleanAndJerk = "clean and jerk"
     case snatch
     case powerClean = "power clean"
+    case hipThrust = "hip thrust"
+    case frontSquat = "front squat"
 }
 
 extension Lift {
@@ -116,6 +116,18 @@ extension Lift {
                 icon: "t_bar_row_figure",
                 imagePrefix: "t_bar_row"
             )
+        case .hipThrust:
+            return LiftData(
+                lift: self,
+                icon: "hip_thrust_figure",
+                imagePrefix: "hip_thrust"
+            )
+        case .frontSquat:
+            return LiftData(
+                lift: self,
+                icon: "front_squat_figure",
+                imagePrefix: "front_squat"
+            )
         }
     }
 
@@ -150,6 +162,11 @@ extension Lift {
             return "Check my power clean: bar close, extension timing, aggressive pull under, rack height without raiding the hips."
         case .pushUp:
             return "Check my push-up: full range, elbow angle, shoulder retraction, wrist alignment."
+        case .hipThrust:
+            return "Check my hip thrust: bench height, foot placement, full hip extension, ribcage stacked, avoid lumbar overextension."
+        case .frontSquat:
+            return "Check my front squat: elbow height, upright torso, bar path, hip depth below parallel, knee tracking."
+
         }
     }
 }

@@ -164,15 +164,23 @@ private final class GridCell: UICollectionViewCell {
     private let iconView = UIImageView()
     private let titleLabel = UILabel()
 
+    // Light/dark greens for selection
+    private static let selectionFill  = UIColor(red: 0.90, green: 0.98, blue: 0.92, alpha: 1.0) // light green
+    private static let selectionStroke = UIColor(red: 0.12, green: 0.55, blue: 0.28, alpha: 1.0) // dark green
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         contentView.backgroundColor = .secondarySystemBackground
         contentView.layer.cornerRadius = 12
         contentView.layer.masksToBounds = true
+        contentView.layer.borderWidth = 0
+        contentView.layer.borderColor = nil
 
         iconView.translatesAutoresizingMaskIntoConstraints = false
         iconView.contentMode = .scaleAspectFit
-        iconView.tintColor = .label    // default (unselected) tint
+        // Do NOT set tintColor; leave icons “as is”
+        // Allow multicolor SF Symbols to render their palette if present
+        iconView.preferredSymbolConfiguration = .preferringMulticolor()
 
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.font = .systemFont(ofSize: 14, weight: .semibold)
@@ -193,10 +201,10 @@ private final class GridCell: UICollectionViewCell {
             // 6pt gap above title
             iconView.bottomAnchor.constraint(equalTo: titleLabel.topAnchor, constant: -6),
 
-            // Icon fills remaining space above
+            // Icon fills remaining space above, centered, width is a fraction of the cell
             iconView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 6),
-            iconView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.4),
-            iconView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor)
+            iconView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            iconView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.4)
         ])
     }
 
@@ -205,30 +213,33 @@ private final class GridCell: UICollectionViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         iconView.image = nil
-        iconView.tintColor = .label
         titleLabel.textColor = .label
         contentView.backgroundColor = .secondarySystemBackground
+        contentView.layer.borderWidth = 0
+        contentView.layer.borderColor = nil
     }
 
     override var isSelected: Bool {
         didSet {
-            // background + text
-            contentView.backgroundColor = isSelected ? .tintColor : .secondarySystemBackground
-            titleLabel.textColor = isSelected ? .white : .label
-            // icon tint (works because we set image as template)
-            iconView.tintColor = isSelected ? .white : .label
+            if isSelected {
+                contentView.backgroundColor = Self.selectionFill
+                contentView.layer.borderWidth = 2
+                contentView.layer.borderColor = Self.selectionStroke.cgColor
+            } else {
+                contentView.backgroundColor = .secondarySystemBackground
+                contentView.layer.borderWidth = 0
+                contentView.layer.borderColor = nil
+            }
+            // Do NOT change iconView.tintColor; leave image as provided
+            // Leave title color alone unless you want a selected style
         }
     }
 
     func configure(_ item: ListGridItem) {
         titleLabel.text = item.title.capitalized
 
-        // Try SF Symbol first, then asset. Force template rendering so tint applies.
+        // Use the image “as is” (keep original colors), no template/tinting
         let baseImage = UIImage(systemName: item.icon) ?? UIImage(named: item.icon)
-        iconView.image = baseImage?.withRenderingMode(.alwaysTemplate)
-
-        // Ensure unselected state visuals on configure
-        iconView.tintColor = isSelected ? .white : .label
+        iconView.image = baseImage?.withRenderingMode(.alwaysOriginal)
     }
 }
-

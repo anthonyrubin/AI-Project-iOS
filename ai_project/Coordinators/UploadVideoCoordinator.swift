@@ -85,7 +85,7 @@ final class UploadVideoCoordinator: NSObject, UINavigationControllerDelegate, PH
         if nav.viewControllers.first === vc {
             vc.navigationItem.leftBarButtonItem = vc.makeCloseBarItem()
         } else {
-            vc.navigationItem.leftBarButtonItem = nil
+            vc.navigationItem.leftBarButtonItem = vc.makeBackBarItem()
         }
     }
 
