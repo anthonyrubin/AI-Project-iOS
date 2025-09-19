@@ -158,7 +158,6 @@ public final class ListGridView: UIView,
     }
 }
 
-// MARK: - Cell
 private final class GridCell: UICollectionViewCell {
     static let reuseID = "GridCell"
 
@@ -173,7 +172,7 @@ private final class GridCell: UICollectionViewCell {
 
         iconView.translatesAutoresizingMaskIntoConstraints = false
         iconView.contentMode = .scaleAspectFit
-        iconView.tintColor = .label
+        iconView.tintColor = .label    // default (unselected) tint
 
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.font = .systemFont(ofSize: 14, weight: .semibold)
@@ -186,29 +185,50 @@ private final class GridCell: UICollectionViewCell {
         contentView.addSubview(titleLabel)
 
         NSLayoutConstraint.activate([
-            iconView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10),
-            iconView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            iconView.widthAnchor.constraint(equalToConstant: 28),
-            iconView.heightAnchor.constraint(equalToConstant: 28),
-
-            titleLabel.topAnchor.constraint(equalTo: iconView.bottomAnchor, constant: 6),
+            // Title across the bottom
             titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
             titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
-            titleLabel.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -10)
+            titleLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -6),
+
+            // 6pt gap above title
+            iconView.bottomAnchor.constraint(equalTo: titleLabel.topAnchor, constant: -6),
+
+            // Icon fills remaining space above
+            iconView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 6),
+            iconView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.4),
+            iconView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor)
         ])
     }
+
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        iconView.image = nil
+        iconView.tintColor = .label
+        titleLabel.textColor = .label
+        contentView.backgroundColor = .secondarySystemBackground
+    }
 
     override var isSelected: Bool {
         didSet {
+            // background + text
             contentView.backgroundColor = isSelected ? .tintColor : .secondarySystemBackground
-            iconView.tintColor = isSelected ? .white : .label
             titleLabel.textColor = isSelected ? .white : .label
+            // icon tint (works because we set image as template)
+            iconView.tintColor = isSelected ? .white : .label
         }
     }
 
     func configure(_ item: ListGridItem) {
-        titleLabel.text = item.title
-        iconView.image = UIImage(systemName: item.icon) ?? UIImage(named: item.icon)
+        titleLabel.text = item.title.capitalized
+
+        // Try SF Symbol first, then asset. Force template rendering so tint applies.
+        let baseImage = UIImage(systemName: item.icon) ?? UIImage(named: item.icon)
+        iconView.image = baseImage?.withRenderingMode(.alwaysTemplate)
+
+        // Ensure unselected state visuals on configure
+        iconView.tintColor = isSelected ? .white : .label
     }
 }
+
