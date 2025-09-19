@@ -359,7 +359,10 @@ final class LessonViewController: UIViewController {
                 // save
             },
             OverflowMenuItem(title: "Delete", systemImage: "trash", isDestructive: true) {
-                // delete
+                Alert(self).danger(
+                    titleText: "Delete Analysis",
+                    bodyText: "Are you sure you want to delete this analysis? This action is permanent and cannot be undone",
+                    buttonText: "Delete")
             }
         ], position: .right)
     }
