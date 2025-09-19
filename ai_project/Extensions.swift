@@ -481,7 +481,7 @@ public extension UINavigationController {
     /// Install a single pill that persists across pushes in the signup flow.
     /// Call this ONCE (e.g., when you create/present the flow).
     func installLanguagePillForSignupFlow(code: String,
-                                          trailingInset: CGFloat = 15,
+                                          trailingInset: CGFloat = 10,
                                           onPicked: ((String) -> Void)? = nil) {
         let upper = code.uppercased()
         let pill: UIButton
