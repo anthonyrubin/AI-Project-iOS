@@ -12,6 +12,7 @@
 		DE2C62702E4D185B00BF5C7B /* SkeletonView in Frameworks */ = {isa = PBXBuildFile; productRef = DEA183B42E4D185B00BF5C7B /* SkeletonView */; };
 		DEA183B22E4D185B00BF5C7B /* SDWebImage in Frameworks */ = {isa = PBXBuildFile; productRef = DEA183B12E4D185B00BF5C7B /* SDWebImage */; };
 		DECB337E2E72448D00C08EF1 /* PryntTrimmerView in Frameworks */ = {isa = PBXBuildFile; productRef = DECB337D2E72448D00C08EF1 /* PryntTrimmerView */; };
+		DECB33AC2E7E1EA300C08EF1 /* MessageKit in Frameworks */ = {isa = PBXBuildFile; productRef = DECB33AB2E7E1EA300C08EF1 /* MessageKit */; };
 		DEEBCA492E58D9AC00857FDB /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = DEEBCA482E58D9AC00857FDB /* GoogleSignIn */; };
 		DEEBCA4A2E58E48900857FDB /* RealmSwift in Embed Frameworks */ = {isa = PBXBuildFile; productRef = DE2C626F2E4C1AC800E1EA9B /* RealmSwift */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
@@ -92,6 +93,7 @@
 				DEEBCA492E58D9AC00857FDB /* GoogleSignIn in Frameworks */,
 				DEA183B22E4D185B00BF5C7B /* SDWebImage in Frameworks */,
 				DE2C62702E4D185B00BF5C7B /* SkeletonView in Frameworks */,
+				DECB33AC2E7E1EA300C08EF1 /* MessageKit in Frameworks */,
 				DE2C62702E4C1AC800E1EA9B /* RealmSwift in Frameworks */,
 				DECB337E2E72448D00C08EF1 /* PryntTrimmerView in Frameworks */,
 				DE276C162E42C66900392987 /* Alamofire in Frameworks */,
@@ -169,6 +171,7 @@
 				DEA183B12E4D185B00BF5C7B /* SDWebImage */,
 				DEEBCA482E58D9AC00857FDB /* GoogleSignIn */,
 				DECB337D2E72448D00C08EF1 /* PryntTrimmerView */,
+				DECB33AB2E7E1EA300C08EF1 /* MessageKit */,
 			);
 			productName = ai_project;
 			productReference = DE276BD32E4287CC00392987 /* ai_project.app */;
@@ -259,6 +262,7 @@
 				DEA183B32E4D185B00BF5C7B /* XCRemoteSwiftPackageReference "SkeletonView" */,
 				DEEBCA472E58D9AC00857FDB /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 				DECB32A32E72429400C08EF1 /* XCRemoteSwiftPackageReference "PryntTrimmerView" */,
+				DECB33AA2E7E1EA300C08EF1 /* XCRemoteSwiftPackageReference "MessageKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DE276BD42E4287CC00392987 /* Products */;
@@ -659,6 +663,14 @@
 				minimumVersion = 4.0.2;
 			};
 		};
+		DECB33AA2E7E1EA300C08EF1 /* XCRemoteSwiftPackageReference "MessageKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/MessageKit/MessageKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.0;
+			};
+		};
 		DEEBCA472E58D9AC00857FDB /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
@@ -694,6 +706,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = DECB32A32E72429400C08EF1 /* XCRemoteSwiftPackageReference "PryntTrimmerView" */;
 			productName = PryntTrimmerView;
+		};
+		DECB33AB2E7E1EA300C08EF1 /* MessageKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DECB33AA2E7E1EA300C08EF1 /* XCRemoteSwiftPackageReference "MessageKit" */;
+			productName = MessageKit;
 		};
 		DEEBCA482E58D9AC00857FDB /* GoogleSignIn */ = {
 			isa = XCSwiftPackageProductDependency;

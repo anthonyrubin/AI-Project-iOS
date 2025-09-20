@@ -173,6 +173,11 @@ final class VideoAnalysisCellNew1: UITableViewCell {
             } else {
                 verdictLabel.text = "Form review • \(neg)"
             }
+        } else if analysis.liftScore == 0 {
+            verdictLabel.text = analysis.overallAnalysis
+            if let sport = sportLabel.text {
+                sportLabel.text = "\(sport) 🚨"
+            }
         } else {
             verdictLabel.text = "Perfect lift"
         }

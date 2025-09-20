@@ -1,5 +1,5 @@
 {
-  "originHash" : "557c6630115101e6b4d06ed774fd2845ba3cf86a0c620fd5449071c2d890acbb",
+  "originHash" : "2a3eb4e19b782f139c3dfb5f4256da3572c9c89359593feb2fcac26d0fc237cb",
   "pins" : [
     {
       "identity" : "alamofire",
@@ -61,6 +61,24 @@
       "location" : "https://github.com/google/GTMAppAuth.git",
       "state" : {
         "revision" : "56e0ccf09a6dd29dc7e68bdf729598240ca8aa16",
+        "version" : "5.0.0"
+      }
+    },
+    {
+      "identity" : "inputbaraccessoryview",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nathantannar4/InputBarAccessoryView",
+      "state" : {
+        "revision" : "0451bb8bebff4da089f15d440aaa1740fee29ce6",
+        "version" : "7.0.2"
+      }
+    },
+    {
+      "identity" : "messagekit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/MessageKit/MessageKit",
+      "state" : {
+        "revision" : "dc48356f830d40de5acc0e126a44257d0a1329b6",
         "version" : "5.0.0"
       }
     },

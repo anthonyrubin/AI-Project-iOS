@@ -47,6 +47,17 @@ final class LessonViewController: UIViewController {
     private var headerSetUp = false
     private var lastHeaderWidth: CGFloat = 0
     private var pendingAspectSize: CGSize? = nil  // from presentationSize
+    
+    private let chatButton: UIButton = {
+        let b = UIButton(type: .system)
+        b.translatesAutoresizingMaskIntoConstraints = false
+        b.setTitle("Chat with Coach", for: .normal)
+        b.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
+        b.backgroundColor = .systemBlue
+        b.tintColor = .white
+        b.layer.cornerRadius = 10
+        return b
+    }()
 
     // MARK: - Init
     init(analysis: VideoAnalysisObject) {
@@ -68,6 +79,7 @@ final class LessonViewController: UIViewController {
         setupHeaderViews()     // configure subviews (no autolayout)
         bindViewModel()
         fetchVideoURL()
+        setupChatButton()
     }
 
     override func viewDidLayoutSubviews() {
@@ -114,6 +126,21 @@ final class LessonViewController: UIViewController {
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
+    }
+    
+    private func setupChatButton() {
+        view.addSubview(chatButton)
+        chatButton.addTarget(self, action: #selector(startChat), for: .touchUpInside)
+
+        NSLayoutConstraint.activate([
+            chatButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            chatButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            chatButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12),
+            chatButton.heightAnchor.constraint(equalToConstant: 50)
+        ])
+
+        // let tableView stop above button
+        tableView.bottomAnchor.constraint(equalTo: chatButton.topAnchor, constant: -8).isActive = true
     }
 
     // MARK: - Header subviews (frame-based, no Auto Layout)
@@ -296,6 +323,11 @@ final class LessonViewController: UIViewController {
         vc.modalPresentationStyle = .fullScreen
         present(vc, animated: true, completion: nil)
     }
+    
+    @objc private func startChat() {
+        let vc = BasicChatViewController()
+        navigationController?.pushViewController(vc, animated: true)
+    }
 }
 
 // MARK: - UITableViewDataSource
@@ -354,3 +386,75 @@ extension LessonViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? { UIView() }
 }
 
+
+import UIKit
+import MessageKit
+import InputBarAccessoryView
+
+final class BasicChatViewController: MessagesViewController {
+
+    private let me = Sender(senderId: "user", displayName: "You")
+    private let coach = Sender(senderId: "coach", displayName: "CoachCam AI")
+
+    private var messages: [MessageType] = []
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = "Chat"
+
+        messagesCollectionView.messagesDataSource = self
+        messagesCollectionView.messagesLayoutDelegate = self
+        messagesCollectionView.messagesDisplayDelegate = self
+        messageInputBar.isHidden = true // we just want to show a static message for now
+
+        // seed initial message
+        let first = MockMessage(text: "Let’s talk about your deadlift video.",
+                                user: coach,
+                                messageId: UUID().uuidString,
+                                date: Date())
+        messages.append(first)
+        messagesCollectionView.reloadData()
+        messagesCollectionView.scrollToLastItem(animated: false)
+    }
+}
+
+// MARK: - MessageKit boilerplate
+
+struct Sender: SenderType {
+    var senderId: String
+    var displayName: String
+}
+
+struct MockMessage: MessageType {
+    var text: String
+    var user: Sender
+    var messageId: String
+    var date: Date
+
+    var sender: SenderType { user }
+    var sentDate: Date { date }
+    var kind: MessageKind { .text(text) }
+}
+
+extension BasicChatViewController: MessagesDataSource {
+    var currentSender: any MessageKit.SenderType {
+        me
+    }
+    func numberOfSections(in _: MessagesCollectionView) -> Int { messages.count }
+    func messageForItem(at indexPath: IndexPath, in _: MessagesCollectionView) -> MessageType {
+        messages[indexPath.section]
+    }
+}
+
+extension BasicChatViewController: MessagesLayoutDelegate {
+    func avatarSize(for _: MessageType, at _: IndexPath, in _: MessagesCollectionView) -> CGSize { .zero }
+}
+
+extension BasicChatViewController: MessagesDisplayDelegate {
+    func backgroundColor(for message: MessageType, at _: IndexPath, in _: MessagesCollectionView) -> UIColor {
+        isFromCurrentSender(message: message) ? .systemBlue : .secondarySystemBackground
+    }
+    func textColor(for message: MessageType, at _: IndexPath, in _: MessagesCollectionView) -> UIColor {
+        isFromCurrentSender(message: message) ? .white : .label
+    }
+}

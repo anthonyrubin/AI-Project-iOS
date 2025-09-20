@@ -81,10 +81,10 @@ final class TabBarController: UITabBarController, UITabBarControllerDelegate {
 
     private func buildTabs() {
         // --- RESTORED your original view controllers ---
-        let lessons = nav(LessonsViewController(), title: "Home",     baseName: "HomeTabIcon")
         let sessionVC = SessionViewController()
         sessionVC.uploadStateManager = uploadStateManager
-        let session = nav(sessionVC, title: "Progress", baseName: "ProgressTabIcon")
+        let session = nav(sessionVC, title: "Home", baseName: "HomeTabIcon")
+        let lessons = nav(LessonsViewController(), title: "History",     baseName: "ProgressTabIcon")
         let profile = nav(SettingsViewController(), title: "Settings", baseName: "SettingsTabIcon")
 
         // Placeholder tab to shift real tabs left (disabled & invisible)
@@ -93,8 +93,8 @@ final class TabBarController: UITabBarController, UITabBarControllerDelegate {
         spacer.tabBarItem.isEnabled = false
         spacer.tabBarItem.isAccessibilityElement = false
 
-        viewControllers = [lessons, session, profile, spacer]
-        selectedIndex = 1
+        viewControllers = [session, lessons, profile, spacer]
+        selectedIndex = 0
     }
 
     // Wrap in a nav and assign a correctly-sized item (same image for both states)
