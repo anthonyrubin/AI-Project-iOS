@@ -346,6 +346,12 @@ public extension UIViewController {
             button = existing
         } else {
             button = makeCircularOverflowButton()
+            button.translatesAutoresizingMaskIntoConstraints = false
+            // Add constraints to ensure a consistent 32x32 size
+            NSLayoutConstraint.activate([
+                button.widthAnchor.constraint(equalToConstant: 32),
+                button.heightAnchor.constraint(equalToConstant: 32)
+            ])
             objc_setAssociatedObject(self, &_Assoc.overflowButtonKey, button, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         }
 

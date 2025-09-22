@@ -4,7 +4,6 @@ class OverallPerformanceCardCell: UITableViewCell {
     
     // MARK: - UI Components
     private let cardView = UIView()
-    private let scoreRingView = ScoreRingView()
     private let analysisLabel = UILabel()
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -35,11 +34,8 @@ class OverallPerformanceCardCell: UITableViewCell {
         analysisLabel.numberOfLines = 0
         analysisLabel.translatesAutoresizingMaskIntoConstraints = false
         
-        scoreRingView.translatesAutoresizingMaskIntoConstraints = false
-        
         // Add subviews
         contentView.addSubview(cardView)
-        cardView.addSubview(scoreRingView)
         cardView.addSubview(analysisLabel)
         
         // Setup constraints
@@ -50,25 +46,16 @@ class OverallPerformanceCardCell: UITableViewCell {
             cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             cardView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20),
             
-            // Score ring view
-            scoreRingView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 16),
-            scoreRingView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
-            scoreRingView.widthAnchor.constraint(equalToConstant: 80),
-            scoreRingView.heightAnchor.constraint(equalToConstant: 80),
-            
             // Analysis label
             analysisLabel.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 16),
-            analysisLabel.leadingAnchor.constraint(equalTo: scoreRingView.trailingAnchor, constant: 16),
+            analysisLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
             analysisLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -16),
-            analysisLabel.bottomAnchor.constraint(lessThanOrEqualTo: cardView.bottomAnchor, constant: -16)
+            analysisLabel.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -16)
         ])
     }
     
     // MARK: - Configuration
     func configure(with analysis: VideoAnalysisObject) {
-        if let liftScore = analysis.liftScore {
-            scoreRingView.setScore(liftScore)
-        }
         analysisLabel.text = analysis.overallAnalysis
     }
 }

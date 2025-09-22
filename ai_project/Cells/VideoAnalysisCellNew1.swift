@@ -92,6 +92,7 @@ final class VideoAnalysisCellNew1: UITableViewCell {
         starLabel.text = nil
         verdictLabel.text = nil
         dateLabel.text = nil
+        hideSkeleton()
     }
 
     // MARK: - Layout
@@ -104,20 +105,9 @@ final class VideoAnalysisCellNew1: UITableViewCell {
         topRow.axis = .horizontal
         topRow.alignment = .firstBaseline
         topRow.spacing = 6
-
-        // MIDDLE: verdict (Positive / Negative) or "Perfect lift"
-        let verdictRow = UIStackView(arrangedSubviews: [verdictLabel, UIView()])
-        verdictRow.axis = .horizontal
-        verdictRow.alignment = .firstBaseline
-        verdictRow.spacing = 6
-
-        // BOTTOM: date
-        let dateRow = UIStackView(arrangedSubviews: [dateLabel, UIView()])
-        dateRow.axis = .horizontal
-        dateRow.alignment = .firstBaseline
-        dateRow.spacing = 6
-
-        let rightStack = UIStackView(arrangedSubviews: [topRow, verdictRow, dateRow])
+        
+        // Use a single vertical stack for all content on the right
+        let rightStack = UIStackView(arrangedSubviews: [topRow, verdictLabel, dateLabel])
         rightStack.axis = .vertical
         rightStack.alignment = .fill
         rightStack.spacing = 8
@@ -131,8 +121,9 @@ final class VideoAnalysisCellNew1: UITableViewCell {
             cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             cardView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
 
-            // Thumbnail (≈30% width of card, full height)
+            // Thumbnail (fixed width, fixed height to prevent blow-up)
             thumbView.widthAnchor.constraint(equalTo: cardView.widthAnchor, multiplier: 0.3),
+            thumbView.heightAnchor.constraint(equalTo: thumbView.widthAnchor, multiplier: 1.0),
             thumbView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
             thumbView.topAnchor.constraint(equalTo: cardView.topAnchor),
             thumbView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor),
@@ -140,7 +131,7 @@ final class VideoAnalysisCellNew1: UITableViewCell {
             // Right stack constraints
             rightStack.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 10),
             rightStack.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -10),
-            rightStack.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -10),
+            rightStack.bottomAnchor.constraint(lessThanOrEqualTo: cardView.bottomAnchor, constant: -10),
             rightStack.leadingAnchor.constraint(equalTo: thumbView.trailingAnchor, constant: 10),
 
             chevronView.widthAnchor.constraint(equalToConstant: 14)
@@ -236,4 +227,3 @@ final class VideoAnalysisCellNew1: UITableViewCell {
     private func showSkeleton() { thumbView.showAnimatedGradientSkeleton() }
     private func hideSkeleton() { thumbView.hideSkeleton() }
 }
-

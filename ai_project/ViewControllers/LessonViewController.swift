@@ -13,6 +13,7 @@ private final class PlayerView: UIView {
     }
 }
 
+// MARK: - LessonViewController
 final class LessonViewController: UIViewController {
 
     // MARK: - Sections
@@ -46,7 +47,7 @@ final class LessonViewController: UIViewController {
     // Layout state
     private var headerSetUp = false
     private var lastHeaderWidth: CGFloat = 0
-    private var pendingAspectSize: CGSize? = nil  // from presentationSize
+    private var pendingAspectSize: CGSize? = nil
     
     
     private lazy var chatButton: UIButton = {
@@ -78,10 +79,22 @@ final class LessonViewController: UIViewController {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         navigationController?.setNavigationBarHidden(false, animated: false)
-        setupCloseButton(position: .left)
+        setupCloseButton(position: BarPosition.left)
+        
+        // Use your extension to set up the overflow menu
+        let deleteItem = OverflowMenuItem(
+            title: "Delete Analysis",
+            systemImage: "trash",
+            isDestructive: true,
+            handler: { [weak self] in
+                self?.confirmAndDelete()
+            }
+        )
+        setupOverflowMenu(items: [deleteItem], position: BarPosition.right)
+        
         super.viewDidLoad()
         setupTable()
-        setupHeaderViews()     // configure subviews (no autolayout)
+        setupHeaderViews()
         bindViewModel()
         fetchVideoURL()
         setupChatButton()
@@ -93,7 +106,7 @@ final class LessonViewController: UIViewController {
         let width = tableView.bounds.width
         if !headerSetUp || abs(width - lastHeaderWidth) > 0.5 {
             lastHeaderWidth = width
-            applyHeaderFrame(forWidth: width)  // sets tableHeaderView with frame
+            applyHeaderFrame(forWidth: width)
         } else {
             // keep player filling current header on rotations
             playerView.frame = headerContainer.bounds
@@ -104,6 +117,26 @@ final class LessonViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         player?.pause()
+    }
+    
+    // MARK: - Navigation Actions
+    private func confirmAndDelete() {
+                Alert(self).danger(
+                    titleText: "Delete Analysis",
+                    bodyText: "Are you sure you want to permanently delete this analysis? This cannot be undone.",
+                    buttonText: "Delete",
+                    canCancel: true,
+                    cancelText: "Cancel",
+                    completion: { [weak self] in
+                        self?.deleteAnalysis()
+                    }
+                )
+    }
+    
+    private func deleteAnalysis() {
+        //viewModel.deleteAnalysis()
+        // Pop the view controller off the navigation stack after deletion
+        navigationController?.popViewController(animated: true)
     }
 
     // MARK: - Table
@@ -153,7 +186,7 @@ final class LessonViewController: UIViewController {
         // Make header match table bg so side areas don’t look like bars
         headerContainer.backgroundColor = tableView.backgroundColor
 
-        playerView.backgroundColor = .clear     // only video shows
+        playerView.backgroundColor = .clear
         playerView.clipsToBounds = true
         headerContainer.addSubview(playerView)
 
@@ -188,8 +221,8 @@ final class LessonViewController: UIViewController {
         var videoH = headerH
 
         if let s = pendingAspectSize, s.width > 0, s.height > 0 {
-            let aspect = s.width / s.height           // W/H
-            let fullWidthNaturalH = width / aspect    // height if we used full width
+            let aspect = s.width / s.height
+            let fullWidthNaturalH = width / aspect
 
             if fullWidthNaturalH <= maxH {
                 // Landscape / not-too-tall: full width, natural height (<= 20%)
