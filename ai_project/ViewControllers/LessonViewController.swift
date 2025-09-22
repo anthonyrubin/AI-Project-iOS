@@ -48,14 +48,19 @@ final class LessonViewController: UIViewController {
     private var lastHeaderWidth: CGFloat = 0
     private var pendingAspectSize: CGSize? = nil  // from presentationSize
     
-    private let chatButton: UIButton = {
-        let b = UIButton(type: .system)
+    
+    private lazy var chatButton: UIButton = {
+        var cfg = UIButton.Configuration.filled()
+        cfg.cornerStyle = .capsule
+        cfg.baseBackgroundColor = .label
+        var attrs = AttributeContainer()
+        attrs.font = .systemFont(ofSize: 18, weight: .semibold)
+        attrs.foregroundColor = UIColor.systemBackground
+        cfg.attributedTitle = AttributedString("Chat with Coach", attributes: attrs)
+        let b = UIButton(configuration: cfg)
         b.translatesAutoresizingMaskIntoConstraints = false
-        b.setTitle("Chat with Coach", for: .normal)
-        b.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
-        b.backgroundColor = .systemBlue
-        b.tintColor = .white
-        b.layer.cornerRadius = 10
+        b.isEnabled = false
+        b.applyTactileTap()
         return b
     }()
 
@@ -136,7 +141,7 @@ final class LessonViewController: UIViewController {
             chatButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             chatButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             chatButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12),
-            chatButton.heightAnchor.constraint(equalToConstant: 50)
+            chatButton.heightAnchor.constraint(equalToConstant: 56)
         ])
 
         // let tableView stop above button
