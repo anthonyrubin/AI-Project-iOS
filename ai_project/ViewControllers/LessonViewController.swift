@@ -49,6 +49,8 @@ final class LessonViewController: UIViewController {
     private var lastHeaderWidth: CGFloat = 0
     private var pendingAspectSize: CGSize? = nil
     
+    private var loadingView = LoadingOverlay()
+    
     
     private lazy var chatButton: UIButton = {
         var cfg = UIButton.Configuration.filled()
@@ -128,15 +130,15 @@ final class LessonViewController: UIViewController {
                     canCancel: true,
                     cancelText: "Cancel",
                     completion: { [weak self] in
-                        self?.deleteAnalysis()
+                        if let id = self?.viewModel.analysis.serverId {
+                            self?.deleteAnalysis(id: id)
+                        }
                     }
                 )
     }
     
-    private func deleteAnalysis() {
-        //viewModel.deleteAnalysis()
-        // Pop the view controller off the navigation stack after deletion
-        navigationController?.popViewController(animated: true)
+    private func deleteAnalysis(id: Int) {
+        viewModel.deleteVideoAnalysis(id: id)
     }
 
     // MARK: - Table
@@ -278,6 +280,36 @@ final class LessonViewController: UIViewController {
             .sink { [weak self] urlStr in
                 guard let self, let urlStr else { return }
                 self.configurePlayer(with: urlStr)
+            }
+            .store(in: &cancellables)
+        viewModel.$deleted
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] deleted in
+                if deleted == true {
+                    self?.navigationController?.popViewController(animated: true)
+                }
+            }
+            .store(in: &cancellables)
+        viewModel.$isLoading
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading in
+                if isLoading {
+                    self?.loadingView.show(in: self!.view)
+                } else {
+                    self?.loadingView.hide()
+                }
+            }
+            .store(in: &cancellables)
+        viewModel.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] errorMessage in
+                if errorMessage != nil {
+                    Alert(self).danger(
+                        titleText: "Uh-oh",
+                        bodyText: errorMessage,
+                        buttonText: "Okay"
+                    )
+                }
             }
             .store(in: &cancellables)
     }

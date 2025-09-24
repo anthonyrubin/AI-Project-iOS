@@ -50,6 +50,7 @@ protocol AnalysisAPI {
     func uploadVideo(fileURL: URL, liftType: String, completion: @escaping (Result<VideoAnalysis, NetworkError>) -> Void)
     func getUserAnalyses(lastSyncTimestamp: String?, completion: @escaping (Result<DeltaSyncResponse, NetworkError>) -> Void)
     func refreshSignedUrls(videoIds: [Int], completion: @escaping (Result<UrlRefreshResponse, Error>) -> Void)
+    func deleteAnalysis(id: Int, completion: @escaping (Result<Void, NetworkError>) -> Void)
 }
 
 protocol MembershipAPI {
@@ -80,7 +81,7 @@ class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI, MembershipAPI, SettingsAP
     
     private var tokenManager: TokenManager
     
-    private let baseURL = "https://d734af29d0ef.ngrok-free.app/api"
+    private let baseURL = "https://988d35328b39.ngrok-free.app/api"
     //private let baseURL = "http://localhost:8000/api"
     
     // MARK: - Token Refresh Management
@@ -534,6 +535,24 @@ class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI, MembershipAPI, SettingsAP
             switch result {
             case .success(let refreshResponse):
                 completion(.success(refreshResponse))
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    func deleteAnalysis(id: Int, completion: @escaping (Result<Void, NetworkError>) -> Void) {
+        let url = "\(baseURL)/video-analysis/delete/"
+        let parameters: Parameters = ["analysis_id": id]
+        performAuthenticatedRequest(
+            url: url,
+            method: .post,
+            parameters: parameters,
+            responseType: EmptyResponse.self
+        ) { result in
+            switch result {
+            case .success(let refreshResponse):
+                completion(.success(()))
             case .failure(let error):
                 completion(.failure(error))
             }

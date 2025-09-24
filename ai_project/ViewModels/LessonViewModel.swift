@@ -10,6 +10,8 @@ class LessonViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var videoUrl: String?
     @Published var isRefreshingUrl: Bool = false
+    @Published var isLoading: Bool = false
+    @Published var deleted: Bool = false
 
     // MARK: - Dependencies
     private let repository: VideoAnalysisRepository
@@ -47,6 +49,21 @@ class LessonViewModel: ObservableObject {
         } else {
             // URL is still valid, set it immediately
             videoUrl = video.signedVideoUrl
+        }
+    }
+    
+    func deleteVideoAnalysis(id: Int) {
+        isLoading = true
+        deleted = false
+
+        repository.deleteAnalysis(id: id) { [weak self] result in
+            switch result {
+            case .success(()):
+                self?.deleted = true
+            case .failure(let error):
+                self?.errorMessage = error.localizedDescription
+            }
+            self?.isLoading = false
         }
     }
     

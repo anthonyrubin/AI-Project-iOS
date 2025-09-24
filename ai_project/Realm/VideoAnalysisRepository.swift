@@ -37,6 +37,24 @@ class VideoAnalysisRepository {
         }
     }
     
+    func deleteAnalysis(id: Int, completion: @escaping (Result<Void, NetworkError>) -> Void) {
+        analysisAPI.deleteAnalysis(id: id) { [weak self] result in
+            switch result {
+            case .success():
+                self?.deleteVideoAnalysis(with: id) { realmDeletionResult in
+                    switch realmDeletionResult {
+                    case .success(_):
+                        completion(.success(()))
+                    case .failure(let error):
+                        completion(.failure(error))
+                    }
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+
     func uploadVideo(fileURL: URL, liftType: String, completion: @escaping (Result<Void, NetworkError>) -> Void) {
         analysisAPI.uploadVideo(fileURL: fileURL, liftType: liftType) { [weak self] result in
             switch result {
@@ -181,6 +199,41 @@ class VideoAnalysisRepository {
             }
             
             completion(.success(storedObjects))
+            
+        } catch {
+            completion(.failure(.cache(error)))
+        }
+    }
+    
+    private func deleteVideoAnalysis(with id: Int, completion: @escaping (Result<Void, NetworkError>) -> Void) {
+        do {
+            let realm = try RealmProvider.make()
+            
+            guard let analysisObjectToDelete = realm.object(ofType: VideoAnalysisObject.self, forPrimaryKey: id) else {
+                // The object doesn't exist, so there's nothing to delete.
+                completion(.success(()))
+                return
+            }
+            
+            try realm.write {
+                // Check for related objects to delete (e.g., the video)
+                let videoServerId = analysisObjectToDelete.videoServerId
+                   if let videoObjectToDelete = realm.object(ofType: VideoObject.self, forPrimaryKey: videoServerId) {
+                    
+                    // Add logic to check if this video is referenced by other analyses
+                    // For now, let's assume we delete the video if no other analysis links to it
+                    let otherAnalyses = realm.objects(VideoAnalysisObject.self).filter("videoServerId == %@ AND serverId != %@", videoServerId, id)
+                    
+                    if otherAnalyses.isEmpty {
+                        realm.delete(videoObjectToDelete)
+                    }
+                }
+                
+                // Delete the analysis object itself
+                realm.delete(analysisObjectToDelete)
+            }
+            
+            completion(.success(()))
             
         } catch {
             completion(.failure(.cache(error)))
