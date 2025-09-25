@@ -81,7 +81,7 @@ class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI, MembershipAPI, SettingsAP
     
     private var tokenManager: TokenManager
     
-    private let baseURL = "https://988d35328b39.ngrok-free.app/api"
+    private let baseURL = "https://0439caf890f6.ngrok-free.app/api"
     //private let baseURL = "http://localhost:8000/api"
     
     // MARK: - Token Refresh Management

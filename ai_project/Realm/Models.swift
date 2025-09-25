@@ -94,7 +94,6 @@ final class VideoAnalysisObject: Object {
     @Persisted var overallAnalysis: String = ""
     @Persisted var strengths: String = "" // JSON string of strengths
     @Persisted var areasForImprovement: String = "" // JSON string of areas for improvement
-    @Persisted var metricsCatalog: List<String> = List<String>()
     @Persisted var createdAt: Date = Date()
     @Persisted var analysisData: String = "" // JSON string of analysis data
     @Persisted var icon: String = ""
@@ -152,14 +151,5 @@ final class VideoAnalysisObject: Object {
             print("❌ Error parsing areas for improvement: \(error)")
         }
         return nil
-    }
-    
-
-    
-    // MARK: - Helper Methods for UI
-    
-    /// Get metrics catalog as array
-    var metricsCatalogArray: [String] {
-        return Array(metricsCatalog)
     }
 }

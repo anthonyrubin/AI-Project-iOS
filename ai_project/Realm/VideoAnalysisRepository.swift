@@ -156,11 +156,6 @@ class VideoAnalysisRepository {
                             }
                         }
                         
-                        // Add metrics catalog
-                        for metric in analysis.metrics_catalog {
-                            analysisObject.metricsCatalog.append(metric)
-                        }
-                        
                         // Store strengths as JSON string
                         do {
                             let encoder = JSONEncoder()
@@ -256,8 +251,10 @@ class VideoAnalysisRepository {
     func getAllAnalyses() -> Results<VideoAnalysisObject> {
         do {
             let realm = try RealmProvider.make()
-            // TODO: LOG HERE
-            return realm.objects(VideoAnalysisObject.self).sorted(byKeyPath: "createdAt", ascending: false)
+            // Filter out deleted analyses and sort by creation date
+            return realm.objects(VideoAnalysisObject.self)
+                .filter("deleted == false")
+                .sorted(byKeyPath: "createdAt", ascending: false)
         } catch {
             // TODO: LOG HERE
             // Return empty results instead of crashing

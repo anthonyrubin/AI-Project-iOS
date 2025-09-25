@@ -11,6 +11,7 @@ class SessionViewModel: ObservableObject {
     @Published var totalMinutesAnalyzed: Int = 0
     @Published var averageScore: Int = 0
     @Published var lastSession: VideoAnalysisObject?
+    @Published var hasAnalyses: Bool = false
     @Published var isLoading = false
     @Published var errorMessage: String?
     
@@ -60,10 +61,6 @@ class SessionViewModel: ObservableObject {
         loadAnalyses()
     }
     
-    func hasAnalyses() -> Bool {
-        return !userAnalyses.isEmpty
-    }
-    
     // MARK: - Private Methods
     
     private func setupRealmObservers() {
@@ -78,14 +75,21 @@ class SessionViewModel: ObservableObject {
     private func handleRealmChanges(_ changes: RealmCollectionChange<Results<VideoAnalysisObject>>) {
         switch changes {
         case .initial(let results):
-            userAnalyses = Array(results)
-            calculateStatistics()
-        case .update(let results, _, _, _):
-            userAnalyses = Array(results)
-            calculateStatistics()
+            updateAnalyses(Array(results))
+        case .update(let results, let deletions, let insertions, let modifications):
+            updateAnalyses(Array(results))
         case .error(let error):
             errorMessage = "Data update error: \(error.localizedDescription)"
         }
+    }
+    
+
+    private func updateAnalyses(_ analyses: [VideoAnalysisObject]) {
+        userAnalyses = analyses
+        let validAnalyses = analyses.filter { !$0.deleted }
+        hasAnalyses = !validAnalyses.isEmpty
+        lastSession = validAnalyses.sorted { $0.createdAt > $1.createdAt }.first
+        calculateStatistics()
     }
     
     private func calculateStatistics() {
@@ -95,7 +99,7 @@ class SessionViewModel: ObservableObject {
         let startOfMonth = calendar.dateInterval(of: .month, for: now)?.start ?? now
         
         let totalSeconds = userAnalyses
-            .filter { $0.createdAt >= startOfMonth }
+            .filter { $0.createdAt >= startOfMonth && !$0.deleted }
             .compactMap { $0.video?.durationSeconds }
             .reduce(0, +)
         
@@ -104,7 +108,7 @@ class SessionViewModel: ObservableObject {
         
         // Calculate average professional score
         let scores = userAnalyses
-            .filter { $0.createdAt >= startOfMonth }
+            .filter { $0.createdAt >= startOfMonth && !$0.deleted }
             .compactMap { $0.liftScore }
         
         if !scores.isEmpty {
@@ -112,11 +116,6 @@ class SessionViewModel: ObservableObject {
         } else {
             averageScore = 0
         }
-        
-        // Get the most recent analysis
-        lastSession = userAnalyses
-            .sorted { $0.createdAt > $1.createdAt }
-            .first
     }
     
     // MARK: - Error Handling

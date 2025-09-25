@@ -55,6 +55,22 @@ final class SessionViewController: UIViewController {
     }
 
     private func setupBindings() {
+        // Bind to lastSession changes for dynamic updates
+        sessionViewModel.$lastSession
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateRecentlyAnalyzedSection()
+            }
+            .store(in: &cancellables)
+
+        // Bind to hasAnalyses changes
+        sessionViewModel.$hasAnalyses
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateTableStructure()
+            }
+            .store(in: &cancellables)
+        
         sessionViewModel.$errorMessage
             .receive(on: DispatchQueue.main)
             .sink { [weak self] errorMessage in
@@ -96,19 +112,25 @@ final class SessionViewController: UIViewController {
         let recentlyAnalyzedIndexPath = getRecentlyAnalyzedIndexPath()
 
         if let loadingCell = videoAnalysisLoadingCell {
-            loadingCell.finishLoading() { [weak self] in
+            loadingCell.finishLoading { [weak self] in
                 guard let self else { return }
-                UIView.transition(with: self.tableView, duration: 0.5, options: .transitionCrossDissolve) {
-                    self.tableView.reloadRows(at: [recentlyAnalyzedIndexPath], with: .none)
-                } completion: { _ in
-                    loadingCell.resetCell()
+                if self.isValidIndexPath(recentlyAnalyzedIndexPath) {
+                    UIView.transition(with: self.tableView, duration: 0.5, options: .transitionCrossDissolve) {
+                        self.tableView.reloadRows(at: [recentlyAnalyzedIndexPath], with: .none)
+                    } completion: { _ in
+                        loadingCell.resetCell()
+                    }
+                } else {
+                    self.tableView.reloadData()
                 }
             }
         } else {
-            UIView.transition(with: self.tableView, duration: 0.5, options: .transitionCrossDissolve) {
-                self.tableView.reloadRows(at: [recentlyAnalyzedIndexPath], with: .none)
-            } completion: { _ in
-                // Upload completed
+            if isValidIndexPath(recentlyAnalyzedIndexPath) {
+                UIView.transition(with: self.tableView, duration: 0.5, options: .transitionCrossDissolve) {
+                    self.tableView.reloadRows(at: [recentlyAnalyzedIndexPath], with: .none)
+                }
+            } else {
+                tableView.reloadData()
             }
         }
     }
@@ -116,9 +138,29 @@ final class SessionViewController: UIViewController {
     private func getRecentlyAnalyzedIndexPath() -> IndexPath {
         var row = 0
         row += 1 // greeting
-        if sessionViewModel.hasAnalyses() { row += 2 } // history header + cell
+        if sessionViewModel.hasAnalyses { row += 2 } // history header + cell
         row += 1 // recently analyzed header
         return IndexPath(row: row, section: 0)
+    }
+    
+    private func updateRecentlyAnalyzedSection() {
+        let indexPath = getRecentlyAnalyzedIndexPath()
+        guard isValidIndexPath(indexPath) else {
+            tableView.reloadData()
+            return
+        }
+        UIView.transition(with: tableView, duration: 0.3, options: .transitionCrossDissolve) {
+            self.tableView.reloadRows(at: [indexPath], with: .none)
+        }
+    }
+    
+    private func updateTableStructure() {
+        tableView.reloadData()
+    }
+
+    private func isValidIndexPath(_ indexPath: IndexPath) -> Bool {
+        return indexPath.section < tableView.numberOfSections &&
+               indexPath.row < tableView.numberOfRows(inSection: indexPath.section)
     }
 
     // MARK: - UI setup (no floating bar anymore)
@@ -175,7 +217,7 @@ final class SessionViewController: UIViewController {
         if row == currentRow { return .greeting }
         currentRow += 1
 
-        if sessionViewModel.hasAnalyses() {
+        if sessionViewModel.hasAnalyses {
             if row == currentRow { return .sessionHistoryHeader }
             currentRow += 1
             if row == currentRow { return .sessionHistoryCell }
@@ -185,7 +227,7 @@ final class SessionViewController: UIViewController {
         if row == currentRow { return .recentlyAnalyzedHeader }
         currentRow += 1
 
-        if sessionViewModel.hasAnalyses() || (uploadStateManager?.isUploading ?? false) {
+        if sessionViewModel.hasAnalyses || (uploadStateManager?.isUploading ?? false) {
             if row == currentRow { return .recentlyAnalyzedCell }
         } else if row == currentRow {
             return .recentlyAnalyzedCell // empty state cell below
@@ -197,17 +239,6 @@ final class SessionViewController: UIViewController {
         showLoadingCellPreThumbnail = true
         tableView.reloadData()
     }
-
-    // Keep startSession() for now (unused) so your future + action can call it.
-//    @objc private func startSession() {
-//        var cfg = PHPickerConfiguration(photoLibrary: .shared())
-//        cfg.filter = .videos
-//        cfg.selectionLimit = 1
-//        cfg.preferredAssetRepresentationMode = .current
-//        let picker = PHPickerViewController(configuration: cfg)
-//        picker.delegate = self
-//        present(picker, animated: true)
-//    }
 }
 
 // MARK: - UITableViewDataSource
@@ -217,7 +248,7 @@ extension SessionViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         var rowCount = 0
         rowCount += 1 // greeting
-        if sessionViewModel.hasAnalyses() { rowCount += 2 }
+        if sessionViewModel.hasAnalyses { rowCount += 2 }
         // recently analyzed header + cell always allocated
         rowCount += 2
         return rowCount
@@ -238,7 +269,7 @@ extension SessionViewController: UITableViewDataSource {
         }
         currentRow += 1
 
-        if sessionViewModel.hasAnalyses() {
+        if sessionViewModel.hasAnalyses {
             if row == currentRow { return setHeaderCell(title: "Session History", indexPath: indexPath) }
             currentRow += 1
 

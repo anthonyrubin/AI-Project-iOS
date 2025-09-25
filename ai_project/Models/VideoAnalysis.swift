@@ -14,7 +14,6 @@ struct VideoAnalysis: Codable {
     let overall_analysis: String
     let strengths: [Strength]
     let areas_for_improvement: [AreaForImprovement]
-    let metrics_catalog: [String]
     let created_at: String
     
     
@@ -32,7 +31,6 @@ struct VideoAnalysis: Codable {
         overall_analysis = try container.decode(String.self, forKey: .overall_analysis)
         strengths = try container.decode([Strength].self, forKey: .strengths)
         areas_for_improvement = try container.decode([AreaForImprovement].self, forKey: .areas_for_improvement)
-        metrics_catalog = try container.decode([String].self, forKey: .metrics_catalog)
         created_at = try container.decode(String.self, forKey: .created_at)
         icon = try container.decode(String.self, forKey: .icon)
     }
