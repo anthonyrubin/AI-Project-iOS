@@ -6,12 +6,10 @@ struct UserDTO: Codable {
     let appAccountToken: UUID
     let username: String
     let email: String
-    let firstName: String?
-    let lastName: String?
     let birthday: Date?
     let height: Double?
     let weight: Double?
-    let isMetric: Bool
+    let isMetric: Bool?
     let workoutDaysPerWeek: String?
     let experience: String?
     let gender: String?
@@ -19,7 +17,6 @@ struct UserDTO: Codable {
 
 protocol UserDataStore {
     func upsert(user: User) throws
-    func setName(userId: Int, first: String, last: String) throws
     func setBirthday(userId: Int, date: Date) throws
     func setExperience(userId: Int, experience: String) throws
     func setWorkoutDaysPerWeek(userId: Int, workoutDaysPerWeek: String) throws
@@ -47,8 +44,6 @@ final class RealmUserDataStore: UserDataStore {
             appAccountToken: user.app_account_token,
             username: user.username,
             email: user.email,
-            firstName: user.first_name,
-            lastName: user.last_name,
             birthday: birthdayDate,
             height: user.height,
             weight: user.weight,
@@ -64,8 +59,6 @@ final class RealmUserDataStore: UserDataStore {
             if obj.realm == nil { obj.serverId = userDTO.id; realm.add(obj, update: .modified) }
             obj.email = userDTO.email
             obj.username = userDTO.username
-            obj.firstName = userDTO.firstName ?? ""
-            obj.lastName = userDTO.lastName ?? ""
             obj.birthday = userDTO.birthday
             obj.height = userDTO.height
             obj.weight = userDTO.weight
@@ -75,12 +68,6 @@ final class RealmUserDataStore: UserDataStore {
             obj.gender = userDTO.gender ?? ""
             obj.updatedAt = Date()
         }
-    }
-
-    func setName(userId: Int, first: String, last: String) throws {
-        let realm = try RealmProvider.make()
-        guard let obj = realm.object(ofType: UserObject.self, forPrimaryKey: userId) else { return }
-        try realm.write { obj.firstName = first; obj.lastName = last; obj.updatedAt = Date() }
     }
 
     func setBirthday(userId: Int, date: Date) throws {

@@ -183,7 +183,7 @@ final class FadeNavDelegate: NSObject, UINavigationControllerDelegate {
 
 
 extension UIViewController {
-    func pushWithFade(_ vc: UIViewController, duration: TimeInterval = 0.25) {
+    func pushWithFade(_ vc: UIViewController, duration: TimeInterval = 0.25, completion: (() -> Void)? = nil) {
         guard let nav = navigationController else { return }
         let tempDelegate = FadeNavDelegate()
         tempDelegate.animator.duration = duration
@@ -193,6 +193,7 @@ extension UIViewController {
         // Clear delegate after transition completes so it doesn't stick
         nav.transitionCoordinator?.animate(alongsideTransition: nil) { _ in
             nav.delegate = nil
+            completion?()
         }
     }
 

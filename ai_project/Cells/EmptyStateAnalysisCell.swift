@@ -18,6 +18,14 @@ class EmptyStateAnalysisCell: UITableViewCell {
         setupUI()
     }
     
+    func configure(gender: String?) {
+        if gender == "female" {
+            emptyStateImageView.image = UIImage(named: "EmptyStatePreviewCard_female")
+        } else {
+            emptyStateImageView.image = UIImage(named: "EmptyStatePreviewCard_male")
+        }
+    }
+    
     private func setupUI() {
         selectionStyle = .none
         backgroundColor = .clear
@@ -32,14 +40,13 @@ class EmptyStateAnalysisCell: UITableViewCell {
         emptyStateImageView.contentMode = .scaleAspectFill
         emptyStateImageView.clipsToBounds = true
         emptyStateImageView.translatesAutoresizingMaskIntoConstraints = false
-        emptyStateImageView.image = UIImage(named: "EmptyStatePreviewCard")
         emptyStateImageView.contentMode = .scaleAspectFit
         cardView.addSubview(emptyStateImageView)
 
         textView.font = .systemFont(ofSize: 16, weight: .medium)
         textView.textColor = UIColor.lightGray
         textView.translatesAutoresizingMaskIntoConstraints = false
-        textView.text = "Start your first analysis by tapping Start Session"
+        textView.text = "Start your first analysis by tapping the + button"
         textView.numberOfLines = 2
         textView.textAlignment = .center
         cardView.addSubview(textView)

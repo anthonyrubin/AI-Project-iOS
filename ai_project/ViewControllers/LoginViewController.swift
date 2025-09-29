@@ -134,6 +134,14 @@ class LoginViewController: BaseViewController {
         }
         
         nav.presentationController?.delegate = signup
+        
+        // IMPORTANT: wire the request back to the presenter
+        signup.onStartSignupRequested = { [weak self, weak nav] in
+            // Dismiss the sheet first, then start the flow on the underlying nav
+            nav?.dismiss(animated: true) {
+                self?.coordinator?.start()
+            }
+        }
 
         present(nav, animated: true)
     }

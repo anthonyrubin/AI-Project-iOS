@@ -97,14 +97,10 @@ class SignupViewModel: ObservableObject {
     private func handleSocialLoginResponse(_ result: Result<SocialSignInResponse, NetworkError>, socialResult: SocialLoginResult) {
         switch result {
         case .success(let response):
-            if response.isNewUser {
-                // New user - navigate to name setup
-                checkpoint = .name
-            } else if let _ = response.tokens {
-                checkpoint = .home
-            } else if let checkpoint = response.checkpoint {
-                // Handle checkpoint-based navigation
+            if let checkpoint = response.checkpoint {
                 handleCheckpoint(checkpoint)
+            } else {
+                fatalError("No checkpoint returned")
             }
         case .failure(let error):
             errorMessage = error.localizedDescription
@@ -114,10 +110,10 @@ class SignupViewModel: ObservableObject {
     private func handleCheckpoint(_ checkpoint: String) {
         let _checkpoint = Checkpoint(rawValue: checkpoint)
         switch _checkpoint {
-        case .name, .birthday, .home:
+        case .home, .startSignupFlow:
             self.checkpoint = _checkpoint
         default:
-            errorMessage = "Unknown checkpoint: \(checkpoint)"
+            errorMessage = "Checkpoint, \(checkpoint), not supported here."
         }
     }
     

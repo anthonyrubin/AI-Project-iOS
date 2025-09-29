@@ -22,15 +22,10 @@ final class SignupCoordinator: NSObject {
         self.nav = nav
         super.init()
 
-
-
-        // Back chevron uses the darker gray of your two grays
         nav.navigationBar.tintColor = .secondaryLabel
-
-        //presentingVC.present(nav, animated: true)
     }
     
-    func start() {
+    func start(completion: (() -> Void)? = nil) {
         let vc = LiftingExperienceViewController()
         // wire step callbacks the coordinator expects
         vc.onSelectedExperience = {
@@ -40,7 +35,9 @@ final class SignupCoordinator: NSObject {
         }
         // let VC advance the flow via its bottom Continue
         vc.onContinue = { [weak self] in self?.nextTapped() }
-        presentingVC?.pushWithFade(vc)
+        presentingVC?.pushWithFade(vc) {
+            completion?()
+        }
     }
     
     @objc private func nextTapped() {

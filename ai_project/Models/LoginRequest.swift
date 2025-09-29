@@ -1,11 +1,9 @@
 import Foundation
 
-enum Checkpoint: String, Decodable { case verify_code, name, birthday, home, videoAnalysis }
-
-struct LoginOrCheckpointResponse: Decodable {
-    let checkpoint: Checkpoint
-    let tokens: TokenResponse?
-    let user: User
+enum Checkpoint: String, Decodable {
+    case home
+    case videoAnalysis = "video_analysis"
+    case startSignupFlow = "start_signup_flow"
 }
 
 struct LoginRequest: Codable {

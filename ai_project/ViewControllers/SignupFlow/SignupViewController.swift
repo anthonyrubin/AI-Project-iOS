@@ -8,6 +8,8 @@ final class SignupViewController: UIViewController, UIAdaptivePresentationContro
     private lazy var errorModalManager = ErrorModalManager(viewController: self)
     
     private var cancellables = Set<AnyCancellable>()
+    
+    var onStartSignupRequested: (() -> Void)?
 
     // MARK: - UI
     
@@ -165,35 +167,25 @@ final class SignupViewController: UIViewController, UIAdaptivePresentationContro
     }
     
     private func handleCheckpoint(checkpoint: Checkpoint) {
-        dismissSelf()
+        //dismissSelf()
         switch checkpoint {
-        case .name:
-            navigateToName()
-        case .birthday:
-            navigateToBirthday()
         case .home:
             navigateToHome()
-        case .verify_code:
-            break
+        case .startSignupFlow:
+            startSignupFlow()
         case .videoAnalysis:
             fatalError("Video analysis should never be an option from here")
 
         }
     }
     
-    private func navigateToName() {
-//        let vc = SetNameViewController()
-//        navigationController?.pushViewController(vc, animated: true)
-    }
-    
-    private func navigateToBirthday() {
-        let vc = BirthdayViewController()
-        navigationController?.pushViewController(vc, animated: true)
-    }
-    
     private func navigateToHome() {
         UserDefaults.standard.set(true, forKey: "isLoggedIn")
         NotificationCenter.default.post(name: .authDidSucceed, object: nil)
+    }
+    
+    private func startSignupFlow() {
+        onStartSignupRequested?()
     }
     
     private func setLoading(_ loading: Bool) {

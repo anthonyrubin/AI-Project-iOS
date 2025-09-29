@@ -260,11 +260,7 @@ extension SessionViewController: UITableViewDataSource {
 
         if row == currentRow {
             let cell = tableView.dequeueReusableCell(withIdentifier: "StandardTitleCell", for: indexPath) as! StandardTitleCell
-            if let firstName = sessionViewModel.currentUser?.firstName, !firstName.isEmpty {
-                cell.configure(with: "Hello, \(firstName)")
-            } else {
-                cell.configure(with: "Hello, User")
-            }
+            cell.configure(with: "Coach Cam AI")
             return cell
         }
         currentRow += 1
@@ -300,7 +296,9 @@ extension SessionViewController: UITableViewDataSource {
                 cell.configure(with: lastAnalysis)
                 return cell
             } else {
-                return tableView.dequeueReusableCell(withIdentifier: "EmptyStateAnalysisCell", for: indexPath) as! EmptyStateAnalysisCell
+                let cell =  tableView.dequeueReusableCell(withIdentifier: "EmptyStateAnalysisCell", for: indexPath) as! EmptyStateAnalysisCell
+                cell.configure(gender: sessionViewModel.currentUser?.gender)
+                return cell
             }
         }
 

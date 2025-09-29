@@ -8,12 +8,6 @@ protocol SignupRepository {
         password2: String,
         completion: @escaping (Result<Void, NetworkError>) -> Void
     )
-    
-    func setName(
-        firstName: String,
-        lastName: String,
-        completion: @escaping (Result<Void, NetworkError>) -> Void
-    )
 }
 
 class SignupRepositoryImpl: SignupRepository {
@@ -46,36 +40,6 @@ class SignupRepositoryImpl: SignupRepository {
                 case .failure(let err):
                     completion(.failure(err))
                 }
-            }
-        )
-    }
-    
-    func setName(
-        firstName: String,
-        lastName: String,
-        completion: @escaping (Result<Void, NetworkError>) -> Void) {
-        
-            signupAPI.setName(
-                firstName: firstName,
-                lastName: lastName,
-                completion: { [weak self] result in
-                    
-                    switch result {
-                    case .success:
-                        completion(.success(()))
-                        if let currentUserId = UserDefaults.standard.object(forKey: "currentUserId") as? Int {
-                            do {
-                                try self?.userDataStore.setName(userId: currentUserId, first: firstName, last: lastName)
-                            } catch {
-                                // TODO: Log here, caching should not fail, but this should fail silently if it does
-                            }
-                        } else {
-                            // TODO: Log here, we should always have a useID at this point
-                        }
-                        
-                    case .failure(let err):
-                        completion(.failure(err))
-                    }
             }
         )
     }

@@ -171,22 +171,13 @@ final class CreateAccountViewController: BaseSignupViewController {
     
     private func handleCheckpoint(checkpoint: Checkpoint) {
         switch checkpoint {
-        case .name:
-            navigateToName()
-        case .birthday:
-            navigateToBirthday()
         case .home:
             navigateToHome()
         case .videoAnalysis:
             navigateToVideoAnalysis()
-        case .verify_code:
-            break
+        case .startSignupFlow:
+            fatalError("Unable to handle startSignupFlow checkpoint from CreateAccountViewController")
         }
-    }
-    
-    private func navigateToName() {
-//        let vc = SetNameViewController()
-//        navigationController?.pushViewController(vc, animated: true)
     }
     
     private func navigateToBirthday() {

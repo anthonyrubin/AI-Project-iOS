@@ -3,11 +3,6 @@ import Alamofire
 import UIKit
 
 protocol AuthAPI {
-    func loginOrCheckpoint(
-        username: String,
-        password: String,
-        completion: @escaping (Result<LoginOrCheckpointResponse, NetworkError>) -> Void
-    )
     func logout(completion: @escaping () -> Void)
     func verifyAccount(
         email: String,
@@ -28,12 +23,6 @@ protocol SignupAPI {
         email: String,
         password1: String,
         password2: String,
-        completion: @escaping (Result<Void, NetworkError>) -> Void
-    )
-    
-    func setName(
-        firstName: String,
-        lastName: String,
         completion: @escaping (Result<Void, NetworkError>) -> Void
     )
 }
@@ -81,7 +70,7 @@ class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI, MembershipAPI, SettingsAP
     
     private var tokenManager: TokenManager
     
-    private let baseURL = "https://0439caf890f6.ngrok-free.app/api"
+    private let baseURL = "https://f74be2cf05b9.ngrok-free.app/api"
     //private let baseURL = "http://localhost:8000/api"
     
     // MARK: - Token Refresh Management
@@ -217,32 +206,6 @@ class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI, MembershipAPI, SettingsAP
         }
     }
 
-    func loginOrCheckpoint(
-        username: String,
-        password: String,
-        completion: @escaping (Result<LoginOrCheckpointResponse, NetworkError>) -> Void
-    ) {
-        let url = "\(baseURL)/login/"
-        let params = ["username": username, "password": password]
-
-        AF.request(url, method: .post, parameters: params, encoder: JSONParameterEncoder.default)
-            .validate(statusCode: 200..<300)
-            .responseDecodable(of: LoginOrCheckpointResponse.self) { resp in
-                switch resp.result {
-                case .success(let value):
-                    completion(.success(value))
-
-                case .failure(let afErr):
-                    if let data = resp.data,
-                       let api = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
-                        completion(.failure(.apiError(api.error)))
-                    } else {
-                        completion(.failure(.requestFailed(afErr)))
-                    }
-                }
-            }
-    }
-
     func logout(completion: @escaping () -> Void) {
         let url = "\(baseURL)/logout/"
 
@@ -322,29 +285,6 @@ class NetworkManager: AuthAPI, SignupAPI, AnalysisAPI, MembershipAPI, SettingsAP
                     }
                 }
             }
-    }
-    
-    func setName(
-        firstName: String,
-        lastName: String,
-        completion: @escaping (Result<Void, NetworkError>) -> Void
-    ) {
-        let url = "\(baseURL)/set-name/"
-        let params = ["firstName": firstName, "lastName": lastName]
-        
-        performAuthenticatedRequest(
-            url: url,
-            method: .post,
-            parameters: params,
-            responseType: SetNameResponse.self
-        ) { result in
-            switch result {
-            case .success:
-                completion(.success(()))
-            case .failure(let error):
-                completion(.failure(error))
-            }
-        }
     }
 
     func setBirthday(birthday: Date, completion: @escaping (Result<Void, NetworkError>) -> Void) {

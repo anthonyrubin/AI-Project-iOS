@@ -3,11 +3,7 @@ import Foundation
 
 protocol AuthRepository {
     func logout(completion: @escaping () -> Void)
-    func loginOrCheckpoint(
-        username: String,
-        password: String,
-        completion: @escaping (Result<LoginOrCheckpointResponse, NetworkError>) -> Void
-    )
+
     func verifyAccount(
         email: String,
         code: String,
@@ -78,30 +74,6 @@ class AuthRepositoryImpl: AuthRepository {
             completion()
             self?.performLocalLogout()
         })
-    }
-    
-    func loginOrCheckpoint(
-        username: String,
-        password: String,
-        completion: @escaping (Result<LoginOrCheckpointResponse, NetworkError>) -> Void
-    ) {
-        authAPI.loginOrCheckpoint(username: username, password: password) { [weak self] result in
-            guard let self else { return }
-            switch result {
-            case .success(let resp):
-                if let t = resp.tokens { self.tokenManager.saveTokens(t) }
-                do {
-                    try self.realmUserDataStore.upsert(user: resp.user)
-                    UserDefaults.standard.set(resp.user.id, forKey: "currentUserId")
-                } catch {
-                    return completion(.failure(.cache(error)))
-                }
-                completion(.success(resp))
-
-            case .failure(let netErr):
-                completion(.failure(netErr))
-            }
-        }
     }
     
     func verifyAccount(

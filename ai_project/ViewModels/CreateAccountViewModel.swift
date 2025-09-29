@@ -191,10 +191,10 @@ class CreateAccountViewModel: ObservableObject {
     private func handleCheckpoint(_ checkpoint: String) {
         let _checkpoint = Checkpoint(rawValue: checkpoint)
         switch _checkpoint {
-        case .name, .birthday, .home:
+        case .home, .videoAnalysis:
             self.checkpoint = _checkpoint
         default:
-            errorMessage = "Unknown checkpoint: \(checkpoint)"
+            errorMessage = "Unhandled checkpoint: \(checkpoint)"
         }
     }
     
