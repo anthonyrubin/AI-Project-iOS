@@ -84,7 +84,7 @@ final class TabBarController: UITabBarController, UITabBarControllerDelegate {
         let sessionVC = SessionViewController()
         sessionVC.uploadStateManager = uploadStateManager
         let session = nav(sessionVC, title: "Home", baseName: "HomeTabIcon")
-        let lessons = nav(LessonsViewController(), title: "History",     baseName: "ProgressTabIcon")
+        //let lessons = nav(LessonsViewController(), title: "History",     baseName: "ProgressTabIcon")
         let profile = nav(SettingsViewController(), title: "Settings", baseName: "SettingsTabIcon")
 
         // Placeholder tab to shift real tabs left (disabled & invisible)
@@ -93,7 +93,7 @@ final class TabBarController: UITabBarController, UITabBarControllerDelegate {
         spacer.tabBarItem.isEnabled = false
         spacer.tabBarItem.isAccessibilityElement = false
 
-        viewControllers = [session, lessons, profile, spacer]
+        viewControllers = [session, profile, spacer]
         selectedIndex = 0
     }
 

@@ -164,7 +164,8 @@ final class LessonViewController: UIViewController {
             tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            // The bottom constraint is intentionally omitted here.
+            // It will be set in setupChatButton() to stop above the button.
         ])
     }
     
@@ -172,14 +173,18 @@ final class LessonViewController: UIViewController {
         view.addSubview(chatButton)
         chatButton.addTarget(self, action: #selector(startChat), for: .touchUpInside)
 
+        // The fix for the height not remaining 56
+        let heightConstraint = chatButton.heightAnchor.constraint(equalToConstant: 56)
+        heightConstraint.priority = .required // Set priority to 1000
+
         NSLayoutConstraint.activate([
             chatButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             chatButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             chatButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12),
-            chatButton.heightAnchor.constraint(equalToConstant: 56)
+            heightConstraint // Use the constraint with the required priority
         ])
 
-        // let tableView stop above button
+        // This is the desired tableView bottom constraint (keeps the table above the button)
         tableView.bottomAnchor.constraint(equalTo: chatButton.topAnchor, constant: -8).isActive = true
     }
 
@@ -286,7 +291,7 @@ final class LessonViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] deleted in
                 if deleted == true {
-                    self?.navigationController?.popViewController(animated: true)
+                    self?.navigationController?.dismiss(animated: true)
                 }
             }
             .store(in: &cancellables)

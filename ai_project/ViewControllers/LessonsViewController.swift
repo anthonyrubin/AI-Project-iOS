@@ -9,7 +9,7 @@ class LessonsViewController: UIViewController {
     
     // MARK: - Title Cell Components
     private let titleLabel = UILabel()
-    private let inboxButton = UIButton(type: .system)
+    //private let inboxButton = UIButton(type: .system)
     
     private lazy var errorModalManager = ErrorModalManager(viewController: self)
 
@@ -109,15 +109,15 @@ class LessonsViewController: UIViewController {
         viewModel.refreshAnalyses()
     }
     
-    @objc private func inboxButtonTapped() {
-        let inboxViewController = InboxViewController()
-        
-        if let sheet = inboxViewController.sheetPresentationController {
-            sheet.detents = [.medium(), .large()]
-        }
-        
-        navigationController?.present(inboxViewController, animated: true)
-    }
+//    @objc private func inboxButtonTapped() {
+//        let inboxViewController = InboxViewController()
+//        
+//        if let sheet = inboxViewController.sheetPresentationController {
+//            sheet.detents = [.medium(), .large()]
+//        }
+//        
+//        navigationController?.present(inboxViewController, animated: true)
+//    }
     
     private func setupNotifications() {
         NotificationCenter.default.addObserver(
@@ -165,11 +165,11 @@ extension LessonsViewController: UITableViewDataSource {
             titleLabel.translatesAutoresizingMaskIntoConstraints = false
             cell.contentView.addSubview(titleLabel)
             
-            inboxButton.setImage(UIImage(systemName: "tray"), for: .normal)
-            inboxButton.tintColor = .label
-            inboxButton.translatesAutoresizingMaskIntoConstraints = false
-            inboxButton.addTarget(self, action: #selector(inboxButtonTapped), for: .touchUpInside)
-            cell.contentView.addSubview(inboxButton)
+//            inboxButton.setImage(UIImage(systemName: "tray"), for: .normal)
+//            inboxButton.tintColor = .label
+//            inboxButton.translatesAutoresizingMaskIntoConstraints = false
+//            inboxButton.addTarget(self, action: #selector(inboxButtonTapped), for: .touchUpInside)
+//            cell.contentView.addSubview(inboxButton)
             
             NSLayoutConstraint.activate([
                 titleLabel.topAnchor.constraint(equalTo: cell.contentView.topAnchor),
@@ -177,10 +177,10 @@ extension LessonsViewController: UITableViewDataSource {
                 titleLabel.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor, constant: -20),
                 titleLabel.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor),
                 
-                inboxButton.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor, constant: -20),
-                inboxButton.centerYAnchor.constraint(equalTo: cell.contentView.centerYAnchor),
-                inboxButton.widthAnchor.constraint(equalToConstant: 44),
-                inboxButton.heightAnchor.constraint(equalToConstant: 44)
+//                inboxButton.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor, constant: -20),
+//                inboxButton.centerYAnchor.constraint(equalTo: cell.contentView.centerYAnchor),
+//                inboxButton.widthAnchor.constraint(equalToConstant: 44),
+//                inboxButton.heightAnchor.constraint(equalToConstant: 44)
             ])
             
             return cell
